@@ -9,21 +9,24 @@ This project is a Python-based command-line application for managing mental heal
 
 ### Admin
 - Allocate patients to MHWPs.
-- Edit and disable user records (MHWPs and Patients).
-- Delete user records.
+- Edit MHWP or patient records.
+- Delete MHWP or patient records.
+- Disable MHWP or patient records (can login/logout but no change can be made).
 - Display a summary of patients, MHWPs, and their related appointments.
 
 ### Patients
 - Edit personal information (name, email, emergency contact).
 - Track daily mood with a color code system and add comments.
-- Add daily journal entries.
+  <img width="383" alt="image" src="https://github.com/user-attachments/assets/d28b5f55-82f1-4dbe-8837-28a62902ff09">
+- Add daily journal entries and save with latest date/time.
+- Access meditation and relaxation exercises based on keyword search.
 - Book and cancel appointments with their assigned MHWP.
 - Receive email notifications for booking confirmations or cancellations.
 
 ### MHWPs (Mental Health and Wellbeing Practitioners)
 - View their calendar with requested and confirmed appointments.
-- Confirm or cancel appointments.
-- Add patient conditions and notes.
+- Confirm or cancel appointments, and send email notifications to patient.
+- Add patient information (conditions, notes, etc. which can be selected from predefined list)
 - View patient data on a dashboard with mood tracking charts.
 
 ## Project Structure

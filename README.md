@@ -17,7 +17,9 @@ This project is a Python-based command-line application for managing mental heal
 ### Patients
 - Edit personal information (name, email, emergency contact).
 - Track daily mood with a color code system and add comments.
+  
   <img width="383" alt="image" src="https://github.com/user-attachments/assets/d28b5f55-82f1-4dbe-8837-28a62902ff09">
+  
 - Add daily journal entries and save with latest date/time.
 - Access meditation and relaxation exercises based on keyword search.
 - Book and cancel appointments with their assigned MHWP.

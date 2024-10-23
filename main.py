@@ -1,4 +1,3 @@
-
 from models.user import Admin, MHWP, Patient
 from controllers.admin import AdminController
 from controllers.patient import PatientController

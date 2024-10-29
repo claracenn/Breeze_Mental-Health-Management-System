@@ -35,18 +35,25 @@
 
 ## 3. **Patient Journal Table**
 
-**Mood Log** records daily mood entries for patients. 
+**Patient Journal Table** records daily mood entries for patients. 
 
+### Fields:
+
+- `patient_id` [Composite PK; FK->Patient/patient_id]: References the patient table for patient info.
+- `date` [Composite PK]: Latest date of saving the journal entry.
+- `journal_text`: Text content of the journal entry.
+
+
+## 4. **Mood Log Table**
 ### Fields:
 
 - `patient_id` [Composite PK; FK->Patient/patient_id]: References the patient table for patient info.
 - `date` [Composite PK]: Latest date of saving the mood entry.
 - `mood_color`: Color-coded representation of the mood (e.g., green for positive, red for negative).
 - `mood_comments`: Text field where the patient can add comments about their mood.
-- `journal_text`: Text content of the journal entry.
 
 
-## 4. **Appointment Table**
+## 5. **Appointment Table**
 
 **Appointment** table stores information about the time of each appointment with MHWPs and the current status.
 
@@ -55,12 +62,15 @@
 - `appointment_id` [PK]: Unique identifier for each appointment.
 - `patient_id` [FK->FK->Patient/patient_id]: References the patient booking the appointment.
 - `mhwp_id` [FK->MHWP]: References the assigned MHWP for this appointment.
-- `date_time`: Date and time of the appointment.
-- `status`(ENUM): `BOOKED`, `CONFIRMED`, `CANCELED`
+- `date`: Date of the appointment.
+- `time_slot`: Time slot of the appointment.
+- `status`(ENUM): `PENDING`, `CONFIRMED`, `CANCELED`
 - `notes`: Additional information about the appointment.
+- `create_time`: Time of appointment creation.
+- `last_updated`: Time of latest update.
 
 
-## 5. **Exercise Resource Table**
+## 6. **Exercise Resource Table**
 
 **Exercise Resource** table stores links to relaxation and meditation exercises that patients can access. 
 
@@ -69,4 +79,5 @@
 - `resource_id` [PK]: Unique identifier for each resource.
 - `title`: Title of the exercise or resource.
 - `description`: Brief description of the resource.
+- `type` (ENUM: `meditation`, `relaxation`): Type of exercises.
 - `url`: URL link to the exercise (audio or video).

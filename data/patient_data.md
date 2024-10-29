@@ -69,15 +69,3 @@
 - `create_time`: Time of appointment creation.
 - `last_updated`: Time of latest update.
 
-
-## 6. **Exercise Resource Table**
-
-**Exercise Resource** table stores links to relaxation and meditation exercises that patients can access. 
-
-### Fields:
-
-- `resource_id` [PK]: Unique identifier for each resource.
-- `title`: Title of the exercise or resource.
-- `description`: Brief description of the resource.
-- `type` (ENUM: `meditation`, `relaxation`): Type of exercises.
-- `url`: URL link to the exercise (audio or video).

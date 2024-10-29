@@ -1,0 +1,242 @@
+[
+    {
+        "patient_id": 1,
+        "date": "2024-06-03",
+        "mood_color": "yellow",
+        "mood_comments": "Neutral, a regular day."
+    },
+    {
+        "patient_id": 2,
+        "date": "2024-05-01",
+        "mood_color": "red",
+        "mood_comments": "Struggling with mood, feeling low."
+    },
+    {
+        "patient_id": 3,
+        "date": "2024-01-16",
+        "mood_color": "green",
+        "mood_comments": "Feeling positive and happy."
+    },
+    {
+        "patient_id": 4,
+        "date": "2024-09-17",
+        "mood_color": "yellow",
+        "mood_comments": "Neutral, a regular day."
+    },
+    {
+        "patient_id": 5,
+        "date": "2024-06-10",
+        "mood_color": "yellow",
+        "mood_comments": "Neutral, a regular day."
+    },
+    {
+        "patient_id": 6,
+        "date": "2024-02-17",
+        "mood_color": "light_green",
+        "mood_comments": "Content with the day."
+    },
+    {
+        "patient_id": 7,
+        "date": "2024-09-17",
+        "mood_color": "red",
+        "mood_comments": "Struggling with mood, feeling low."
+    },
+    {
+        "patient_id": 8,
+        "date": "2024-04-11",
+        "mood_color": "green",
+        "mood_comments": "Feeling positive and happy."
+    },
+    {
+        "patient_id": 9,
+        "date": "2024-01-05",
+        "mood_color": "dark_red",
+        "mood_comments": "Very down, challenging day emotionally."
+    },
+    {
+        "patient_id": 10,
+        "date": "2024-07-16",
+        "mood_color": "red",
+        "mood_comments": "Struggling with mood, feeling low."
+    },
+    {
+        "patient_id": 11,
+        "date": "2024-02-10",
+        "mood_color": "light_green",
+        "mood_comments": "Content with the day."
+    },
+    {
+        "patient_id": 12,
+        "date": "2024-08-28",
+        "mood_color": "red",
+        "mood_comments": "Struggling with mood, feeling low."
+    },
+    {
+        "patient_id": 13,
+        "date": "2024-01-22",
+        "mood_color": "light_green",
+        "mood_comments": "Content with the day."
+    },
+    {
+        "patient_id": 14,
+        "date": "2024-04-18",
+        "mood_color": "green",
+        "mood_comments": "Feeling positive and happy."
+    },
+    {
+        "patient_id": 15,
+        "date": "2024-03-13",
+        "mood_color": "yellow",
+        "mood_comments": "Neutral, a regular day."
+    },
+    {
+        "patient_id": 16,
+        "date": "2024-05-27",
+        "mood_color": "yellow",
+        "mood_comments": "Neutral, a regular day."
+    },
+    {
+        "patient_id": 17,
+        "date": "2024-11-16",
+        "mood_color": "orange",
+        "mood_comments": "A bit down, feeling some stress."
+    },
+    {
+        "patient_id": 18,
+        "date": "2024-07-13",
+        "mood_color": "light_green",
+        "mood_comments": "Content with the day."
+    },
+    {
+        "patient_id": 19,
+        "date": "2024-06-29",
+        "mood_color": "dark_red",
+        "mood_comments": "Very down, challenging day emotionally."
+    },
+    {
+        "patient_id": 20,
+        "date": "2024-05-02",
+        "mood_color": "orange",
+        "mood_comments": "A bit down, feeling some stress."
+    },
+    {
+        "patient_id": 1,
+        "date": "2024-12-22",
+        "mood_color": "yellow",
+        "mood_comments": "Neutral, a regular day."
+    },
+    {
+        "patient_id": 2,
+        "date": "2024-05-01",
+        "mood_color": "green",
+        "mood_comments": "Feeling positive and happy."
+    },
+    {
+        "patient_id": 3,
+        "date": "2024-02-14",
+        "mood_color": "light_green",
+        "mood_comments": "Content with the day."
+    },
+    {
+        "patient_id": 4,
+        "date": "2024-06-12",
+        "mood_color": "yellow",
+        "mood_comments": "Neutral, a regular day."
+    },
+    {
+        "patient_id": 5,
+        "date": "2024-03-07",
+        "mood_color": "orange",
+        "mood_comments": "A bit down, feeling some stress."
+    },
+    {
+        "patient_id": 6,
+        "date": "2024-11-18",
+        "mood_color": "yellow",
+        "mood_comments": "Neutral, a regular day."
+    },
+    {
+        "patient_id": 7,
+        "date": "2024-03-25",
+        "mood_color": "light_green",
+        "mood_comments": "Content with the day."
+    },
+    {
+        "patient_id": 8,
+        "date": "2024-01-12",
+        "mood_color": "yellow",
+        "mood_comments": "Neutral, a regular day."
+    },
+    {
+        "patient_id": 9,
+        "date": "2024-08-04",
+        "mood_color": "red",
+        "mood_comments": "Struggling with mood, feeling low."
+    },
+    {
+        "patient_id": 10,
+        "date": "2024-08-17",
+        "mood_color": "dark_red",
+        "mood_comments": "Very down, challenging day emotionally."
+    },
+    {
+        "patient_id": 11,
+        "date": "2024-12-02",
+        "mood_color": "green",
+        "mood_comments": "Feeling positive and happy."
+    },
+    {
+        "patient_id": 12,
+        "date": "2024-06-17",
+        "mood_color": "red",
+        "mood_comments": "Struggling with mood, feeling low."
+    },
+    {
+        "patient_id": 13,
+        "date": "2024-11-27",
+        "mood_color": "light_green",
+        "mood_comments": "Content with the day."
+    },
+    {
+        "patient_id": 14,
+        "date": "2024-07-02",
+        "mood_color": "light_green",
+        "mood_comments": "Content with the day."
+    },
+    {
+        "patient_id": 15,
+        "date": "2024-08-03",
+        "mood_color": "dark_red",
+        "mood_comments": "Very down, challenging day emotionally."
+    },
+    {
+        "patient_id": 16,
+        "date": "2024-09-08",
+        "mood_color": "dark_red",
+        "mood_comments": "Very down, challenging day emotionally."
+    },
+    {
+        "patient_id": 17,
+        "date": "2024-10-29",
+        "mood_color": "light_green",
+        "mood_comments": "Content with the day."
+    },
+    {
+        "patient_id": 18,
+        "date": "2024-12-13",
+        "mood_color": "red",
+        "mood_comments": "Struggling with mood, feeling low."
+    },
+    {
+        "patient_id": 19,
+        "date": "2024-11-05",
+        "mood_color": "dark_red",
+        "mood_comments": "Very down, challenging day emotionally."
+    },
+    {
+        "patient_id": 20,
+        "date": "2024-05-27",
+        "mood_color": "red",
+        "mood_comments": "Struggling with mood, feeling low."
+    }
+]

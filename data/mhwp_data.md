@@ -11,10 +11,10 @@
 
 ### Fields:
 
--   `mhwp_id` [PK]: Unique identifier for each MHWP.
+-   `mhwp_id` [PK; FK->User/user_id]: Unique identifier for each MHWP.
 -   `name`: Name of MHWP.
 -   `email`: Email id of MHWPs for sending notifications.
--   `patient_ids`: List of patients for each MHWP.
+-   `patient_ids`[FK->patient_id]: List of patients for each MHWP.
 
 ## 2. **Appointment Table**
 

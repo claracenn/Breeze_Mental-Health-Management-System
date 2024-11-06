@@ -44,7 +44,8 @@ def show_options(role):
         print("Welcome, MHWP! Here are your options:")
         print("1. View Appointments")
         print("2. Manage Patient Records")
-        print("3. Logout")
+        print("3. Display Dashboard")
+        print("4. Logout")
     elif role == "patient":
         print("Welcome, Patient! Here are your options:")
         print("1. Book/Cancel Appointment")

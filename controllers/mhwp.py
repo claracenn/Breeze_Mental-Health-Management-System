@@ -20,3 +20,4 @@ class MHWPController:
         for patient in self.mhwp.patients:
             print(f"Patient: {patient.username}, Mood Log: {patient.mood_log}")
     
+print(MHWP)

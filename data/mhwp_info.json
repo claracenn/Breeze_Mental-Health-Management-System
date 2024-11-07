@@ -2,31 +2,26 @@
     {
         "mhwp_id": 21,
         "name": "Robert Lewandowski",
-        "email": "robert.lewandowski@example.com",
-        "patient_ids": [1, 6, 12, 13, 19]
+        "email": "robert.lewandowski@example.com"
     },
     {
         "mhwp_id": 22,
         "name": "Erling Haaland",
-        "email": "erling.haaland@example.com",
-        "patient_ids": [5, 16, 20]
+        "email": "erling.haaland@example.com"
     },
     {
         "mhwp_id": 23,
         "name": "Dani Olmo",
-        "email": "dani.olmo@example.com",
-        "patient_ids": [3, 4, 15, 17]
+        "email": "dani.olmo@example.com"
     },
     {
         "mhwp_id": 24,
         "name": "Toni Kroos",
-        "email": "toni.kroos@example.com",
-        "patient_ids": [9, 10, 11]
+        "email": "toni.kroos@example.com"
     },
     {
         "mhwp_id": 25,
         "name": "Julian Alvarez",
-        "email": "julian.alvarez@example.com",
-        "patient_ids": [2, 7, 8, 14, 18]
+        "email": "julian.alvarez@example.com"
     }
 ]

@@ -105,6 +105,54 @@ class MHWPController:
             for rec in patient_records:
                 if rec["patient_id"] in patients.keys():
                     print(rec["patient_id"], patients[rec["patient_id"]], rec["condition"], rec["notes"])
+            self.update_patient_record(patient_records, patients)
+
+    def update_patient_record(self, patient_records, patients):
+        id_input = ""
+        while id_input != "X":
+            id_input = input("Choose patient_id to update record ('X' to exit): ")
+            if id_input == "X": break
+            else: id_input = int(id_input)
+            if id_input in patients.keys():
+                for record in patient_records:
+                    if record["patient_id"] == id_input:
+                        print("Selected patient record:")
+                        print(self.get_patient_name(id_input), record["condition"], record["notes"])
+                        print("1. Update patient condition.")
+                        print("2. Update patient notes.")
+                        print("3. Exit")
+                        mhwp_input = ''
+                        while mhwp_input not in ['1', '2', '3']:
+                            mhwp_input = input("Choose option listed above (Enter 1, 2, or 3): ")
+                            if mhwp_input == '1':
+                                condition = input("Please enter patient condition: ")
+                                record["condition"] = condition
+                                try:
+                                    with open('./data/patient_record.json', 'w') as update_record:
+                                        json.dump(patient_records, update_record, indent=4)
+                                except FileNotFoundError as e:
+                                    print(f"File cannot be found: {e}")
+                                except Exception as e:
+                                    print(f"Unexpected error occurred: {e}")
+                            elif mhwp_input == '2':
+                                note = input("Please enter note for patient: ")
+                                record["notes"] = note
+                                try:
+                                    with open('./data/patient_record.json', 'w') as update_record:
+                                        json.dump(patient_records, update_record, indent=4)
+                                except FileNotFoundError as e:
+                                    print(f"File cannot be found: {e}")
+                                except Exception as e:
+                                    print(f"Unexpected error occurred: {e}")
+                            elif mhwp_input == '3':
+                                break
+                            else:
+                                print("Please enter 1, 2, or 3")
+
+                        break
+                break
+            else:
+                print("Please enter valid patient id.")
 
     def view_dashboard(self):
         for patient in self.mhwp.patients:

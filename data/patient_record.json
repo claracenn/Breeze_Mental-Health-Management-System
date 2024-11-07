@@ -1,102 +1,102 @@
 [
     {
-        "patient_id": 1, 
-        "condition": "Anxiety", 
-        "notes": "Patient shows improvement with weekly therapy."
+        "patient_id": 1,
+        "condition": "ADHD",
+        "notes": "Patient shows improvement with medication."
     },
     {
-        "patient_id": 2, 
-        "condition": "Depression", 
+        "patient_id": 2,
+        "condition": "Depression",
         "notes": "Recommended increased physical activity."
     },
     {
-        "patient_id": 3, 
-        "condition": "Stress", 
+        "patient_id": 3,
+        "condition": "Stress",
         "notes": "High work-related stress; advised relaxation techniques."
     },
     {
-        "patient_id": 4, 
-        "condition": "PTSD", 
+        "patient_id": 4,
+        "condition": "PTSD",
         "notes": "Suggested cognitive behavioral therapy sessions."
     },
     {
-        "patient_id": 5, 
-        "condition": "Anxiety", 
+        "patient_id": 5,
+        "condition": "Anxiety",
         "notes": "Patient benefits from group therapy sessions."
     },
     {
-        "patient_id": 6, 
-        "condition": "Bipolar Disorder", 
+        "patient_id": 6,
+        "condition": "Bipolar Disorder",
         "notes": "Mood swings observed; monitor weekly."
     },
     {
-        "patient_id": 7, 
-        "condition": "OCD", 
+        "patient_id": 7,
+        "condition": "OCD",
         "notes": "Obsessive thoughts are persistent; therapy ongoing."
     },
     {
-        "patient_id": 8, 
-        "condition": "Depression", 
+        "patient_id": 8,
+        "condition": "Depression",
         "notes": "Shows signs of improvement with medication."
     },
     {
-        "patient_id": 9, 
-        "condition": "Panic Disorder", 
+        "patient_id": 9,
+        "condition": "Panic Disorder",
         "notes": "Patient prone to sudden attacks; focus on grounding exercises."
     },
     {
-        "patient_id": 10, 
-        "condition": "Social Anxiety", 
+        "patient_id": 10,
+        "condition": "Social Anxiety",
         "notes": "Encouraged gradual exposure therapy."
     },
     {
-        "patient_id": 11, 
-        "condition": "GAD (Generalized Anxiety Disorder)", 
+        "patient_id": 11,
+        "condition": "GAD (Generalized Anxiety Disorder)",
         "notes": "Patient reports constant worry; suggested mindfulness."
     },
     {
-        "patient_id": 12, 
-        "condition": "ADHD", 
+        "patient_id": 12,
+        "condition": "ADHD",
         "notes": "Recommended structured routine to manage symptoms."
     },
     {
-        "patient_id": 13, 
-        "condition": "Stress", 
+        "patient_id": 13,
+        "condition": "Stress",
         "notes": "Experiencing high academic stress; advised coping strategies."
     },
     {
-        "patient_id": 14, 
-        "condition": "Depression", 
+        "patient_id": 14,
+        "condition": "Depression",
         "notes": "Medication review planned for next session."
     },
     {
-        "patient_id": 15, 
-        "condition": "PTSD", 
+        "patient_id": 15,
+        "condition": "PTSD",
         "notes": "Nightmares and flashbacks frequent; focus on trauma counseling."
     },
     {
-        "patient_id": 16, 
-        "condition": "Anxiety", 
+        "patient_id": 16,
+        "condition": "Anxiety",
         "notes": "Mild improvement noted; continue current regimen."
     },
     {
-        "patient_id": 17, 
-        "condition": "Bipolar Disorder", 
+        "patient_id": 17,
+        "condition": "Bipolar Disorder",
         "notes": "Stable mood recently; continue with current therapy."
     },
     {
-        "patient_id": 18, 
-        "condition": "OCD", 
+        "patient_id": 18,
+        "condition": "OCD",
         "notes": "Compulsions reduced; patient responds well to therapy."
     },
     {
-        "patient_id": 19, 
-        "condition": "Panic Disorder", 
+        "patient_id": 19,
+        "condition": "Panic Disorder",
         "notes": "Triggered by crowded places; advised relaxation methods."
     },
     {
-        "patient_id": 20, 
-        "condition": "Social Anxiety", 
+        "patient_id": 20,
+        "condition": "Social Anxiety",
         "notes": "Weekly progress observed in group settings."
     }
 ]

@@ -82,10 +82,29 @@ class MHWPController:
                         print("Please enter valid appointment_id, or enter 'X' to exit.")
                         break
 
+    def display_patient_record(self):
+        # Find list of patients for a particular MHWP
+        try:
+            with open('./data/patient_info.json', 'r') as info:
+                patient_info = json.load(info)
+            with open('./data/patient_record.json', 'r') as record:
+                patient_records = json.load(record)
+        except FileNotFoundError as e:
+            print(f"File cannot be found: {e}")
+        except Exception as e:
+            print(f"Unexpected Error Occurred: {e}")
+        else:
+            print("My Patient Records")
+            mhwp_id = self.mhwp["mhwp_id"]
+            patients = {}
+            for pat in patient_info:
+                if pat["mhwp_id"] == mhwp_id:
+                    patients[pat["patient_id"]] = pat["name"]
 
-    def add_patient_record(self, patient, condition, notes):
-        patient.condition = condition
-        patient.notes = notes
+            # Display patient list with records
+            for rec in patient_records:
+                if rec["patient_id"] in patients.keys():
+                    print(rec["patient_id"], patients[rec["patient_id"]], rec["condition"], rec["notes"])
 
     def view_dashboard(self):
         for patient in self.mhwp.patients:
@@ -96,8 +115,7 @@ class MHWPController:
 MHWP = {
         "mhwp_id": 21,
         "name": "Robert Lewandowski",
-        "email": "robert.lewandowski@example.com",
-        "patient_ids": [1, 6, 12, 13, 19]
+        "email": "robert.lewandowski@example.com"
         }
 mhwp1 = MHWPController(MHWP)
-mhwp1.choose_appointment()
+mhwp1.display_patient_record()

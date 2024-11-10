@@ -34,7 +34,6 @@ class MHWPController:
             print(f"Unexpected error occured when trying to GET patient information: {e}")     
 
 
-    
     def get_appointments(self):
         appointment_path_name = "./data/appointment.json"
         try:
@@ -57,11 +56,24 @@ class MHWPController:
     def display_calendar(self):
         appointments = self.get_appointments()
         # cols = ["Date", "Time", "Patient", "Status"]
-        print("My Calendar")
-        mhwp_id = self.mhwp["mhwp_id"]
-        for app in appointments:
-            if app["mhwp_id"] == mhwp_id:
-                print(app["date"], app["time_slot"], self.get_patient_name(app["patient_id"]), app["status"])
+
+        data = {
+            "Name": [],
+            "Time": [],
+            "Date": [], 
+            "Status": []
+        }
+
+        for appointment in appointments:
+            data["Name"].append(self.get_patient_name(appointment["patient_id"]))
+            data["Time"].append(appointment["time_slot"])
+            data["Date"].append(appointment["date"])
+            data["Status"].append(appointment["status"])
+        create_table(data, "My Calendar", display_title=True)
+
+
+
+ 
 
 
     def handle_appointment(self, appointment):
@@ -216,7 +228,8 @@ MHWP = {
         }
 mhwp1 = MHWPController(MHWP)
 
-mhwp1.view_dashboard()
+# mhwp1.view_dashboard()
+mhwp1.display_calendar()
 # print(mhwp1.get_appointments())
 # print(mhwp1.get_patients_info())
 # print(mhwp1.display_patient_records())

@@ -2,6 +2,7 @@ import json
 from models.user import MHWP
 import pandas as pd
 from misc.table import create_table
+from utils.data_handler import read_json
 
 class MHWPController:
     '''Class to control various functions of the MHWPs.'''
@@ -11,38 +12,25 @@ class MHWPController:
 
 
     def get_patients_info(self):
-        '''Returns a list of patients for current mhwp'''
-        try:
-            patient_data_path_name = "./data/patient_info.json"
-            with open(patient_data_path_name, 'r') as patient_payload:
-                return [patient for patient in json.load(patient_payload) if patient["mhwp_id"] == self.mhwp["mhwp_id"]]
-        except FileNotFoundError as e:
-            print(f"File cannot be found: {e}")
-        except Exception as e:
-            print(f"Unexpected error occured when trying to GET patient information: {e}")     
-
+        '''Returns a list of patient information for current MHWP'''
+        patient_data_path_name = "./data/patient_info.json"
+        patient_info_payload = read_json(patient_data_path_name)
+        return [patient for patient in patient_info_payload if patient["mhwp_id"] == self.mhwp["mhwp_id"]]
+ 
 
     def get_patient_records(self):
-        '''Get patient record'''
+        '''Returns a list of patient records for current MHWP'''
         patient_record_path = "./data/patient_record.json"
-        try:
-            with open(patient_record_path, 'r') as patient_record_payload:
-                return [record for record in json.load(patient_record_payload)]
-        except FileNotFoundError as e:
-            print(f"File cannot be found: {e}")
-        except Exception as e:
-            print(f"Unexpected error occured when trying to GET patient information: {e}")     
+        patient_record_payload = read_json(patient_record_path)
+        return [record for record in patient_record_payload]  
 
 
     def get_appointments(self):
+        '''Returns a list of appointments for current MWHP'''
         appointment_path_name = "./data/appointment.json"
-        try:
-            with open(appointment_path_name, 'r') as appointment_payload:
-                return [appointment for appointment in json.load(appointment_payload) if appointment["mhwp_id"] == self.mhwp["mhwp_id"]]
-        except FileNotFoundError as e:
-            print(f"File cannot be found: {e}")
-        except Exception as e:
-            print(f"Unexpected error occured when trying to GET appointments: {e}")
+        appointment_payload = read_json(appointment_path_name);
+        return [appointment for appointment in appointment_payload if appointment["mhwp_id"] == self.mhwp["mhwp_id"]]
+
 
     def get_patient_name(self, patient_id):
         '''Returns patient name from patients id'''
@@ -229,7 +217,7 @@ MHWP = {
 mhwp1 = MHWPController(MHWP)
 
 # mhwp1.view_dashboard()
-mhwp1.display_calendar()
+# mhwp1.display_calendar()
 # print(mhwp1.get_appointments())
 # print(mhwp1.get_patients_info())
 # print(mhwp1.display_patient_records())

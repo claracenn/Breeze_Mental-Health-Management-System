@@ -1,5 +1,5 @@
 from models.user import Patient
-from utils.table import create_table
+from utils.data_handler import create_table
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd

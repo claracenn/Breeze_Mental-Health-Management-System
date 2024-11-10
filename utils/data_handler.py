@@ -1,4 +1,22 @@
 import pandas as pd
+import json
+
+def read_json(filepath):
+    """
+    Reads a JSON file and returns its content.
+    """
+    try:
+        with open(filepath, 'r') as file:
+            return json.load(file) 
+    except FileNotFoundError as e:
+        print(f"File not found: {e}")
+        return None
+    except json.JSONDecodeError as e:
+        print(f"Invalid JSON format in file: {filepath} - {e}")
+        return None
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return None
 
 
 def create_title(title, df, col_widths):
@@ -21,7 +39,6 @@ def create_title(title, df, col_widths):
     print(dash_lines)
     print(dash_lines)
 
-    
 
 def create_table(data, title="", display_title=False, display_index=False):
     """
@@ -52,8 +69,6 @@ def create_table(data, title="", display_title=False, display_index=False):
     for col, width in col_widths.items():
         df[col] = df[col].str.center(width)
 
-
-
     #print title
     if display_title:
         create_title(title, df, col_widths)
@@ -62,7 +77,6 @@ def create_table(data, title="", display_title=False, display_index=False):
     headers = [col.center(col_widths[col]) for col in df.columns]
     print(" | ".join(headers))
     print("=+=".join("=" * col_widths[col] for col in df.columns))
-
 
     # now print row data (the first parameter is index if needed)
     for _, row in df.iterrows():

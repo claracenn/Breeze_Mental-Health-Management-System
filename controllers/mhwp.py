@@ -22,7 +22,12 @@ class MHWPController:
         '''Returns a list of patient records for current MHWP'''
         patient_record_path = "./data/patient_record.json"
         patient_record_payload = read_json(patient_record_path)
-        return [record for record in patient_record_payload]  
+        patients_info = self.get_patients_info()
+        patient_ids = set([patient["patient_id"] for patient in patients_info])
+        patient_records = [record for record in patient_record_payload if record["patient_id"] in patient_ids] 
+        for record in patient_records:
+            record["name"] = self.get_patient_name(record["patient_id"])
+        return patient_records
 
 
     def get_appointments(self):
@@ -38,7 +43,8 @@ class MHWPController:
         patient = next((x for x in patients if x["patient_id"] == patient_id), None)
         if (patient == None):
             print("Patient ID provided does not correspond to any patient");
-        return patient["name"]
+        else:
+            return patient["name"]
 
 
     def display_calendar(self):
@@ -103,28 +109,41 @@ class MHWPController:
 
     def display_patient_records(self):
         # Find list of patients for a particular MHWP
-        try:
-            with open('./data/patient_info.json', 'r') as info:
-                patient_info = json.load(info)
-            with open('./data/patient_record.json', 'r') as record:
-                patient_records = json.load(record)
-        except FileNotFoundError as e:
-            print(f"File cannot be found: {e}")
-        except Exception as e:
-            print(f"Unexpected Error Occurred: {e}")
-        else:
-            print("My Patient Records")
-            mhwp_id = self.mhwp["mhwp_id"]
-            patients = {}
-            for pat in patient_info:
-                if pat["mhwp_id"] == mhwp_id:
-                    patients[pat["patient_id"]] = pat["name"]
+        patient_info = self.get_patients_info()
+        patient_records = self.get_patient_records();
 
-            # Display patient list with records
-            for rec in patient_records:
-                if rec["patient_id"] in patients.keys():
-                    print(rec["patient_id"], patients[rec["patient_id"]], rec["condition"], rec["notes"])
-            self.update_patient_record(patient_records, patients)
+        data = {
+            "Patient ID": [],
+            "Name": [],
+            "Conditions": [], 
+            "Notes": [],
+        }
+        for patient in patient_records:
+            data["Patient ID"].append(patient["patient_id"])
+            data["Name"].append(patient["name"])
+            data["Conditions"].append(patient["condition"])
+            data["Notes"].append(patient["notes"])
+
+
+        create_table(data, title="Patients Records", display_title=True)
+        '''
+        SCHEMA IS A BIT IFFY ASK ARNAB ABOUT IT, IT IS STILL DOABLE BUT 
+        DOESN'T REALLY MAKE SENSE (acc maybe it does, look at it from a 
+        pov where we are inputting data, so that we need to update in as little
+        places as possible)
+        '''
+
+        # Display patient list with records
+        # for rec in patient_records:
+        #     if rec["patient_id"] in patients.keys():
+        #         print(rec["patient_id"], patients[rec["patient_id"]], rec["condition"], rec["notes"])
+
+
+
+        # self.update_patient_record(patient_records, patients)
+    
+    
+    
 
     def update_patient_record(self, patient_records, patients):
         id_input = ""
@@ -216,9 +235,10 @@ MHWP = {
         }
 mhwp1 = MHWPController(MHWP)
 
-# mhwp1.view_dashboard()
+mhwp1.view_dashboard()
 # mhwp1.display_calendar()
 # print(mhwp1.get_appointments())
 # print(mhwp1.get_patients_info())
-# print(mhwp1.display_patient_records())
+mhwp1.display_patient_records()
 # print(mhwp1.get_patient_records())
+# print(mhwp1.get_patient_name(1))

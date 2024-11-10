@@ -71,7 +71,7 @@ def main():
     # Linked to Controllers to implement the functionality of each user role
     else:
         print("Functionality implementing...")
-        
+    
 
 if __name__ == "__main__":
     main()

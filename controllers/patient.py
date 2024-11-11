@@ -7,7 +7,7 @@ from patient_mood_controller import MoodController
 from models.patient.patient_journal import Journal
 from models.patient.patient_mood import Mood
 from models.user import Patient
-from utils.data_handler import create_table
+from utils.data_handler import *
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
@@ -16,8 +16,10 @@ from datetime import datetime
 class PatientController:
     def __init__(self, patient: Patient):
         self.patient = patient
-        self.journal_controller = JournalController()
-        self.mood_controller = MoodController()
+        self.journal_file = "data/patient_journal.json"
+        self.mood_file = "data/patient_mood.json"
+        #self.journal_controller = JournalController()
+        #self.mood_controller = MoodController()
 
     def display_menu(self, title, options):
         """Generic method to display a menu and get user input."""
@@ -79,7 +81,18 @@ class PatientController:
                 "Journal Menu", ["View Journal Entries", "Add Journal Entry", "Back to Homepage"]
             )
             if choice == "1":
-                self.view_journals()
+                while True:
+                    self.view_journals()
+                    # Submenu for continue searching
+                    sub_choice = self.display_menu(
+                        "Further Adjustments on Journal", ["Delete Journal Entry", "Update Journal Entry", "Back to Homepage"]
+                    )
+                    if sub_choice == "3":
+                        return
+                    elif sub_choice == "1":
+                        self.delete_journal()
+                    elif sub_choice == "2":
+                        self.update_journal()
             elif choice == "2":
                 self.add_journal()
             elif choice == "3":
@@ -132,8 +145,6 @@ class PatientController:
                     )
                     if sub_choice == "2":
                         return
-                    elif sub_choice != "1":
-                        print("Invalid choice. Please try again.")
             elif choice == "2":
                 break
             else:
@@ -150,7 +161,7 @@ class PatientController:
     # View all journals
     def view_journals(self):
         """Display all journals for the current patient in a table format"""
-        journals = self.journal_controller.view_journals(self.patient.user_id)
+        journals = read_json(self.journal_file)
         
         if not journals:
             print("No journal entries found.")
@@ -174,7 +185,8 @@ class PatientController:
         create_table(
             data=table_data,
             title="Your Journal Entries",
-            display_title=True
+            display_title=True,
+            display_index=True
         )
     
     # Add a new journal entry
@@ -184,18 +196,40 @@ class PatientController:
         
         current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         
-        journal = Journal(
-            patient_id=self.patient.user_id,
-            timestamp=current_timestamp,
-            journal_text=journal_text
-        )
+        # 感觉可以不需要models里的Journal类，直接用字典就行
+        #journal = Journal(
+        #    patient_id=self.patient.user_id,
+        #    timestamp=current_timestamp,
+        #    journal_text=journal_text
+        #) 
+        journal = {
+            "patient_id": self.patient.user_id,
+            "timestamp": current_timestamp,
+            "journal_text": journal_text
+        }
         
-        if self.journal_controller.add_journal(journal):
+        if add_entry(self.journal_file, journal):
             print("Journal saved successfully!")
         else:
             print("Failed to save journal. Please try again.")
 
-    
+    # Delete a journal entry
+    def delete_journal(self):
+        journal_index = int(input("Enter the index of the journal entry you want to delete: ").strip())
+        if delete_entry(self.journal_file, journal_index):
+            print("Journal entry deleted successfully!")
+        else:
+            print("Failed to delete journal entry. Please try again.")
+
+    # Update a journal entry
+    def update_journal(self):
+        journal_index = int(input("Enter the index of the journal entry you want to update: ").strip())
+        new_journal_text = input("Enter the new journal text: ").strip()
+        if update_entry(self.journal_file, journal_index, {"journal_text": new_journal_text}):
+            print("Journal entry updated successfully!")
+        else:
+            print("Failed to update journal entry. Please try again.")
+
 
     # Section 3: Mood methods
     # Display the mood scale
@@ -267,6 +301,16 @@ class PatientController:
                 print("Please enter a number between 1 and 6.")
             except ValueError:
                 print("Please enter a valid number between 1 and 6.")
+
+# 可以试试给字加颜色，如下：
+# print("🍃\033[1m Welcome to Breeze Mental Health System\033[0m 🍃", end='\n\n')
+# Font and color codes (for reference)
+    #Red = "\033[31m"  # use for errors
+    #Green = "\033[32m"  # use for success messages
+    #Yellow = "\033[33m"  # use for warnings or prompts
+    #Cyan = "\033[36m"  # use for general information
+    #Reset = "\033[0m"  # to reset text to normal
+    #Bold = "\033[1m"  # to make text bold
 
         mood_colors = {
             1: "1_red",

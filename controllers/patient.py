@@ -2,8 +2,6 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from patient_journal_controller import JournalController
-from patient_mood_controller import MoodController
 from models.patient.patient_journal import Journal
 from models.patient.patient_mood import Mood
 from models.user import Patient
@@ -19,8 +17,6 @@ class PatientController:
         self.patient = patient
         self.journal_file = "data/patient_journal.json"
         self.mood_file = "data/patient_mood.json"
-        #self.journal_controller = JournalController()
-        #self.mood_controller = MoodController()
         self.patient_info_file = "data/patient_info.json"
 
     def display_menu(self, title, options):
@@ -87,10 +83,10 @@ class PatientController:
                     self.view_journals()
                     # Submenu for continue searching
                     sub_choice = self.display_menu(
-                        "Further Adjustments on Journal", ["Delete Journal Entry", "Update Journal Entry", "Back to Homepage"]
+                        "Further Adjustments on Journal", ["Delete Journal Entry", "Update Journal Entry", "Back to Journal Menu"]
                     )
                     if sub_choice == "3":
-                        return
+                        break
                     elif sub_choice == "1":
                         self.delete_journal()
                     elif sub_choice == "2":
@@ -108,7 +104,18 @@ class PatientController:
                 "Mood Menu", ["View Mood Log", "Add Mood Entry", "Back to Homepage"]
             )
             if choice == "1":
-                self.view_moods()
+                while True:
+                    self.view_moods()
+                    # Submenu for continue searching
+                    sub_choice = self.display_menu(
+                        "Further Adjustments on Mood", ["Delete Mood Entry", "Update Mood Entry", "Back to Mood Menu"]
+                    )
+                    if sub_choice == "3":
+                        break
+                    elif sub_choice == "1":
+                        self.delete_mood()
+                    elif sub_choice == "2":
+                        self.update_mood()
             elif choice == "2":
                 self.add_mood()
             elif choice == "3":
@@ -258,19 +265,38 @@ class PatientController:
     def view_journals(self):
         """Display all journals for the current patient in a table format"""
         journals = read_json(self.journal_file)
-        
+       
         if not journals:
             print("No journal entries found.")
             return
+        
+        # Filter entries for the current patient
+        patient_journals = [
+        {"index": i, **j} for i, j in enumerate(journals) if j["patient_id"] == self.patient.user_id
+        ]
+
+        # Exit if no entries found for this patient
+        if not patient_journals:
+            print("No journal entries found for this patient.")
+            return
+    
+        # Sort in descending order by timestamp (latest first)
+        patient_journals.sort(key=lambda x: x["timestamp"], reverse=True)
             
         # Prepare table
         table_data = {
             "Date": [],
             "Journal Entry": []
         }
+
+        # Create a mapping of user-visible indices to actual indices in the file
+        self.current_patient_journal_map = {}  # Maps display index to actual JSON index
         
-        for journal in journals:
-            # Convert timestamp into more readable format
+        for idx, journal in enumerate(patient_journals):
+        # Map user-visible index (1-based) to actual JSON file index
+            self.current_patient_journal_map[idx + 1] = journal["index"]
+            
+            # Format timestamp
             timestamp = datetime.strptime(journal["timestamp"], "%Y-%m-%dT%H:%M:%S")
             formatted_date = timestamp.strftime("%Y-%m-%d %H:%M")
             
@@ -292,18 +318,13 @@ class PatientController:
         
         current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         
-        # 感觉可以不需要models里的Journal类，直接用字典就行
-        #journal = Journal(
-        #    patient_id=self.patient.user_id,
-        #    timestamp=current_timestamp,
-        #    journal_text=journal_text
-        #) 
-        journal = {
-            "patient_id": self.patient.user_id,
-            "timestamp": current_timestamp,
-            "journal_text": journal_text
-        }
-        
+        journal = Journal(
+           patient_id=self.patient.user_id,
+           timestamp=current_timestamp,
+           journal_text=journal_text
+        ) 
+        journal = journal.to_dict()
+                
         if add_entry(self.journal_file, journal):
             print("Journal saved successfully!")
         else:
@@ -312,7 +333,14 @@ class PatientController:
     # Delete a journal entry
     def delete_journal(self):
         journal_index = int(input("Enter the index of the journal entry you want to delete: ").strip())
-        if delete_entry(self.journal_file, journal_index):
+        # Retrieve the actual index in the JSON file
+        actual_index = self.current_patient_journal_map.get(journal_index)
+        
+        if actual_index is None:
+            print("Invalid index for the current patient.")
+            return
+        
+        if delete_entry(self.journal_file, actual_index + 1):
             print("Journal entry deleted successfully!")
         else:
             print("Failed to delete journal entry. Please try again.")
@@ -320,8 +348,15 @@ class PatientController:
     # Update a journal entry
     def update_journal(self):
         journal_index = int(input("Enter the index of the journal entry you want to update: ").strip())
+        # Retrieve the actual index in the JSON file
+        actual_index = self.current_patient_journal_map.get(journal_index)
+        
+        if actual_index is None:
+            print("Invalid index for the current patient.")
+            return
+        
         new_journal_text = input("Enter the new journal text: ").strip()
-        if update_entry(self.journal_file, journal_index, {"journal_text": new_journal_text}):
+        if update_entry(self.journal_file, actual_index + 1, {"journal_text": new_journal_text}):
             print("Journal entry updated successfully!")
         else:
             print("Failed to update journal entry. Please try again.")
@@ -330,46 +365,84 @@ class PatientController:
     # Section 3: Mood methods
     # Display the mood scale
     def display_mood_scale(self):
-        print("""
-                MOOD SCALE
+        # Define ANSI color codes for each mood level
+        RED = "\033[91m\033[1m"
+        LIGHT_RED = "\033[91m"
+        ORANGE = "\033[93m\033[1m"
+        YELLOW = "\033[93m"
+        LIGHT_GREEN = "\033[92m"
+        GREEN = "\033[92m\033[1m"
+        RESET = "\033[0m"  # Resets the color to default
+
+        # Print the Mood Scale with colors
+        print(f"""
+                      MOOD SCALE
         ON A SCALE OF 1-6 WHERE ARE YOU RIGHT NOW?
-        1 😢   2 😕   3 😐   4 🙂   5 😊   6 😃
-        1 - Very Unhappy (Red)
-        2 - Unhappy (Light Red)
-        3 - Slightly Unhappy (Orange)
-        4 - Slightly Happy (Yellow)
-        5 - Happy (Light Green)
-        6 - Very Happy (Green)
+        
+        {RED}1 😢{RESET}   {LIGHT_RED}2 😕{RESET}   {ORANGE}3 😐{RESET}   {YELLOW}4 🙂{RESET}   {LIGHT_GREEN}5 😊{RESET}   {GREEN}6 😃{RESET}
+
+        {RED}1 - Very Unhappy (Red){RESET}
+        {LIGHT_RED}2 - Unhappy (Light Red){RESET}
+        {ORANGE}3 - Slightly Unhappy (Orange){RESET}
+        {YELLOW}4 - Slightly Happy (Yellow){RESET}
+        {LIGHT_GREEN}5 - Happy (Light Green){RESET}
+        {GREEN}6 - Very Happy (Green){RESET}
         """)
+
 
     # View all Mood
     def view_moods(self):
-        """Display all mood logs for the current patient in a table format"""
-        moods = self.mood_controller.view_moods(self.patient.user_id)
+        # Define ANSI color codes for each mood level
+        RED = "\033[91m\033[1m"
+        LIGHT_RED = "\033[91m"
+        ORANGE = "\033[93m\033[1m"
+        YELLOW = "\033[93m"
+        LIGHT_GREEN = "\033[92m"
+        GREEN = "\033[92m\033[1m"
+        RESET = "\033[0m"  # Resets the color to default
+
+        """Display all mood logs for the current patient in a table format and map their indices."""
+        moods = read_json(self.mood_file)
         
         if not moods:
             print("No mood entries found.")
             return
-            
-        # Prepare table
+        
+        # Filter for the current patient's mood entries
+        patient_moods = [
+            {"index": i, **m} for i, m in enumerate(moods) if m["patient_id"] == self.patient.user_id
+        ]
+
+        if not patient_moods:
+            print("No mood entries found for this patient.")
+            return
+        
+        # Sort moods by timestamp in descending order
+        patient_moods.sort(key=lambda x: x["timestamp"], reverse=True)
+        
+        # Prepare table data and create an index map
         table_data = {
             "Date": [],
             "Mood": [],
             "Comments": []
         }
-        
-        # Convert mood colour to expression
+        self.current_patient_mood_map = {}  # Map user-visible index to JSON index
+
+        # Define mood color and emoji mapping
         mood_to_emoji = {
-            "1_red": "😢 (Very Unhappy)",
-            "2_light_red": "😕 (Unhappy)",
-            "3_orange": "😐 (Slightly Unhappy)",
-            "4_yellow": "🙂 (Slightly Happy)",
-            "5_light_green": "😊 (Happy)",
-            "6_green": "😃 (Very Happy)"
+            "1_red": f"{RED}😢 (Very Unhappy){RESET}",
+            "2_light_red": f"{LIGHT_RED}😕 (Unhappy){RESET}",
+            "3_orange": f"{ORANGE}😐 (Slightly Unhappy){RESET}",
+            "4_yellow": f"{YELLOW}🙂 (Slightly Happy){RESET}",
+            "5_light_green": f"{LIGHT_GREEN}😊 (Happy){RESET}",
+            "6_green": f"{GREEN}😃 (Very Happy){RESET}"
         }
         
-        for mood in moods:
-            # Convert timestamp into more readable format
+        for idx, mood in enumerate(patient_moods):
+            # Map user-visible index to actual JSON index
+            self.current_patient_mood_map[idx + 1] = mood["index"]
+            
+            # Format timestamp
             timestamp = datetime.strptime(mood["timestamp"], "%Y-%m-%dT%H:%M:%S")
             formatted_date = timestamp.strftime("%Y-%m-%d %H:%M")
             
@@ -377,12 +450,14 @@ class PatientController:
             table_data["Mood"].append(mood_to_emoji.get(mood["mood_color"], mood["mood_color"]))
             table_data["Comments"].append(mood["mood_comments"])
         
-        # Create and display table
+        # Display the table
         create_table(
             data=table_data,
             title="Your Mood History",
-            display_title=True
+            display_title=True,
+            display_index=True
         )
+
 
     # Add a new mood entry
     def add_mood(self):
@@ -390,23 +465,12 @@ class PatientController:
         
         while True:
             try:
-                print("\nPlease select your mood (1-6):")
-                mood_choice = int(input().strip())
+                mood_choice = int(input("\nPlease select your mood (1-6):").strip())
                 if 1 <= mood_choice <= 6:
                     break
                 print("Please enter a number between 1 and 6.")
             except ValueError:
                 print("Please enter a valid number between 1 and 6.")
-
-# 可以试试给字加颜色，如下：
-# print("🍃\033[1m Welcome to Breeze Mental Health System\033[0m 🍃", end='\n\n')
-# Font and color codes (for reference)
-    #Red = "\033[31m"  # use for errors
-    #Green = "\033[32m"  # use for success messages
-    #Yellow = "\033[33m"  # use for warnings or prompts
-    #Cyan = "\033[36m"  # use for general information
-    #Reset = "\033[0m"  # to reset text to normal
-    #Bold = "\033[1m"  # to make text bold
 
         mood_colors = {
             1: "1_red",
@@ -418,8 +482,7 @@ class PatientController:
         }
         mood_color = mood_colors[mood_choice]
 
-        print("Please enter your mood comments:")
-        mood_comments = input().strip()
+        mood_comments = input("Please enter your mood comments:").strip()
 
         current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -429,10 +492,48 @@ class PatientController:
             mood_color=mood_color,
             mood_comments=mood_comments
         )
-        if self.mood_controller.add_mood(mood):
+
+        mood = mood.to_dict()
+
+        if add_entry(self.mood_file, mood):
             print("Mood logged successfully!")
         else:
             print("Failed to log mood. Please try again.")
+
+    # Delete a mood entry
+    def delete_mood(self):
+        mood_index = int(input("Enter the index of the mood entry you want to delete: ").strip())
+        
+        # Get the actual JSON index from the mapping
+        actual_index = self.current_patient_mood_map.get(mood_index)
+        
+        if actual_index is None:
+            print("Invalid index for the current patient.")
+            return
+                
+        if delete_entry(self.mood_file, actual_index + 1):  
+            print("Mood entry deleted successfully!")
+        else:
+            print("Failed to delete mood entry. Please try again.")
+
+    # Update a mood entry
+    def update_mood(self):
+        mood_index = int(input("Enter the index of the mood entry you want to update: ").strip())
+        
+        # Get the actual JSON index from the mapping
+        actual_index = self.current_patient_mood_map.get(mood_index)
+        
+        if actual_index is None:
+            print("Invalid index for the current patient.")
+            return
+        
+        new_mood_comments = input("Enter the new mood comments: ").strip()
+        
+        if update_entry(self.mood_file, actual_index + 1, {"mood_comments": new_mood_comments}):  
+            print("Mood entry updated successfully!")
+        else:
+            print("Failed to update mood entry. Please try again.")
+
 
     # Section 4: Appointment methods
     def view_appointment(self):

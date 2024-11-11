@@ -1,11 +1,6 @@
 [
     {
         "patient_id": 1,
-        "timestamp": "2024-03-03T08:23:45",
-        "journal_text": "Had some struggles but learned from them."
-    },
-    {
-        "patient_id": 1,
         "timestamp": "2024-04-20T15:34:29",
         "journal_text": "Feeling a bit stressed but hopeful for tomorrow."
     },
@@ -22,27 +17,12 @@
     {
         "patient_id": 3,
         "timestamp": "2024-07-06T09:42:17",
-        "journal_text": "Worked on a new hobby, which was refreshing."
-    },
-    {
-        "patient_id": 3,
-        "timestamp": "2024-10-18T18:21:59",
-        "journal_text": "A reflective day, feeling closer to my goals."
-    },
-    {
-        "patient_id": 4,
-        "timestamp": "2024-11-07T14:39:05",
-        "journal_text": "Had some worries, but gratitude helped me through."
-    },
-    {
-        "patient_id": 4,
-        "timestamp": "2024-12-17T19:22:30",
-        "journal_text": "Feeling more balanced today, focusing on wellness."
+        "journal_text": "I'm very happy!"
     },
     {
         "patient_id": 5,
         "timestamp": "2024-08-23T07:55:11",
-        "journal_text": "Feeling calm after an evening walk."
+        "journal_text": "I'm very happy!"
     },
     {
         "patient_id": 5,
@@ -203,5 +183,15 @@
         "patient_id": 1,
         "timestamp": "2024-11-11T11:37:52",
         "journal_text": "I am in a good mood today!"
+    },
+    {
+        "patient_id": 1,
+        "timestamp": "2024-11-11T18:12:54",
+        "journal_text": "I'm good."
+    },
+    {
+        "patient_id": 1,
+        "timestamp": "2024-11-11T18:30:35",
+        "journal_text": "I'm good!"
     }
 ]

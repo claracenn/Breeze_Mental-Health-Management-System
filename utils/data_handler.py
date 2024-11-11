@@ -52,6 +52,7 @@ def delete_entry(filepath, index):
     Deletes an entry from a JSON file based on the index of the entry
     """
     data = read_json(filepath)
+    
     try:
         if isinstance(data, list):
             if 1 <= index <= len(data):

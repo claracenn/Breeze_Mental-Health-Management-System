@@ -12,6 +12,7 @@ import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime
+import json
 
 class PatientController:
     def __init__(self, patient: Patient):
@@ -20,6 +21,7 @@ class PatientController:
         self.mood_file = "data/patient_mood.json"
         #self.journal_controller = JournalController()
         #self.mood_controller = MoodController()
+        self.patient_info_file = "data/patient_info.json"
 
     def display_menu(self, title, options):
         """Generic method to display a menu and get user input."""
@@ -151,11 +153,105 @@ class PatientController:
                 print("Invalid choice. Please try again.")
 
     # Section 1: Profile methods
+    # 加载患者数据
+    def load_patient_data(self):
+        """Load patient data from JSON file."""
+        try:
+            with open(self.patient_info_file, "r") as file:
+                return json.load(file)
+        except FileNotFoundError:
+            print("Patient info file not found.")
+            return []
+        except json.JSONDecodeError:
+            print("Error decoding JSON file.")
+            return []
+
+    # 查看患者资料
     def view_profile(self):
-        pass
+        """Display the patient's profile information based on patient ID."""
+        data = self.load_patient_data()
+        for patient in data:
+            if patient["patient_id"] == self.patient.user_id:
+                print(f"Name: {patient['name']}")
+                print(f"Email: {patient['email']}")
+                print(f"Emergency Contact Email: {patient['emergency_contact_email']}")
+                print(f"Assigned MHWP ID: {patient['mhwp_id']}")
+                return patient
+        print("Patient not found.")
+        return None
+    
+    def edit_profile(self):
+        """Edit the patient's profile information and save changes to JSON file."""
+        data = self.load_patient_data()
+        
+        # 查找当前患者数据
+        for patient in data:
+            if patient["patient_id"] == self.patient.user_id:
+                # 显示当前信息并请求输入新的信息
+                print("Edit Profile:")
+                new_email = input(f"Enter new email (current: {patient['email']}): ").strip()
+                new_emergency_contact = input(f"Enter new emergency contact email (current: {patient['emergency_contact_email']}): ").strip()
+
+                # 更新信息，如果用户输入了新的值
+                if new_email:
+                    patient["email"] = new_email
+                if new_emergency_contact:
+                    patient["emergency_contact_email"] = new_emergency_contact
+                
+                # 保存更改回 JSON 文件
+                self.save_patient_data(data)
+                print("Profile updated successfully.")
+                return
+
+        print("Patient not found.")
+
+    def save_patient_data(self, data):
+        """Save the updated patient data back to the JSON file."""
+        try:
+            with open(self.patient_info_file, "w") as file:
+                json.dump(data, file, indent=4)
+            print("Data saved successfully.")
+        except Exception as e:
+            print(f"Failed to save data: {e}")
+
 
     def edit_profile(self):
-        pass
+        """Edit the patient's profile information and save changes to JSON file."""
+        data = self.load_patient_data()
+        
+        # 查找当前患者数据
+        for patient in data:
+            if patient["patient_id"] == self.patient.user_id:
+                # 显示当前信息并请求输入新的信息
+                print("Edit Profile:")
+                new_name = input(f"Enter new name (current: {patient['name']}): ").strip()
+                new_email = input(f"Enter new email (current: {patient['email']}): ").strip()
+                new_emergency_contact = input(f"Enter new emergency contact email (current: {patient['emergency_contact_email']}): ").strip()
+
+                # 更新信息，如果用户输入了新的值
+                if new_name:
+                    patient["name"] = new_name
+                if new_email:
+                    patient["email"] = new_email
+                if new_emergency_contact:
+                    patient["emergency_contact_email"] = new_emergency_contact
+                
+                # 保存更改回 JSON 文件
+                self.save_patient_data(data)
+                print("Profile updated successfully.")
+                return
+
+        print("Patient not found.")
+
+    def save_patient_data(self, data):
+        """Save the updated patient data back to the JSON file."""
+        try:
+            with open(self.patient_info_file, "w") as file:
+                json.dump(data, file, indent=4)
+            print("Data saved successfully.")
+        except Exception as e:
+            print(f"Failed to save data: {e}")
+
 
     # Section 2: Journal methods
     # View all journals
@@ -380,6 +476,6 @@ class PatientController:
 
 # Testing
 if __name__ == "__main__":
-    patient_controller = PatientController(Patient(1, "patient", "password"))
-    patient_controller.display_patient_homepage()
+    patient_controller = PatientController(Patient(1, "patient", "password", "email", "emergency_contact_email", "mhwp_id"))
+    patient_controller.display_patient_homepage()                  
 

@@ -1,12 +1,23 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from patient_journal_controller import JournalController
+from patient_mood_controller import MoodController
+from models.patient.patient_journal import Journal
+from models.patient.patient_mood import Mood
 from models.user import Patient
 from utils.data_handler import create_table
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+from datetime import datetime
 
 class PatientController:
     def __init__(self, patient: Patient):
         self.patient = patient
+        self.journal_controller = JournalController()
+        self.mood_controller = MoodController()
 
     def display_menu(self, title, options):
         """Generic method to display a menu and get user input."""
@@ -68,9 +79,9 @@ class PatientController:
                 "Journal Menu", ["View Journal Entries", "Add Journal Entry", "Back to Homepage"]
             )
             if choice == "1":
-                self.view_journal()
+                self.view_journals()
             elif choice == "2":
-                self.add_journal_entry()
+                self.add_journal()
             elif choice == "3":
                 break
             else:
@@ -82,9 +93,9 @@ class PatientController:
                 "Mood Menu", ["View Mood Log", "Add Mood Entry", "Back to Homepage"]
             )
             if choice == "1":
-                self.view_mood()
+                self.view_moods()
             elif choice == "2":
-                self.add_mood_entry()
+                self.add_mood()
             elif choice == "3":
                 break
             else:
@@ -136,18 +147,152 @@ class PatientController:
         pass
 
     # Section 2: Journal methods
-    def view_journal(self):
-        pass    
+    # View all journals
+    def view_journals(self):
+        """Display all journals for the current patient in a table format"""
+        journals = self.journal_controller.view_journals(self.patient.user_id)
+        
+        if not journals:
+            print("No journal entries found.")
+            return
+            
+        # Prepare table
+        table_data = {
+            "Date": [],
+            "Journal Entry": []
+        }
+        
+        for journal in journals:
+            # Convert timestamp into more readable format
+            timestamp = datetime.strptime(journal["timestamp"], "%Y-%m-%dT%H:%M:%S")
+            formatted_date = timestamp.strftime("%Y-%m-%d %H:%M")
+            
+            table_data["Date"].append(formatted_date)
+            table_data["Journal Entry"].append(journal["journal_text"])
+        
+        # Create and display table
+        create_table(
+            data=table_data,
+            title="Your Journal Entries",
+            display_title=True
+        )
+    
+    # Add a new journal entry
+    def add_journal(self):
+        print("Type your journal, tap enter when you finish:")
+        journal_text = input().strip()
+        
+        current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        
+        journal = Journal(
+            patient_id=self.patient.user_id,
+            timestamp=current_timestamp,
+            journal_text=journal_text
+        )
+        
+        if self.journal_controller.add_journal(journal):
+            print("Journal saved successfully!")
+        else:
+            print("Failed to save journal. Please try again.")
 
-    def add_journal_entry(self):
-        pass
+    
 
     # Section 3: Mood methods
-    def view_mood(self):
-        pass
+    # Display the mood scale
+    def display_mood_scale(self):
+        print("""
+                MOOD SCALE
+        ON A SCALE OF 1-6 WHERE ARE YOU RIGHT NOW?
+        1 😢   2 😕   3 😐   4 🙂   5 😊   6 😃
+        1 - Very Unhappy (Red)
+        2 - Unhappy (Light Red)
+        3 - Slightly Unhappy (Orange)
+        4 - Slightly Happy (Yellow)
+        5 - Happy (Light Green)
+        6 - Very Happy (Green)
+        """)
 
-    def add_mood_entry(self):
-        pass
+    # View all Mood
+    def view_moods(self):
+        """Display all mood logs for the current patient in a table format"""
+        moods = self.mood_controller.view_moods(self.patient.user_id)
+        
+        if not moods:
+            print("No mood entries found.")
+            return
+            
+        # Prepare table
+        table_data = {
+            "Date": [],
+            "Mood": [],
+            "Comments": []
+        }
+        
+        # Convert mood colour to expression
+        mood_to_emoji = {
+            "1_red": "😢 (Very Unhappy)",
+            "2_light_red": "😕 (Unhappy)",
+            "3_orange": "😐 (Slightly Unhappy)",
+            "4_yellow": "🙂 (Slightly Happy)",
+            "5_light_green": "😊 (Happy)",
+            "6_green": "😃 (Very Happy)"
+        }
+        
+        for mood in moods:
+            # Convert timestamp into more readable format
+            timestamp = datetime.strptime(mood["timestamp"], "%Y-%m-%dT%H:%M:%S")
+            formatted_date = timestamp.strftime("%Y-%m-%d %H:%M")
+            
+            table_data["Date"].append(formatted_date)
+            table_data["Mood"].append(mood_to_emoji.get(mood["mood_color"], mood["mood_color"]))
+            table_data["Comments"].append(mood["mood_comments"])
+        
+        # Create and display table
+        create_table(
+            data=table_data,
+            title="Your Mood History",
+            display_title=True
+        )
+
+    # Add a new mood entry
+    def add_mood(self):
+        self.display_mood_scale()
+        
+        while True:
+            try:
+                print("\nPlease select your mood (1-6):")
+                mood_choice = int(input().strip())
+                if 1 <= mood_choice <= 6:
+                    break
+                print("Please enter a number between 1 and 6.")
+            except ValueError:
+                print("Please enter a valid number between 1 and 6.")
+
+        mood_colors = {
+            1: "1_red",
+            2: "2_light_red",
+            3: "3_orange",
+            4: "4_yellow",
+            5: "5_light_green",
+            6: "6_green"
+        }
+        mood_color = mood_colors[mood_choice]
+
+        print("Please enter your mood comments:")
+        mood_comments = input().strip()
+
+        current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+        mood = Mood(
+            patient_id=self.patient.user_id,
+            timestamp=current_timestamp,
+            mood_color=mood_color,
+            mood_comments=mood_comments
+        )
+        if self.mood_controller.add_mood(mood):
+            print("Mood logged successfully!")
+        else:
+            print("Failed to log mood. Please try again.")
 
     # Section 4: Appointment methods
     def view_appointment(self):
@@ -178,6 +323,9 @@ class PatientController:
                     results.append({'Title': title, 'URL': href})
 
             if len(results) == 0:
+                # Print the constructed file path and current working directory
+                print("Journal file path:", self.journal_file)
+                print("Current working directory:", os.getcwd())
                 print("No related resources found.")
             else:
                 data = {key: [result[key] for result in results] for key in results[0]}

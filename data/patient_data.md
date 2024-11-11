@@ -40,15 +40,15 @@
 ### Fields:
 
 - `patient_id` [Composite PK; FK->Patient/patient_id]: References the patient table for patient info.
-- `date` [Composite PK]: Latest date of saving the journal entry.
+- `timestamp` [Composite PK]: Latest date of saving the journal entry.
 - `journal_text`: Text content of the journal entry.
 
 
-## 4. **Mood Log Table**
+## 4. **Patient Mood Table**
 ### Fields:
 
 - `patient_id` [Composite PK; FK->Patient/patient_id]: References the patient table for patient info.
-- `date` [Composite PK]: Latest date of saving the mood entry.
+- `timestamp` [Composite PK]: Latest date of saving the mood entry.
 - `mood_color`: Color-coded representation of the mood (e.g., green for positive, red for negative).
 - `mood_comments`: Text field where the patient can add comments about their mood.
 

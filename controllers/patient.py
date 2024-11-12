@@ -167,6 +167,7 @@ class PatientController:
         for patient in data:
             if patient["patient_id"] == self.patient.user_id:
                 print("\nYour Profile:")
+                print(f"PatientID: {patient['patient_id']}"),
                 print(f"Name: {patient['name']}")
                 print(f"Email: {patient['email']}")
                 print(f"Emergency Contact Email: {patient['emergency_contact_email']}")
@@ -175,33 +176,75 @@ class PatientController:
         print("Patient not found.")
         return None
 
+   
     def edit_profile(self):
         """Edit the patient's profile information and save changes to JSON file."""
         data = read_json(self.patient_info_file)
-        
+
         for patient in data:
             if patient["patient_id"] == self.patient.user_id:
-                # Show current profile information and request new information
                 print("\nEdit Profile:")
-                new_name = input(f"Enter new name (current: {patient['name']}): ").strip()
-                new_email = input(f"Enter new email (current: {patient['email']}): ").strip()
-                new_emergency_contact = input(f"Enter new emergency contact email (current: {patient['emergency_contact_email']}): ").strip()
+                while True:
+                    # Display edit menu with current values and option numbers
+                    choice = self.display_menu(
+                        "Select the field you want to edit (Current value in parentheses)",
+                        [
+                            f"Name (current: {patient['name']})",
+                            f"Email (current: {patient['email']})",
+                            f"Emergency Contact Email (current: {patient['emergency_contact_email']})",
+                            "Edit All",
+                            "Back to Profile Menu"
+                        ]
+                    )
+                    
+                    if choice == "1":
+                        new_name = input(f"Enter new name (current: {patient['name']}): ").strip()
+                        if new_name:
+                            patient["name"] = new_name
+                            print("Name updated successfully.")
+                            save_json(self.patient_info_file, data)
+                            return  # Return to Profile Menu 
+                    
+                    elif choice == "2":
+                        new_email = input(f"Enter new email (current: {patient['email']}): ").strip()
+                        if new_email:
+                            patient["email"] = new_email
+                            print("Email updated successfully.")
+                            save_json(self.patient_info_file, data)
+                            return  # Return to Profile Menu 
+                    
+                    elif choice == "3":
+                        new_emergency_contact = input(f"Enter new emergency contact email (current: {patient['emergency_contact_email']}): ").strip()
+                        if new_emergency_contact:
+                            patient["emergency_contact_email"] = new_emergency_contact
+                            print("Emergency contact email updated successfully.")
+                            save_json(self.patient_info_file, data)
+                            return  # Return to Profile Menu 
+                    
+                    elif choice == "4":
+                        # Edit all fields
+                        new_name = input(f"Enter new name (current: {patient['name']}): ").strip()
+                        if new_name:
+                            patient["name"] = new_name
+                        
+                        new_email = input(f"Enter new email (current: {patient['email']}): ").strip()
+                        if new_email:
+                            patient["email"] = new_email
+                        
+                        new_emergency_contact = input(f"Enter new emergency contact email (current: {patient['emergency_contact_email']}): ").strip()
+                        if new_emergency_contact:
+                            patient["emergency_contact_email"] = new_emergency_contact
 
-                # Update information if user entered new values
-                if new_name:
-                    patient["name"] = new_name
-                if new_email:
-                    patient["email"] = new_email
-                if new_emergency_contact:
-                    patient["emergency_contact_email"] = new_emergency_contact
+                        print("All fields updated successfully.")
+                        save_json(self.patient_info_file, data)
+                        return  # Return to Profile Menu immediately after all updates
 
-                save_json(self.patient_info_file, data)
-                print("Profile updated successfully.")
-                return
-
-        print("Patient not found.")
-        return None
-
+                    elif choice == "5":
+                        print("Returning to Profile Menu.")
+                        break
+                    
+                    else:
+                        print("Invalid choice. Please try again.")
     # Section 2: Journal methods
     # View all journals
     def view_journals(self):

@@ -26,6 +26,10 @@ class AdminController:
         if not user.is_disabled:
             user.username = new_data.get('username', user.username)
             user.password = new_data.get('password', user.password)
+            if isinstance(user, Patient):
+                return self.edit_patient(user, new_data)
+            elif isinstance(user, MHWP):
+                return self.edit_mhwp(user, new_data)
         else:
             print("User is disabled, cannot edit")
 
@@ -37,13 +41,11 @@ class AdminController:
         patient_info = read_json(patient_data_path_name)
         fin_json = []
 
-        index = False
-
         for i in range(len(patient_info)):
             patient = patient_info[i]
 
             #If the index is found in the patient info
-            if patient['patient_id'] == patient_del.get_user_id():
+            if patient['patient_id'] == patient_del.user_id:
                 continue
             else:
                 fin_json.append(patient)
@@ -53,47 +55,27 @@ class AdminController:
             json.dump(fin_json, file, indent=4)
 
     def delete_mhwp(self, mhwp_del: MHWP):
-        pass
+        mhwp_data_path_name = "./data/mhwp.json"
+        mhwp_info = read_json(mhwp_data_path_name)
+        fin_json = []
+
+        for i in range(len(mhwp_info)):
+            mhwp = mhwp_info[i]
+
+            #If the index is found in the patient info
+            if mhwp['patient_id'] != mhwp_del.user_id:
+                fin_json.append(mhwp)
+        
+        #save it in the new patient info
+        with open('./data/mhwp.json', 'w+') as file:
+            json.dump(fin_json, file, indent=4)
 
     def delete_user(self, user):
         if isinstance(user, Patient):
-            return delete_patient(self, user)
+            return self.delete_patient(self, user)
         if isinstance(user, MHWP):
-            return delete_patient(self, user)
+            return self.delete_patient(self, user)
     
     def display_summary(self):
         print(f"Total MHWPs: {len(self.admin.mhwps)}")
         print(f"Total Patients: {len(self.admin.patients)}")
-
-    def get_admin(self):
-        return self.admin
-    
-    def get_user_id(self):
-        return self.admin.user_id
-    
-    def get_username(self):
-        return self.admin.username
-    
-    def get_password(self):
-        return self.admin.password
-    
-    def get_role(self):
-        return self.admin.role
-    
-    def get_is_disabled(self):
-        return self.admin.is_disabled
-    
-    def set_user_id(self, user_id):
-        self.admin.user_id = user_id
-
-    def set_username(self, username):
-        self.admin.username = username
-
-    def set_password(self, password):
-        self.admin.password = password
-
-    def set_role(self, role):
-        self.admin.role = role
-
-    def set_is_disabled(self, is_disabled):
-        self.admin.is_disabled = is_disabled

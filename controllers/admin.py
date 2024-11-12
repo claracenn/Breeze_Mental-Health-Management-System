@@ -36,6 +36,8 @@ class AdminController:
     def disable_user(self, user):
         user.is_disabled = True
     
+    #deletes a specific patient based on their user id, writes json file 
+    #without the patient you want to delete
     def delete_patient(self, patient_del: Patient) -> None:
         patient_data_path_name = "./data/patient_info.json"
         patient_info = read_json(patient_data_path_name)
@@ -54,6 +56,8 @@ class AdminController:
         with open('./data/patient_info.json', 'w+') as file:
             json.dump(fin_json, file, indent=4)
 
+    #deletes a specific MHWP based on their user id, writes json file 
+    #without the MHWP you want to delete
     def delete_mhwp(self, mhwp_del: MHWP):
         mhwp_data_path_name = "./data/mhwp.json"
         mhwp_info = read_json(mhwp_data_path_name)
@@ -62,11 +66,11 @@ class AdminController:
         for i in range(len(mhwp_info)):
             mhwp = mhwp_info[i]
 
-            #If the index is found in the patient info
+            #If the index is found in the MHWP info
             if mhwp['patient_id'] != mhwp_del.user_id:
                 fin_json.append(mhwp)
         
-        #save it in the new patient info
+        #save it in the new MHWP info            
         with open('./data/mhwp.json', 'w+') as file:
             json.dump(fin_json, file, indent=4)
 

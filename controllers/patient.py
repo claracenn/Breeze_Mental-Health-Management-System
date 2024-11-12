@@ -12,6 +12,14 @@ import pandas as pd
 from datetime import datetime
 import json
 
+# ANSI escape codes for subdued colors and styles
+BOLD = "\033[1m"
+UNDERLINE = "\033[4m"
+BLACK = "\033[30m"  
+BROWN_RED = "\033[91m"  
+DARK_GREY = "\033[90m"
+RESET = "\033[0m"
+
 class PatientController:
     def __init__(self, patient: Patient):
         self.patient = patient
@@ -20,24 +28,27 @@ class PatientController:
         self.patient_info_file = "data/patient_info.json"
 
     def display_menu(self, title, options):
-        """Generic method to display a menu and get user input."""
-        print(f"\n{title}")
+        """Generic method to display a menu with subdued styling."""
+        print(f"\n{BOLD}{UNDERLINE}{title}{RESET}")
+        print("-" * 50)  # Divider line
         for index, option in enumerate(options, start=1):
-            print(f"{index}. {option}")
-        return input("Choose an option: ")
+            # 将编号用框括起来
+            print(f"{BLACK}[{index}]{RESET} {option}")
+        print("-" * 50)
+        return input(f"{BROWN_RED}Choose an option ⏳: {RESET}")  
 
     # Main menu
     def display_patient_homepage(self):
         """Display the patient homepage."""
         while True:
             choice = self.display_menu(
-                "Welcome to the Patient Homepage",
+                "🏠 Patient Homepage",
                 [
-                    "My Profile",
-                    "My Journal",
-                    "My Mood",
-                    "My Appointments",
-                    "Search Resources",
+                    "Profile",
+                    "Journal",
+                    "Mood",
+                    "Appointments",
+                    "Resources",
                     "Log Out",
                 ],
             )
@@ -52,17 +63,17 @@ class PatientController:
             elif choice == "5":
                 self.resource_menu()
             elif choice == "6":
-                print("Logging out...")
+                print(f"{BOLD}Logging out...{RESET}")
                 break
             else:
-                print("Invalid choice. Please try again.")
+                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
 
     # Sub menus
     def profile_menu(self):
         """Display the profile menu."""
         while True:
             choice = self.display_menu(
-                "Profile Menu", ["View Profile", "Edit Profile", "Back to Homepage"]
+                "👤 Profile Menu", ["View Profile", "Edit Profile", "Back to Homepage"]
             )
             if choice == "1":
                 self.view_profile()
@@ -71,62 +82,40 @@ class PatientController:
             elif choice == "3":
                 break
             else:
-                print("Invalid choice. Please try again.")
+                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
 
     def journal_menu(self):
         while True:
             choice = self.display_menu(
-                "Journal Menu", ["View Journal Entries", "Add Journal Entry", "Back to Homepage"]
+                "📔 Journal Menu", ["View Journal Entries", "Add Journal Entry", "Back to Homepage"]
             )
             if choice == "1":
-                while True:
-                    self.view_journals()
-                    # Submenu for continue searching
-                    sub_choice = self.display_menu(
-                        "Further Adjustments on Journal", ["Delete Journal Entry", "Update Journal Entry", "Back to Journal Menu"]
-                    )
-                    if sub_choice == "3":
-                        break
-                    elif sub_choice == "1":
-                        self.delete_journal()
-                    elif sub_choice == "2":
-                        self.update_journal()
+                self.view_journals()
             elif choice == "2":
                 self.add_journal()
             elif choice == "3":
                 break
             else:
-                print("Invalid choice. Please try again.")
+                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
 
     def mood_menu(self):
         while True:
             choice = self.display_menu(
-                "Mood Menu", ["View Mood Log", "Add Mood Entry", "Back to Homepage"]
+                "😊 Mood Menu", ["View Mood Log", "Add Mood Entry", "Back to Homepage"]
             )
             if choice == "1":
-                while True:
-                    self.view_moods()
-                    # Submenu for continue searching
-                    sub_choice = self.display_menu(
-                        "Further Adjustments on Mood", ["Delete Mood Entry", "Update Mood Entry", "Back to Mood Menu"]
-                    )
-                    if sub_choice == "3":
-                        break
-                    elif sub_choice == "1":
-                        self.delete_mood()
-                    elif sub_choice == "2":
-                        self.update_mood()
+                self.view_moods()
             elif choice == "2":
                 self.add_mood()
             elif choice == "3":
                 break
             else:
-                print("Invalid choice. Please try again.")
+                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
 
     def appointment_menu(self):
         while True:
             choice = self.display_menu(
-                "Appointment Menu",
+                "📅 Appointment Menu",
                 ["View Appointment", "Make New Appointment", "Edit Appointment", "Back to Homepage"],
             )
             if choice == "1":
@@ -138,27 +127,19 @@ class PatientController:
             elif choice == "4":
                 break
             else:
-                print("Invalid choice. Please try again.")
+                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
 
     def resource_menu(self):
         while True:
             choice = self.display_menu(
-                "Search Resources", ["Search by Keyword", "Back to Homepage"]
+                "🔍 Search Resources", ["Search by Keyword", "Back to Homepage"]
             )
             if choice == "1":
-                while True:
-                    self.search_by_keyword()
-                    # Submenu for continue searching
-                    sub_choice = self.display_menu(
-                        "Search Resources", ["Continue Searching", "Back to Homepage"]
-                    )
-                    if sub_choice == "2":
-                        return
+                self.search_by_keyword()
             elif choice == "2":
                 break
             else:
-                print("Invalid choice. Please try again.")
-
+                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
 
     # Section 1: Profile methods
     def view_profile(self):
@@ -166,85 +147,70 @@ class PatientController:
         data = read_json(self.patient_info_file)
         for patient in data:
             if patient["patient_id"] == self.patient.user_id:
-                print("\nYour Profile:")
-                print(f"PatientID: {patient['patient_id']}"),
-                print(f"Name: {patient['name']}")
-                print(f"Email: {patient['email']}")
-                print(f"Emergency Contact Email: {patient['emergency_contact_email']}")
-                print(f"Assigned MHWP ID: {patient['mhwp_id']}")
+                print(f"\n{BOLD}Your Profile:{RESET}")
+                print(f"🆔 PatientID: {patient['patient_id']}")
+                print(f"👤 Name: {patient['name']}")
+                print(f"📧 Email: {patient['email']}")
+                print(f"📞 Emergency Contact: {patient['emergency_contact_email']}")
+                print(f"🏥 Assigned MHWP ID: {patient['mhwp_id']}")
                 return patient
-        print("Patient not found.")
-        return None
+        print(f"{DARK_GREY}Patient not found.{RESET}")
 
-   
     def edit_profile(self):
-        """Edit the patient's profile information and save changes to JSON file."""
         data = read_json(self.patient_info_file)
-
         for patient in data:
             if patient["patient_id"] == self.patient.user_id:
-                print("\nEdit Profile:")
+                print(f"\n{BOLD}Edit Profile:{RESET}")
                 while True:
-                    # Display edit menu with current values and option numbers
                     choice = self.display_menu(
                         "Select the field you want to edit (Current value in parentheses)",
                         [
                             f"Name (current: {patient['name']})",
                             f"Email (current: {patient['email']})",
-                            f"Emergency Contact Email (current: {patient['emergency_contact_email']})",
+                            f"Emergency Contact (current: {patient['emergency_contact_email']})",
                             "Edit All",
-                            "Back to Profile Menu"
+                            "Back to Profile Menu",
                         ]
                     )
                     
                     if choice == "1":
-                        new_name = input(f"Enter new name (current: {patient['name']}): ").strip()
+                        new_name = input("Enter new name: ").strip()
                         if new_name:
                             patient["name"] = new_name
-                            print("Name updated successfully.")
+                            print(f"{BOLD}Name updated successfully.{RESET}")
                             save_json(self.patient_info_file, data)
-                            return  # Return to Profile Menu 
-                    
+                            return  
                     elif choice == "2":
-                        new_email = input(f"Enter new email (current: {patient['email']}): ").strip()
+                        new_email = input("Enter new email: ").strip()
                         if new_email:
                             patient["email"] = new_email
-                            print("Email updated successfully.")
+                            print(f"{BOLD}Email updated successfully.{RESET}")
                             save_json(self.patient_info_file, data)
-                            return  # Return to Profile Menu 
-                    
+                            return  
                     elif choice == "3":
-                        new_emergency_contact = input(f"Enter new emergency contact email (current: {patient['emergency_contact_email']}): ").strip()
-                        if new_emergency_contact:
-                            patient["emergency_contact_email"] = new_emergency_contact
-                            print("Emergency contact email updated successfully.")
+                        new_contact = input("Enter new emergency contact: ").strip()
+                        if new_contact:
+                            patient["emergency_contact_email"] = new_contact
+                            print(f"{BOLD}Emergency contact updated successfully.{RESET}")
                             save_json(self.patient_info_file, data)
-                            return  # Return to Profile Menu 
-                    
+                            return  
                     elif choice == "4":
-                        # Edit all fields
-                        new_name = input(f"Enter new name (current: {patient['name']}): ").strip()
-                        if new_name:
-                            patient["name"] = new_name
-                        
-                        new_email = input(f"Enter new email (current: {patient['email']}): ").strip()
-                        if new_email:
-                            patient["email"] = new_email
-                        
-                        new_emergency_contact = input(f"Enter new emergency contact email (current: {patient['emergency_contact_email']}): ").strip()
-                        if new_emergency_contact:
-                            patient["emergency_contact_email"] = new_emergency_contact
-
-                        print("All fields updated successfully.")
+                        new_name = input("Enter new name: ").strip()
+                        new_email = input("Enter new email: ").strip()
+                        new_contact = input("Enter new emergency contact: ").strip()
+                        patient["name"] = new_name or patient["name"]
+                        patient["email"] = new_email or patient["email"]
+                        patient["emergency_contact_email"] = new_contact or patient["emergency_contact_email"]
+                        print(f"{BOLD}All fields updated successfully.{RESET}")
                         save_json(self.patient_info_file, data)
-                        return  # Return to Profile Menu immediately after all updates
-
+                        return  
                     elif choice == "5":
                         print("Returning to Profile Menu.")
                         break
-                    
                     else:
-                        print("Invalid choice. Please try again.")
+                        print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+
+
     # Section 2: Journal methods
     # View all journals
     def view_journals(self):

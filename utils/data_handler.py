@@ -19,6 +19,24 @@ def read_json(filepath):
         return None
 
 
+def update_json(filepath, data):
+    """
+    Overwrite contents of a JSON file.
+    WARNING: Only use function to update data in JSON files.
+    """
+    try:
+        with open(filepath, 'w') as file:
+            json.dump(data, file, indent=4)
+    except FileNotFoundError as e:
+        print(f"File not found: {e}")
+        return None
+    except json.JSONDecodeError as e:
+        print(f"Invalid JSON format in file: {filepath} - {e}")
+        return None
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return None
+
 def create_title(title, df, col_widths):
     """
     Create a title for the table we print such that

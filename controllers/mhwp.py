@@ -72,6 +72,8 @@ class MHWPController:
         create_table(data, "My Calendar", display_title=True)
 
 
+
+
     def handle_appointment(self, appointment):
         pass
 
@@ -181,6 +183,14 @@ class MHWPController:
         cols = ["Patient ID", "Name", "Email", "Emergency Contact"]
         rows = [list(patient.values()) for patient in patients]
 
+        icons = {
+            1: "\U0001F601",
+            2: "\U0001F642",
+            3: "\U0001F610",
+            4: "\U0001F615", 
+            5: "\U0001F61E",
+            6: "\U0001F621"
+        }
 
         data = {
                 "Patient ID": [],
@@ -188,7 +198,7 @@ class MHWPController:
                 "Email": [], 
                 "Emergency Contact": [], 
                 # "Conditions": [], 
-                # "Mood": []
+                "Mood": []
             }
         
         for patient in patients:
@@ -196,6 +206,7 @@ class MHWPController:
             data["Name"].append(patient["name"])
             data["Email"].append(patient["email"])
             data["Emergency Contact"].append(patient["emergency_contact_email"])
+            data["Mood"].append(icons[patient["mood_code"]])
 
         create_table(data,title="Toms's Patient Dashboard", display_title=True, display_index=False)
  

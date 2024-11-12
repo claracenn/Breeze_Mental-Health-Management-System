@@ -3,6 +3,7 @@ from models.user import MHWP
 import pandas as pd
 from misc.table import create_table
 from utils.data_handler import read_json
+import random
 
 class MHWPController:
     '''Class to control various functions of the MHWPs.'''
@@ -66,8 +67,6 @@ class MHWPController:
         create_table(data, "My Calendar", display_title=True)
 
 
-
- 
 
 
     def handle_appointment(self, appointment):
@@ -202,6 +201,14 @@ class MHWPController:
         cols = ["Patient ID", "Name", "Email", "Emergency Contact"]
         rows = [list(patient.values()) for patient in patients]
 
+        icons = {
+            1: "\U0001F601",
+            2: "\U0001F642",
+            3: "\U0001F610",
+            4: "\U0001F615", 
+            5: "\U0001F61E",
+            6: "\U0001F621"
+        }
 
         data = {
                 "Patient ID": [],
@@ -209,7 +216,7 @@ class MHWPController:
                 "Email": [], 
                 "Emergency Contact": [], 
                 # "Conditions": [], 
-                # "Mood": []
+                "Mood": []
             }
         
         for patient in patients:
@@ -217,6 +224,7 @@ class MHWPController:
             data["Name"].append(patient["name"])
             data["Email"].append(patient["email"])
             data["Emergency Contact"].append(patient["emergency_contact_email"])
+            data["Mood"].append(icons[patient["mood_code"]])
 
         create_table(data,title="Toms's Patient Dashboard", display_title=True, display_index=False)
  
@@ -239,6 +247,6 @@ mhwp1.view_dashboard()
 # mhwp1.display_calendar()
 # print(mhwp1.get_appointments())
 # print(mhwp1.get_patients_info())
-mhwp1.display_patient_records()
+# mhwp1.display_patient_records()
 # print(mhwp1.get_patient_records())
 # print(mhwp1.get_patient_name(1))

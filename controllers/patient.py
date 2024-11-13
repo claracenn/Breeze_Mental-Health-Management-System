@@ -32,7 +32,7 @@ class PatientController:
         print(f"\n{BOLD}{UNDERLINE}{title}{RESET}")
         print("-" * 50)  # Divider line
         for index, option in enumerate(options, start=1):
-            # 将编号用框括起来
+            # [1] Frame it
             print(f"{BLACK}[{index}]{RESET} {option}")
         print("-" * 50)
         return input(f"{BROWN_RED}Choose an option ⏳: {RESET}")  

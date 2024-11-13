@@ -4,7 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import json
 from models.user import MHWP
 import pandas as pd
-from utils.data_handler import read_json, update_json
+from utils.data_handler import *
 
 class MHWPController:
     '''Class to control various functions of the MHWPs.'''
@@ -232,7 +232,7 @@ class MHWPController:
                 self.icons[target_info["mood_code"]]
             ]
         }
-        title = f"{target_info["name"]}'s Summary"
+        title = f"{target_info['name']}'s Summary"
         create_table(data, title=title, display_title=True)
 
     @staticmethod

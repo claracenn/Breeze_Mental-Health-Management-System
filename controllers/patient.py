@@ -157,7 +157,7 @@ class PatientController:
                 return patient
         print(f"{DARK_GREY}Patient not found.{RESET}")
 
-        def edit_profile(self):
+    def edit_profile(self):
             """Edit the patient's profile information and save changes to JSON file."""
             data = read_json(self.patient_info_file)
             mhwp_data = read_json("data/mhwp_info.json")

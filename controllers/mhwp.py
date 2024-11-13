@@ -235,6 +235,39 @@ class MHWPController:
         title = f"{target_info["name"]}'s Summary"
         create_table(data, title=title, display_title=True)
 
+    @staticmethod
+    def calculate_patient_counts(patient_file, mhwp_file):
+        """
+        Calculate the number of patients assigned to each MHWP and update the patient_count field in mhwp_file.
+        :param patient_file: The file path to the JSON file containing patient information.
+        :param mhwp_file: The file path to the JSON file containing MHWP information.
+        """
+        # Read patient and MHWP information
+        patients = read_json(patient_file)
+        mhwp_data = read_json(mhwp_file)
+
+        # Initialize patient counts for each MHWP
+        mhwp_patient_counts = {}
+
+        # Count the number of patients assigned to each MHWP
+        for patient in patients:
+            mhwp_id = patient.get("mhwp_id")
+            if mhwp_id is not None:
+                mhwp_patient_counts[mhwp_id] = mhwp_patient_counts.get(mhwp_id, 0) + 1
+
+        # Update mhwp_data with patient counts
+        for mhwp in mhwp_data:
+            mhwp_id = mhwp.get("mhwp_id")
+            mhwp["patient_count"] = mhwp_patient_counts.get(mhwp_id, 0)
+
+        # Save the updated MHWP data back to the mhwp_file
+        save_json(mhwp_file, mhwp_data)
+        
+        # Return the updated mhwp_data without printing anything
+        return mhwp_data
+
+ 
+
  
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime
 import json
+from controllers.mhwp import MHWPController
 
 # ANSI escape codes for subdued colors and styles
 BOLD = "\033[1m"
@@ -155,66 +156,67 @@ class PatientController:
                 print(f"🏥 Assigned MHWP ID: {patient['mhwp_id']}")
                 return patient
         print(f"{DARK_GREY}Patient not found.{RESET}")
+
         def edit_profile(self):
-        """Edit the patient's profile information and save changes to JSON file."""
-        data = read_json(self.patient_info_file)
-        mhwp_data = read_json("data/mhwp_info.json")
+            """Edit the patient's profile information and save changes to JSON file."""
+            data = read_json(self.patient_info_file)
+            mhwp_data = read_json("data/mhwp_info.json")
 
-        for patient in data:
-            if patient["patient_id"] == self.patient.user_id:
-                print(f"\nEdit Profile:")
-                while True:
-                    choice = self.display_menu(
-                        "Select the field you want to edit (Current value in parentheses)",
-                        [
-                            f"Name (current: {patient['name']})",
-                            f"Email (current: {patient['email']})",
-                            f"Emergency Contact (current: {patient['emergency_contact_email']})",
-                            f"MHWP (current: {patient.get('mhwp_id', 'None')})",
-                            "Edit All",
-                            "Back to Profile Menu",
-                        ]
-                    )
-                    
-                    if choice == "4":
-                        self.display_eligible_mhwps(patient["patient_id"], patient["mhwp_id"])
-                        return  
-                    elif choice == "1":
-                        new_name = input("Enter new name: ").strip()
-                        if new_name:
-                            patient["name"] = new_name
-                            print("Name updated successfully.")
-                    elif choice == "2":
-                        new_email = input("Enter new email: ").strip()
-                        if new_email:
-                            patient["email"] = new_email
-                            print("Email updated successfully.")
-                    elif choice == "3":
-                        new_contact = input("Enter new emergency contact email: ").strip()
-                        if new_contact:
-                            patient["emergency_contact_email"] = new_contact
-                            print("Emergency contact updated successfully.")
-                    elif choice == "5":
-                        new_name = input("Enter new name: ").strip()
-                        new_email = input("Enter new email: ").strip()
-                        new_contact = input("Enter new emergency contact email: ").strip()
-                        if new_name:
-                            patient["name"] = new_name
-                        if new_email:
-                            patient["email"] = new_email
-                        if new_contact:
-                            patient["emergency_contact_email"] = new_contact
-                        print("All fields updated successfully.")
-                    elif choice == "6":
-                        print("Returning to Profile Menu.")
-                        break
-                    else:
-                        print("Invalid choice. Please try again.")
+            for patient in data:
+                if patient["patient_id"] == self.patient.user_id:
+                    print(f"\nEdit Profile:")
+                    while True:
+                        choice = self.display_menu(
+                            "Select the field you want to edit (Current value in parentheses)",
+                            [
+                                f"Name (current: {patient['name']})",
+                                f"Email (current: {patient['email']})",
+                                f"Emergency Contact (current: {patient['emergency_contact_email']})",
+                                f"MHWP (current: {patient.get('mhwp_id', 'None')})",
+                                "Edit All",
+                                "Back to Profile Menu",
+                            ]
+                        )
+                        
+                        if choice == "4":
+                            self.display_eligible_mhwps(patient["patient_id"], patient["mhwp_id"])
+                            return  
+                        elif choice == "1":
+                            new_name = input("Enter new name: ").strip()
+                            if new_name:
+                                patient["name"] = new_name
+                                print("Name updated successfully.")
+                        elif choice == "2":
+                            new_email = input("Enter new email: ").strip()
+                            if new_email:
+                                patient["email"] = new_email
+                                print("Email updated successfully.")
+                        elif choice == "3":
+                            new_contact = input("Enter new emergency contact email: ").strip()
+                            if new_contact:
+                                patient["emergency_contact_email"] = new_contact
+                                print("Emergency contact updated successfully.")
+                        elif choice == "5":
+                            new_name = input("Enter new name: ").strip()
+                            new_email = input("Enter new email: ").strip()
+                            new_contact = input("Enter new emergency contact email: ").strip()
+                            if new_name:
+                                patient["name"] = new_name
+                            if new_email:
+                                patient["email"] = new_email
+                            if new_contact:
+                                patient["emergency_contact_email"] = new_contact
+                            print("All fields updated successfully.")
+                        elif choice == "6":
+                            print("Returning to Profile Menu.")
+                            break
+                        else:
+                            print("Invalid choice. Please try again.")
 
-                save_json(self.patient_info_file, data)
-                break
-        else:
-            print("Patient not found.")
+                    save_json(self.patient_info_file, data)
+                    break
+            else:
+                print("Patient not found.")
 
     def display_eligible_mhwps(self, patient_id, current_mhwp_id):
         """Display a list of eligible MHWPs (patient_count < 4) for the patient to select from."""

@@ -4,7 +4,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import json
 from models.user import MHWP
 import pandas as pd
-from misc.table import create_table
 from utils.data_handler import read_json, update_json
 
 class MHWPController:

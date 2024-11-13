@@ -155,12 +155,14 @@ class PatientController:
                 print(f"🏥 Assigned MHWP ID: {patient['mhwp_id']}")
                 return patient
         print(f"{DARK_GREY}Patient not found.{RESET}")
-
-    def edit_profile(self):
+        def edit_profile(self):
+        """Edit the patient's profile information and save changes to JSON file."""
         data = read_json(self.patient_info_file)
+        mhwp_data = read_json("data/mhwp_info.json")
+
         for patient in data:
             if patient["patient_id"] == self.patient.user_id:
-                print(f"\n{BOLD}Edit Profile:{RESET}")
+                print(f"\nEdit Profile:")
                 while True:
                     choice = self.display_menu(
                         "Select the field you want to edit (Current value in parentheses)",
@@ -168,47 +170,99 @@ class PatientController:
                             f"Name (current: {patient['name']})",
                             f"Email (current: {patient['email']})",
                             f"Emergency Contact (current: {patient['emergency_contact_email']})",
+                            f"MHWP (current: {patient.get('mhwp_id', 'None')})",
                             "Edit All",
                             "Back to Profile Menu",
                         ]
                     )
                     
-                    if choice == "1":
+                    if choice == "4":
+                        self.display_eligible_mhwps(patient["patient_id"], patient["mhwp_id"])
+                        return  
+                    elif choice == "1":
                         new_name = input("Enter new name: ").strip()
                         if new_name:
                             patient["name"] = new_name
-                            print(f"{BOLD}Name updated successfully.{RESET}")
-                            save_json(self.patient_info_file, data)
-                            return  
+                            print("Name updated successfully.")
                     elif choice == "2":
                         new_email = input("Enter new email: ").strip()
                         if new_email:
                             patient["email"] = new_email
-                            print(f"{BOLD}Email updated successfully.{RESET}")
-                            save_json(self.patient_info_file, data)
-                            return  
+                            print("Email updated successfully.")
                     elif choice == "3":
-                        new_contact = input("Enter new emergency contact: ").strip()
+                        new_contact = input("Enter new emergency contact email: ").strip()
                         if new_contact:
                             patient["emergency_contact_email"] = new_contact
-                            print(f"{BOLD}Emergency contact updated successfully.{RESET}")
-                            save_json(self.patient_info_file, data)
-                            return  
-                    elif choice == "4":
+                            print("Emergency contact updated successfully.")
+                    elif choice == "5":
                         new_name = input("Enter new name: ").strip()
                         new_email = input("Enter new email: ").strip()
-                        new_contact = input("Enter new emergency contact: ").strip()
-                        patient["name"] = new_name or patient["name"]
-                        patient["email"] = new_email or patient["email"]
-                        patient["emergency_contact_email"] = new_contact or patient["emergency_contact_email"]
-                        print(f"{BOLD}All fields updated successfully.{RESET}")
-                        save_json(self.patient_info_file, data)
-                        return  
-                    elif choice == "5":
+                        new_contact = input("Enter new emergency contact email: ").strip()
+                        if new_name:
+                            patient["name"] = new_name
+                        if new_email:
+                            patient["email"] = new_email
+                        if new_contact:
+                            patient["emergency_contact_email"] = new_contact
+                        print("All fields updated successfully.")
+                    elif choice == "6":
                         print("Returning to Profile Menu.")
                         break
                     else:
-                        print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+                        print("Invalid choice. Please try again.")
+
+                save_json(self.patient_info_file, data)
+                break
+        else:
+            print("Patient not found.")
+
+    def display_eligible_mhwps(self, patient_id, current_mhwp_id):
+        """Display a list of eligible MHWPs (patient_count < 4) for the patient to select from."""
+        
+        MHWPController.calculate_patient_counts(self.patient_info_file, "data/mhwp_info.json")
+        mhwp_data = read_json("data/mhwp_info.json")
+
+        # 筛选符合条件的 MHWP
+        eligible_mhwps = [mhwp for mhwp in mhwp_data if mhwp.get("patient_count", 0) < 4]
+        if not eligible_mhwps:
+            print("No available MHWPs with less than 4 patients.")
+            return
+
+        print("\nEligible MHWPs:")
+        display_data = {
+            "MHWP ID": [mhwp["mhwp_id"] for mhwp in eligible_mhwps],
+            "Name": [mhwp["name"] for mhwp in eligible_mhwps],
+            "Email": [mhwp["email"] for mhwp in eligible_mhwps],
+            "Patient Count": [mhwp["patient_count"] for mhwp in eligible_mhwps]
+        }
+        create_table(display_data, title="Eligible MHWPs", display_title=True, display_index=True)
+
+        selected_idx = int(input("Select a new MHWP by index: ").strip()) - 1
+        if 0 <= selected_idx < len(eligible_mhwps):
+            new_mhwp_id = eligible_mhwps[selected_idx]["mhwp_id"]
+            reason = input("Enter the reason for changing MHWP: ").strip()
+            self.create_mhwp_change_request(patient_id, current_mhwp_id, new_mhwp_id, reason)
+            print("Your request to change MHWP has been submitted and is pending approval.")
+        else:
+            print("Invalid selection.")
+
+    def create_mhwp_change_request(self, patient_id, current_mhwp_id, target_mhwp_id, reason):
+        
+        request_log = read_json(self.request_log_file)
+
+        new_request = {
+            "user_id": patient_id,
+            "current_mhwp_id": current_mhwp_id,
+            "target_mhwp_id": target_mhwp_id,
+            "reason": reason,
+            "status": "pending",
+            "requested_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+
+        # write new request into request_log
+        request_log.append(new_request)
+        save_json(self.request_log_file, request_log)
+
 
 
     # Section 2: Journal methods

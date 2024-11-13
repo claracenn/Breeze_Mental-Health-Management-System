@@ -31,6 +31,12 @@ def save_json(filepath, data):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return False
+    except json.JSONDecodeError as e:
+        print(f"Invalid JSON format in file: {filepath} - {e}")
+        return False
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return False
 
 
 def add_entry(filepath, entry):

@@ -1,6 +1,6 @@
 import json
 from controllers.patient import PatientController
-from models.user import Patient  # 假设 Patient 类定义在 model.user 模块中
+from models.user import Patient  
 from utils.data_handler import *
 
 # Display the welcome page
@@ -28,10 +28,9 @@ def login(users):
     return None, None
 
 def get_patient_info_by_userid(user_id, filename='data/patient_info.json'):
-    """根据患者id从 patient_info.json 文件中查找对应信息。"""
-    patient_data = read_json(filename)  # 使用前面定义的 read_json 函数加载数据
+   
+    patient_data = read_json(filename) 
     
-    # 查找匹配的患者信息
     for patient in patient_data:
         if patient['patient_id'] == user_id:
             return patient
@@ -53,7 +52,7 @@ def main():
         role, user_info = login(users)
 
     if role == 'patient':
-            # 使用用户名作为外键查找患者详细信息
+            
             patient_info = get_patient_info_by_userid(user_info['user_id'])
             
             if patient_info:

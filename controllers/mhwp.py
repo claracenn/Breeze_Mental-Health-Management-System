@@ -170,11 +170,11 @@ class MHWPController:
                             if mhwp_input == '1':
                                 condition = input("Please enter patient condition: ")
                                 record["condition"] = condition
-                                update_json('./data/patient_record.json', patient_records)
+                                save_json('./data/patient_record.json', patient_records)
                             elif mhwp_input == '2':
                                 note = input("Please enter note for patient: ")
                                 record["notes"] = note
-                                update_json('./data/patient_record.json', patient_records)
+                                save_json('./data/patient_record.json', patient_records)
                             elif mhwp_input == '3':
                                 break
                             else:

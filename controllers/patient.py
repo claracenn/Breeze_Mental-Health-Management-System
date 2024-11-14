@@ -6,27 +6,46 @@ from models.patient.patient_journal import Journal
 from models.patient.patient_mood import Mood
 from models.user import Patient
 from utils.data_handler import *
+from controllers.mhwp import MHWPController
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
-from controllers.mhwp import MHWPController
 
-# ANSI escape codes for subdued colors and styles
+
+"""
+==================================
+Initialise ANSI color codes
+==================================
+"""
 BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
 BLACK = "\033[30m"  
 BROWN_RED = "\033[91m"  
 DARK_GREY = "\033[90m"
 RESET = "\033[0m"
+RED = "\033[91m\033[1m"
+LIGHT_RED = "\033[91m"
+ORANGE = "\033[93m\033[1m"
+YELLOW = "\033[93m"
+LIGHT_GREEN = "\033[92m"
+GREEN = "\033[92m\033[1m"
 
+"""
+==================================
+Patient Controller Class
+==================================
+"""
 class PatientController:
     def __init__(self, patient: Patient):
         self.patient = patient
         self.journal_file = "data/patient_journal.json"
         self.mood_file = "data/patient_mood.json"
         self.patient_info_file = "data/patient_info.json"
+        self.appointment_file = "data/appointment.json"
+        self.request_log_file = "data/mhwp_change_request.json"
+        self.mhwp_info_file = "data/mhwp_info.json"
 
     def display_menu(self, title, options):
         """Generic method to display a menu with subdued styling."""
@@ -142,7 +161,10 @@ class PatientController:
             else:
                 print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
 
-    # Section 1: Profile methods
+
+# ----------------------------
+# Section 1: Profile methods
+# ----------------------------
     def view_profile(self):
         """Display the patient's profile information based on patient ID."""
         data = read_json(self.patient_info_file)
@@ -224,7 +246,7 @@ class PatientController:
         MHWPController.calculate_patient_counts(self.patient_info_file, "data/mhwp_info.json")
         mhwp_data = read_json("data/mhwp_info.json")
 
-        # 筛选符合条件的 MHWP
+        # Show eligible mhwp
         eligible_mhwps = [mhwp for mhwp in mhwp_data if mhwp.get("patient_count", 0) < 4]
         if not eligible_mhwps:
             print("No available MHWPs with less than 4 patients.")
@@ -249,9 +271,8 @@ class PatientController:
             print("Invalid selection.")
 
     def create_mhwp_change_request(self, patient_id, current_mhwp_id, target_mhwp_id, reason):
-        
+        """Create a new MHWP change request and save it to request_log.json."""
         request_log = read_json(self.request_log_file)
-
         new_request = {
             "user_id": patient_id,
             "current_mhwp_id": current_mhwp_id,
@@ -260,15 +281,13 @@ class PatientController:
             "status": "pending",
             "requested_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-
-        # write new request into request_log
         request_log.append(new_request)
         save_json(self.request_log_file, request_log)
 
 
-
-    # Section 2: Journal methods
-    # View all journals
+# ----------------------------
+# Section 2: Journal methods
+# ----------------------------
     def view_journals(self):
         """Display all journals for the current patient in a table format"""
         journals = read_json(self.journal_file)
@@ -318,8 +337,8 @@ class PatientController:
             display_index=True
         )
     
-    # Add a new journal entry
     def add_journal(self):
+        """Add a new journal entry for the current patient."""
         print("Type your journal, tap enter when you finish:")
         journal_text = input().strip()
         
@@ -337,8 +356,8 @@ class PatientController:
         else:
             print("Failed to save journal. Please try again.")
 
-    # Delete a journal entry
     def delete_journal(self):
+        """Delete a journal entry for the current patient."""
         journal_index = int(input("Enter the index of the journal entry you want to delete: ").strip())
         # Retrieve the actual index in the JSON file
         actual_index = self.current_patient_journal_map.get(journal_index)
@@ -352,8 +371,8 @@ class PatientController:
         else:
             print("Failed to delete journal entry. Please try again.")
 
-    # Update a journal entry
     def update_journal(self):
+        """Update a journal entry for the current patient."""
         journal_index = int(input("Enter the index of the journal entry you want to update: ").strip())
         # Retrieve the actual index in the JSON file
         actual_index = self.current_patient_journal_map.get(journal_index)
@@ -368,19 +387,11 @@ class PatientController:
         else:
             print("Failed to update journal entry. Please try again.")
 
-
-    # Section 3: Mood methods
-    # Display the mood scale
+# ----------------------------
+# Section 3: Mood methods
+# ----------------------------
     def display_mood_scale(self):
-        # Define ANSI color codes for each mood level
-        RED = "\033[91m\033[1m"
-        LIGHT_RED = "\033[91m"
-        ORANGE = "\033[93m\033[1m"
-        YELLOW = "\033[93m"
-        LIGHT_GREEN = "\033[92m"
-        GREEN = "\033[92m\033[1m"
-        RESET = "\033[0m"  # Resets the color to default
-
+        """Display the mood scale with colors and emojis."""
         # Print the Mood Scale with colors
         print(f"""
                       MOOD SCALE
@@ -397,18 +408,8 @@ class PatientController:
         """)
 
 
-    # View all Mood
     def view_moods(self):
-        # Define ANSI color codes for each mood level
-        RED = "\033[91m\033[1m"
-        LIGHT_RED = "\033[91m"
-        ORANGE = "\033[93m\033[1m"
-        YELLOW = "\033[93m"
-        LIGHT_GREEN = "\033[92m"
-        GREEN = "\033[92m\033[1m"
-        RESET = "\033[0m"  # Resets the color to default
-
-        """Display all mood logs for the current patient in a table format and map their indices."""
+        """Display all mood logs for the current patient."""
         moods = read_json(self.mood_file)
         
         if not moods:
@@ -465,9 +466,8 @@ class PatientController:
             display_index=True
         )
 
-
-    # Add a new mood entry
     def add_mood(self):
+        """Add a new mood entry for the current patient."""
         self.display_mood_scale()
         
         while True:
@@ -507,8 +507,8 @@ class PatientController:
         else:
             print("Failed to log mood. Please try again.")
 
-    # Delete a mood entry
     def delete_mood(self):
+        """Delete a mood entry for the current patient."""
         mood_index = int(input("Enter the index of the mood entry you want to delete: ").strip())
         
         # Get the actual JSON index from the mapping
@@ -523,8 +523,8 @@ class PatientController:
         else:
             print("Failed to delete mood entry. Please try again.")
 
-    # Update a mood entry
     def update_mood(self):
+        """Update a mood entry for the current patient."""
         mood_index = int(input("Enter the index of the mood entry you want to update: ").strip())
         
         # Get the actual JSON index from the mapping
@@ -542,17 +542,119 @@ class PatientController:
             print("Failed to update mood entry. Please try again.")
 
 
-    # Section 4: Appointment methods
+# ----------------------------
+# Section 4: Appointment methods
+# ----------------------------
     def view_appointment(self):
         pass 
 
     def make_appointment(self):
-        pass
+        """Make appointment with MHWP."""
+        try:
+            patient_info = read_json(self.patient_info_file)
+            appointment = read_json(self.appointment_file)
+            mhwp_info = read_json(self.mhwp_info_file)
+
+            patient = next((p for p in patient_info if p["patient_id"] == self.patient.user_id), None)
+            if not patient:
+                print("Patient not found.")
+                return
+                
+            today = datetime.now().date()
+            all_dates = [(today + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(1, 8)]
+            all_time_slots = [
+                "09:00 - 10:00", "10:00 - 11:00", "11:00 - 12:00",
+                "14:00 - 15:00", "15:00 - 16:00", "16:00 - 17:00"
+                ]
+            
+            # Display available dates
+            while True:
+                available_dates = []
+                for date in all_dates:
+                    mhwp_appointments = [
+                        a for a in appointment
+                        if a["mhwp_id"] == self.patient.mhwp_id and a["date"] == date and a["status"] in ["PENDING", "CONFIRMED"]
+                    ]
+                    booked_slots = [a["time_slot"] for a in mhwp_appointments]
+                    if len(booked_slots) < len(all_time_slots):
+                        available_dates.append(date)
+
+                if not available_dates:
+                    print("❗️ No available dates for appointment.")
+                    return
+                else:
+                    print("📅 Available Dates:")
+                    for idx, date in enumerate(available_dates, start=1):
+                        print(f"{idx}. {date}")
+                
+                try:
+                    # Select date
+                    selected_date_idx = int(input("Select a date by index: ").strip()) - 1
+                    if selected_date_idx < 0 or selected_date_idx >= len(available_dates):
+                        print("❌ Invalid selection.")
+                        continue
+                    selected_date = available_dates[selected_date_idx]
+
+                    # Check if the patient already has an appointment on the selected date
+                    patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id]
+                    if any(a["date"] == selected_date for a in patient_appointments):
+                        print("❗️ You already have an appointment on this date. Please choose another date.")
+                        continue #return to date selection
+                    break
+                except Exception as e:
+                    print("❌ Invalid selection.")
+            
+            # Display available time slots
+            while True:
+                mhwp_appointments = [a for a in mhwp_appointments if a["mhwp_id"] == self.patient.mhwp_id 
+                                        and a["date"] == selected_date
+                                        and a["status"] in ["PENDING", "CONFIRMED"]
+                                    ]   
+                booked_time_slots = [a["time"] for a in mhwp_appointments]
+                available_time_slots = [t for t in all_time_slots if t not in booked_time_slots]
+                print("⏰ Available Time Slots:")
+                for i, slot in enumerate(available_time_slots, 1):
+                    print(f"{i}. {slot}")
+
+                # Select time slot
+                try:
+                    selected_slot_index = int(input("Select a time slot: ")) - 1
+                    if selected_slot_index not in range(len(available_time_slots)):
+                        print("❌ Invalid selection.") 
+                        continue #return to time slot selection
+                    selected_time_slot = available_time_slots[selected_slot_index]
+                    break
+                except Exception as e:
+                    print("❌ Invalid selection.")
+
+            # Confirm appointment
+            new_appointment = {
+                "appointment_id": len(appointment) + 1,
+                "patient_id": self.patient.user_id,
+                "mhwp_id": self.patient.mhwp_id,
+                "date": selected_date,
+                "time_slot": selected_time_slot,
+                "status": "PENDING",
+                "notes": "",
+                "create_time": datetime.now().strftime("%Y-%m-%dT%H:%M:%S"),
+                "last_updated": datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+            }
+            
+            # Add and save the new appointment
+            add_entry(self.appointment_file, new_appointment)
+            print("😊 Appointment booked successfully!")
+            print(f"📅 Date: {selected_date}, ⏰Time Slot: {selected_time_slot}")
+
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            
 
     def edit_appointment(self):
         pass
 
-    # Section 5: Resource methods
+# ----------------------------
+# Section 5: Resource methods
+# ----------------------------
     def search_by_keyword(self):
         keyword = input("Enter a keyword to search for related resources: ")
         url = f"https://www.freemindfulness.org/_/search?query={keyword}"

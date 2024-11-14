@@ -224,7 +224,7 @@ class PatientController:
         MHWPController.calculate_patient_counts(self.patient_info_file, "data/mhwp_info.json")
         mhwp_data = read_json("data/mhwp_info.json")
 
-        # 筛选符合条件的 MHWP
+        #select eligible MHWP
         eligible_mhwps = [mhwp for mhwp in mhwp_data if mhwp.get("patient_count", 0) < 4]
         if not eligible_mhwps:
             print("No available MHWPs with less than 4 patients.")

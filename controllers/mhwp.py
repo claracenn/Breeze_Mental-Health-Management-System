@@ -242,11 +242,9 @@ class MHWPController:
         :param patient_file: The file path to the JSON file containing patient information.
         :param mhwp_file: The file path to the JSON file containing MHWP information.
         """
-        # Read patient and MHWP information
         patients = read_json(patient_file)
         mhwp_data = read_json(mhwp_file)
 
-        # Initialize patient counts for each MHWP
         mhwp_patient_counts = {}
 
         # Count the number of patients assigned to each MHWP
@@ -260,10 +258,8 @@ class MHWPController:
             mhwp_id = mhwp.get("mhwp_id")
             mhwp["patient_count"] = mhwp_patient_counts.get(mhwp_id, 0)
 
-        # Save the updated MHWP data back to the mhwp_file
         save_json(mhwp_file, mhwp_data)
         
-        # Return the updated mhwp_data without printing anything
         return mhwp_data
 
  

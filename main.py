@@ -56,7 +56,6 @@ def main():
             patient_info = get_patient_info_by_userid(user_info['user_id'])
             
             if patient_info:
-                # 创建 Patient 对象并传递给 PatientController
                 patient = Patient(
                     user_id=patient_info['patient_id'],
                     username=user_info['username'],

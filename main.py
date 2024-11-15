@@ -119,8 +119,8 @@ def role_navigation(user_role, user_id):
     elif user_role == 'patient':
         patient_user = Patient(user_id, f"patient{user_id}", "")
         patient_controller = PatientController(patient_user)
-        if hasattr(patient_controller, 'display_menu'):
-            patient_controller.display_menu()  # Call the appropriate menu method
+        if hasattr(patient_controller, 'display_patient_homepage'):
+            patient_controller.display_patient_homepage() 
         else:
             print(f"{Red}Error: Patient controller does not have a display_menu method.{Reset}")
     else:

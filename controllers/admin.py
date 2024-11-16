@@ -51,11 +51,11 @@ class AdminController:
             logging.debug(f"Action: {action}, Performed by: {user}")
 
     def print_divider(self):
-        print(f"{Blue}{Bold}=" * 55 + f"{Reset}")
+        print(f"{Blue}{Bold}=" * 79 + f"{Reset}")
 
     def print_centered_message(self, message, color_code):
         # Calculate the centered message without ANSI codes
-        centered_message = message.center(55)
+        centered_message = message.center(79)
         # Add the color codes around the centered message
         print(f"{color_code}{centered_message}{Reset}")
 
@@ -252,23 +252,68 @@ class AdminController:
 
     def display_summary(self):
         try:
+            # Update breadcrumbs
             self.update_breadcrumbs("Display Summary")
             self.show_breadcrumbs()
+
+            # Print page header and divider
+            self.print_page_header("Display Summary")
+
+            # Read data from JSON files
             patient_info = read_json('../data/patient_info.json')
             mhwp_info = read_json('../data/mhwp_info.json')
+
+            # Display total numbers
             print(f"{Cyan}Total Patients: {len(patient_info)}{Reset}")
             print(f"{Cyan}Total MHWPs: {len(mhwp_info)}{Reset}")
 
+            # Convert data to DataFrames for easier viewing
             df_patients = pd.DataFrame(patient_info)
             df_mhwps = pd.DataFrame(mhwp_info)
-            print(f"{Blue}\nPatients Data:{Reset}")
+
+            # Display the first few rows as a preview (5 rows each)
+            print(f"{Blue}\nPatients Data (First 5 Records):{Reset}")
             print(df_patients.head())
-            print(f"{Blue}\nMHWPs Data:{Reset}")
+            print(f"{Blue}\nMHWPs Data (First 5 Records):{Reset}")
             print(df_mhwps.head())
-            self.breadcrumbs.pop()
+
+            # Ask the user if they want to see the full list
+            while True:
+                user_choice = self.get_user_input(
+                    f"{Cyan}{Italic}Would you like to see the full list of data? (yes/no):{Reset} ",
+                    valid_options=["yes", "no"]
+                )
+
+                if user_choice == "yes":
+                    # Display full lists of patients and MHWPs
+                    self.print_divider()
+                    self.print_centered_message("Full Patients Data", f"{Blue}{Bold}")
+                    print(df_patients)
+                    self.print_divider()
+                    self.print_centered_message("Full MHWPs Data", f"{Blue}{Bold}")
+                    print(df_mhwps)
+
+                    # Ask user if they want to return to the main menu
+                    user_choice = self.get_user_input(
+                        f"{Cyan}{Italic}Press enter to return to the main menu...{Reset}", allow_back=False
+                    )
+                    break
+
+                elif user_choice == "no":
+                    print(f"{Cyan}Returning to the main menu...{Reset}")
+                    break
+
+        except BackException:
+            print(f"{Cyan}Returning to the previous menu...{Reset}")
+
         except Exception as e:
             print(f"{Red}An error occurred while displaying the summary. Please contact the administrator.{Reset}")
             self.log_action(f"Error in display_summary: {e}", "system")
+
+        finally:
+            # Clean up the breadcrumb navigation
+            if self.breadcrumbs:
+                self.breadcrumbs.pop()
 
     def display_menu(self):
         while True:
@@ -431,10 +476,10 @@ class AdminController:
 
             # Show current user information
             self.print_centered_message("Current User Information", f"{Blue}{Bold}")
-            print(f"{Blue}-" * 55 + f"{Reset}")
+            print(f"{Blue}-" * 79 + f"{Reset}")
             for key, value in user_info.items():
                 print(f"{key}: {value}{Reset}")
-            print(f"{Blue}-" * 55 + f"{Reset}")
+            print(f"{Blue}-" * 79 + f"{Reset}")
 
             # Collect fields to edit for patients and MHWPs
             new_data = {}

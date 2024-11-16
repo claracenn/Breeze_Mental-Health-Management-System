@@ -280,11 +280,51 @@ class AdminController:
             # Ask the user if they want to see the full list
             while True:
                 user_choice = self.get_user_input(
-                    f"{Cyan}{Italic}Would you like to see the full list of data? (yes/no):{Reset} ",
-                    valid_options=["yes", "no"]
+                    f"{Cyan}{Italic}Would you like to see the full list of data?{Reset}\n"
+                    f"{Yellow}1. Patients Full Data\n"
+                    f"{Yellow}2. MHWPs Full Data\n"
+                    f"{Yellow}3. Patients and MHWPs Full Data\n"
+                    f"{Yellow}4. No, return to main menu\n"
+                    f"{Cyan}{Italic}Enter your choice (1/2/3/4):{Reset} ",
+                    valid_options=["1", "2", "3", "4"]
                 )
 
-                if user_choice == "yes":
+                if user_choice == "1":
+                    # Update breadcrumbs
+                    self.update_breadcrumbs("Full Data [Patients Only]")
+                    self.show_breadcrumbs()
+
+                    # Print page header and divider
+                    self.print_page_header("Full Data [Patients Only]")
+
+                    # Display full list of patients
+                    self.print_divider()
+                    self.print_centered_message("Full Patients Data", f"{Blue}{Bold}")
+                    print(df_patients)
+                    self.print_divider()
+
+                elif user_choice == "2":
+                    # Update breadcrumbs
+                    self.update_breadcrumbs("Full Data [MHWPs Only]")
+                    self.show_breadcrumbs()
+
+                    # Print page header and divider
+                    self.print_page_header("Full Data [MHWPs Only]")
+
+                    # Display full list of MHWPs
+                    self.print_divider()
+                    self.print_centered_message("Full MHWPs Data", f"{Blue}{Bold}")
+                    print(df_mhwps)
+                    self.print_divider()
+
+                elif user_choice == "3":
+                    # Update breadcrumbs
+                    self.update_breadcrumbs("Full Data [Patient & MHWP]")
+                    self.show_breadcrumbs()
+
+                    # Print page header and divider
+                    self.print_page_header("Full Data [Patient & MHWP]")
+
                     # Display full lists of patients and MHWPs
                     self.print_divider()
                     self.print_centered_message("Full Patients Data", f"{Blue}{Bold}")

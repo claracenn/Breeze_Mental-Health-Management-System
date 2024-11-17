@@ -2,7 +2,7 @@ import pandas as pd
 import json
 import logging
 from models.user import Admin, MHWP, Patient
-from utils.data_handler import read_json
+from utils.data_handler import *
 
 # from controllers.mhwp import MHWPController
 # from controllers.patient import PatientController
@@ -85,11 +85,56 @@ class AdminController:
         self.print_centered_message("Type 'back' at any time to return to the previous menu", f"{Grey}")
         self.print_divider()
 
+
+    def display_users(self, user_type):
+        #display the patient/mhwp tables so it is clearer
+        user_data = read_json("./data/patient_info.json") if user_type == "patient" else read_json("./data/mhwp_info.json")
+        if user_data is None:
+            print(f"{Red}Failed to load user data. Please check the file and try again.{Reset}")
+            return
+
+        user_ids = [str(user["patient_id"]) for user in user_data] if user_type == "patient" else [str(user["mhwp_id"]) for user in user_data]
+        user_names = [str(user["name"]) for user in user_data]
+        user_dict = {"Patient Id": user_ids, "Patient Names": user_names}
+        create_table(user_dict)
+
+    # Function to get the element by patient_id or mhwp_id
+    def get_user_by_id(self, json_path, user_type_id: str, id_num):
+
+        try:
+            info = read_json(json_path)
+
+            # Check if patient data loaded correctly
+            if info is None or not isinstance(info, list):
+                self.log_action(f"Failed to read patient data from {json_path}", "error", "system")
+                return "data_error"
+            
+            if user_type_id.strip().lower() not in ["patient_id", "mhwp_id"]:
+                raise IOError("The user type id must be typed either as patient_id or mhwp_id.")
+
+            user = next((item for item in info if item[user_type_id] == id_num), None)
+
+            if type(user) != dict:
+                raise ValueError("This user doesn't exist.")
+            else:
+                return user
+        
+        except IOError as ioe:
+            print(f"{Red}An error occurred while searching for the specified user: {ioe}{Reset}")
+            self.log_action(f"Failed to key in user type id: {ioe}", "error", self.admin.username)
+            return "save_error"
+        
+        except ValueError as ve:
+            print(f"{Red}An error occurred while searching for the specified user: {ve}{Reset}")
+            self.log_action(f"Failed to find user: {ve}", "error", self.admin.username)
+            return "save_error"
+
     # Creates a dictionary of a patient and their respective MHWP
     # If the patient doesn't have a MHWP, assign them to MHWP
     # used as input
     def allocate_patient(self, mhwp: MHWP, patient: Patient):
-        patient_data_path_name = "../data/patient_info.json"
+
+        patient_data_path_name = "./data/patient_info.json"
         patient_info = read_json(patient_data_path_name)
 
         # Check if patient data loaded correctly
@@ -140,13 +185,15 @@ class AdminController:
 
         # Apply new values to the user object
         for field, value in new_data.items():
+            print(field, value)
+            print(editable_fields)
             if field in editable_fields:
                 setattr(user, field, value)
             else:
                 print(f"{Red}Warning: {field} is not editable for this user type.{Reset}")
 
         # Update data in the JSON file
-        user_data_path = "../data/patient_info.json" if isinstance(user, Patient) else "../data/mhwp_info.json"
+        user_data_path = "./data/patient_info.json" if isinstance(user, Patient) else "./data/mhwp_info.json"
         user_data = read_json(user_data_path)
         user_found = False
 
@@ -173,6 +220,7 @@ class AdminController:
             self.log_action(f"Failed to locate User ID {user.user_id} for editing", "error", self.admin.username)
 
     def disable_user(self, user):
+
         confirm = self.get_user_input(f"{Red}Are you sure you want to disable User ID {user.user_id}? (y/n): {Reset}", valid_options=["y", "n"])
         if confirm == 'y':
             user.is_disabled = True
@@ -394,12 +442,15 @@ class AdminController:
         self.show_breadcrumbs()
         try:
             # Load patient data
-            patient_data = read_json("../data/patient_info.json")
+            patient_data = read_json("./data/patient_info.json")
             if patient_data is None:
                 print(f"{Red}Failed to load patient data. Please check the file and try again.{Reset}")
                 return
 
             patient_ids = [str(patient["patient_id"]) for patient in patient_data]
+            patient_names = [str(patient["name"]) for patient in patient_data]
+            patient_dict = {"Patient Id": patient_ids, "Patient Names": patient_names}
+            create_table(patient_dict)
 
             # Print header and divider
             self.print_page_header("Allocation Page")
@@ -423,19 +474,30 @@ class AdminController:
                 self.print_divider()  # Divider for retry attempts
 
             # Ask for MHWP ID
-            mhwp_data = read_json("../data/mhwp_info.json")
+            mhwp_data = read_json("./data/mhwp_info.json")
             if mhwp_data is None:
                 print(f"{Red}Failed to load MHWP data. Please check the file and try again.{Reset}")
                 return
 
             mhwp_ids = [str(mhwp["mhwp_id"]) for mhwp in mhwp_data]
+            mhwp_names = [str(mhwp["name"]) for mhwp in mhwp_data]
+            mhwp_dict = {"MHWP Id": mhwp_ids, "MHWP Names": mhwp_names}
+            create_table(mhwp_dict)
 
             retry_attempts = 0
             while retry_attempts < 3:
                 mhwp_id = self.get_user_input(f"{Cyan}{Italic}Enter MHWP ID to assign to Patient {patient_id}: {Reset}").strip()
                 if mhwp_id in mhwp_ids:
                     print(f"{Green}MHWP ID {mhwp_id} found. Assigning Patient {patient_id} to MHWP {mhwp_id}.{Reset}")
-                    patient = Patient(patient_id, f"patient{patient_id}", "")
+
+                    #temporarily create patient
+                    #may need to fix this after merging
+                    #update username & password
+                    
+                    patient_data = self.get_user_by_id("./data/patient_info.json", "patient_id", int(patient_id))
+                    mhwp_data = self.get_user_by_id("./data/mhwp_info.json", "mhwp_id", int(mhwp_id))
+
+                    patient = Patient(patient_id, f"patient{patient_id}", "", patient_data['email'], patient_data['emergency_contact_email'], patient_data['mhwp_id'])
                     mhwp = MHWP(mhwp_id, f"mhwp{mhwp_id}", "")
 
                     # Call allocate_patient and let it handle the final assignment
@@ -457,6 +519,7 @@ class AdminController:
                         self.breadcrumbs.pop()
                         return
                 self.print_divider()  # Divider for retry attempts
+
         except BackException:
             print(f"{Grey}Returning to the previous menu...{Reset}")
         except ValueError as ve:
@@ -494,6 +557,8 @@ class AdminController:
                         return
                 self.print_divider()
 
+            self.display_users(user_type)
+
             # Prompt for User ID and validate if the user exists
             user_id = self.get_user_input(f"{Cyan}{Italic}Enter User ID: {Reset}").strip()
             if not user_id:
@@ -503,10 +568,10 @@ class AdminController:
 
             # Load user data based on user type
             if user_type == "patient":
-                user_data = read_json("../data/patient_info.json")
+                user_data = read_json("./data/patient_info.json")
                 user_info = next((u for u in user_data if str(u["patient_id"]) == user_id), None)
             elif user_type == "mhwp":
-                user_data = read_json("../data/mhwp_info.json")
+                user_data = read_json("./data/mhwp_info.json")
                 user_info = next((u for u in user_data if str(u["mhwp_id"]) == user_id), None)
 
             if not user_info:
@@ -554,8 +619,14 @@ class AdminController:
                 return
 
             # Create user object and call edit_user
+            ########
+            ########
+            #######
+            #update this in main - username is probably not the same as email
             if user_type == "patient":
-                user = Patient(user_id, user_info.get("name"), user_info.get("email"))
+                user = Patient(user_id, user_info.get("name"), user_info.get("email"), 
+                               "", user_info.get("emergency_contact_email"),
+                               user_info.get("mhwp_id"))
             elif user_type == "mhwp":
                 user = MHWP(user_id, user_info.get("name"), user_info.get("email"))
 
@@ -579,15 +650,26 @@ class AdminController:
         self.update_breadcrumbs("Disable User")
         self.show_breadcrumbs()
         try:
-            user_type = self.get_user_input(f"{Cyan}{Italic}Enter user type (patient/mhwp): {Reset}")
-            if user_type.lower() not in ["patient", "mhwp"]:
+            user_type = self.get_user_input(f"{Cyan}{Italic}Enter user type (patient/mhwp): {Reset}").strip().lower()
+            if user_type not in ["patient", "mhwp"]:
                 raise ValueError("Invalid user type. Must be 'patient' or 'mhwp'.")
             user_id = self.get_user_input(f"{Cyan}{Italic}Enter User ID: {Reset}")
             if not user_id:
                 raise ValueError("User ID cannot be empty.")
-            if user_type.lower() == "patient":
-                user = Patient(user_id, f"patient{user_id}", "")
-            elif user_type.lower() == "mhwp":
+            
+            user_data_path = "./data/patient_info.json" if user_type == "patient" else "./data/mhwp_info.json"
+            user_data = read_json(user_data_path)
+            user_info = next((u for u in user_data if str(u["patient_id"]) == user_id), None) if user_type == "patient" else next((u for u in user_data if str(u["mhwp_id"]) == user_id), None)
+            print(user_info, 'bobb')
+            create_table(user_info)
+
+            print(user_info, "bobby")
+
+            if user_type == "patient":
+                user = Patient(int(user_id), user_info.get("name"), user_info.get("email"), 
+                               "", user_info.get("emergency_contact_email"),
+                               user_info.get("mhwp_id"))
+            elif user_type == "mhwp":
                 user = MHWP(user_id, f"mhwp{user_id}", "")
             self.disable_user(user)
             print(f"User {user_id} has been disabled.")

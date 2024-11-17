@@ -219,42 +219,99 @@ class AdminController:
             print(f"{Red}User not found in the data file.{Reset}")
             self.log_action(f"Failed to locate User ID {user.user_id} for editing", "error", self.admin.username)
 
+
+
     def disable_user(self, user):
 
         confirm = self.get_user_input(f"{Red}Are you sure you want to disable User ID {user.user_id}? (y/n): {Reset}", valid_options=["y", "n"])
         if confirm == 'y':
             user.is_disabled = True
-            print(f"{Green}User {user.user_id} has been disabled successfully.{Reset}")
-            self.log_action(f"Disabled User ID {user.user_id}", "info", self.admin.username)
         elif confirm == 'n':
             print(f"{Cyan}Action cancelled. Returning to Admin Menu...{Reset}")
 
+        try:
+            path = "./data/user.json"
+            user_info = read_json(path)
+            fin_json = []
+
+            for i in range(len(user_info)):
+                user_details = user_info[i]
+
+                # Creating a new lists of Patients
+                # checks id and username/email
+                if user_details["user_id"] == user.user_id:
+                    user_details["status"] = "DISABLED"
+
+                fin_json.append(user_details)
+
+            # save it in the new patient info
+            with open(path, 'w') as file:
+                json.dump(fin_json, file, indent=4)
+            print(f"{Green}User {user.user_id} has been disabled successfully.{Reset}")
+            self.log_action(f"Disabled Patient ID {user.user_id}", "info", self.admin.username)
+
+        except IOError as e:
+                print(f"{Red}An error occurred while saving the updated user data: {e}{Reset}")
+                self.log_action(f"Failed to save updated user data: {e}", "error", self.admin.username)
+
+    def delete_patient_from_file(self, patient_del: Patient, file_path):
+
+        try:
+            #-----------------------------------------------------------------
+            #-------------------Delete in patient_info file-------------------
+            #-----------------------------------------------------------------
+            patient_info = read_json(file_path)
+            fin_json = []
+
+            for i in range(len(patient_info)):
+                patient = patient_info[i]
+
+                # Creating a new lists of Patients by checking id
+                if patient['patient_id'] != patient_del.user_id:
+                    fin_json.append(patient)
+
+            # save it in the new patient info
+            with open(file_path, 'w') as file:
+                json.dump(fin_json, file, indent=4)
+            print(f"{Green}Patient {patient_del.user_id} deleted successfully.{Reset}")
+            self.log_action(f"Deleted Patient ID {patient_del.user_id}", "info", self.admin.username)
+
+        except IOError as e:
+                print(f"{Red}An error occurred while deleting user data: {e}{Reset}")
+                self.log_action(f"Failed to deleted user data: {e}", "error", self.admin.username)
+
+    
     # deletes a specific patient based on their user id, writes json file
     # without the patient you want to delete
-    def delete_patient(self, patient_del: Patient) -> None:
-        confirm = self.get_user_input(f"{Red}Are you sure you want to delete Patient ID {patient_del.user_id}? (y/n): {Reset}", valid_options=["y", "n"])
+    def delete_patient(self, patient_del: Patient):
+        confirm = self.get_user_input(f"{Red}Are you sure you want to delete Patient ID {patient_del.user_id}? (y/n): {Reset}", valid_options=["y", "n"]).strip().lower()
         if confirm != 'y':
             print(f"{Cyan}Action cancelled. Returning to Admin Menu...{Reset}")
             return
 
-        patient_data_path_name = "../data/patient_info.json"
-        patient_info = read_json(patient_data_path_name)
-        fin_json = []
+        try:
+            mhwp_file_path = "./data/mhwp_info.json"
 
-        for i in range(len(patient_info)):
-            patient = patient_info[i]
+            #get mhwp id from patient_del
 
-            # Creating a new lists of Patients
-            # checks id and username/email
-            if (patient['patient_id'] != patient_del.user_id and
-                    patient['email'] != patient_del.username):
-                fin_json.append(patient)
+            #set patient count -= 1
 
-        # save it in the new patient info
-        with open('../data/patient_info.json', 'w+') as file:
-            json.dump(fin_json, file, indent=4)
-        print(f"{Green}Patient {patient_del.user_id} deleted successfully.{Reset}")
-        self.log_action(f"Deleted Patient ID {patient_del.user_id}", "info", self.admin.username)
+            #write to mhwp_info.json
+
+            patient_file_paths = [
+                                "./data/patient_info.json",
+                                "./data/patient_journal.json",
+                                "./data/patient_mood.json",
+                                "./data/patient_record.json",
+                                "./data/user.json"
+                                 ]
+            
+            for path in patient_file_paths:
+                self.delete_patient_from_file(patient_del, path)
+        
+        except IOError as e:
+                print(f"{Red}An error occurred while deleting user data: {e}{Reset}")
+                self.log_action(f"Failed to deleted user data: {e}", "error", self.admin.username)
 
     #deletes a specific MHWP based on their user id, writes json file
     #without the MHWP you want to delete
@@ -618,17 +675,12 @@ class AdminController:
                 self.breadcrumbs.pop()
                 return
 
-            # Create user object and call edit_user
-            ########
-            ########
-            #######
-            #update this in main - username is probably not the same as email
             if user_type == "patient":
-                user = Patient(user_id, user_info.get("name"), user_info.get("email"), 
-                               "", user_info.get("emergency_contact_email"),
+                user = Patient(int(user_id), f"patient{user_id}", "", 
+                               user_info.get("email"), user_info.get("emergency_contact_email"),
                                user_info.get("mhwp_id"))
             elif user_type == "mhwp":
-                user = MHWP(user_id, user_info.get("name"), user_info.get("email"))
+                user = MHWP(int(user_id), f"mhwp{user_id}", "")
 
             # Perform the edit operation
             self.edit_user(user, new_data)
@@ -653,6 +705,9 @@ class AdminController:
             user_type = self.get_user_input(f"{Cyan}{Italic}Enter user type (patient/mhwp): {Reset}").strip().lower()
             if user_type not in ["patient", "mhwp"]:
                 raise ValueError("Invalid user type. Must be 'patient' or 'mhwp'.")
+            
+            self.display_users(user_type)
+
             user_id = self.get_user_input(f"{Cyan}{Italic}Enter User ID: {Reset}")
             if not user_id:
                 raise ValueError("User ID cannot be empty.")
@@ -660,18 +715,18 @@ class AdminController:
             user_data_path = "./data/patient_info.json" if user_type == "patient" else "./data/mhwp_info.json"
             user_data = read_json(user_data_path)
             user_info = next((u for u in user_data if str(u["patient_id"]) == user_id), None) if user_type == "patient" else next((u for u in user_data if str(u["mhwp_id"]) == user_id), None)
-            print(user_info, 'bobb')
-            create_table(user_info)
 
-            print(user_info, "bobby")
+            create_table([user_info])
 
             if user_type == "patient":
-                user = Patient(int(user_id), user_info.get("name"), user_info.get("email"), 
-                               "", user_info.get("emergency_contact_email"),
+                user = Patient(int(user_id), f"patient{user_id}", "", 
+                               user_info.get("email"), user_info.get("emergency_contact_email"),
                                user_info.get("mhwp_id"))
             elif user_type == "mhwp":
-                user = MHWP(user_id, f"mhwp{user_id}", "")
+                user = MHWP(int(user_id), f"mhwp{user_id}", "")
+
             self.disable_user(user)
+
             print(f"User {user_id} has been disabled.")
         except ValueError as ve:
             print(f"Input Error: {ve}")
@@ -684,17 +739,32 @@ class AdminController:
         self.update_breadcrumbs("Delete User")
         self.show_breadcrumbs()
         try:
-            user_type = self.get_user_input(f"{Cyan}{Italic}Enter user type (patient/mhwp): {Reset}")
-            if user_type.lower() not in ["patient", "mhwp"]:
+            user_type = self.get_user_input(f"{Cyan}{Italic}Enter user type (patient/mhwp): {Reset}").strip().lower()
+            if user_type not in ["patient", "mhwp"]:
                 raise ValueError("Invalid user type. Must be 'patient' or 'mhwp'.")
+            
+            self.display_users(user_type)
+
             user_id = self.get_user_input(f"{Cyan}{Italic}Enter User ID: {Reset}")
             if not user_id:
                 raise ValueError("User ID cannot be empty.")
-            if user_type.lower() == "patient":
-                user = Patient(user_id, f"patient{user_id}", "")
-            elif user_type.lower() == "mhwp":
-                user = MHWP(user_id, f"mhwp{user_id}", "")
+            
+            user_data_path = "./data/patient_info.json" if user_type == "patient" else "./data/mhwp_info.json"
+            user_data = read_json(user_data_path)
+            user_info = next((u for u in user_data if str(u["patient_id"]) == user_id), None) if user_type == "patient" else next((u for u in user_data if str(u["mhwp_id"]) == user_id), None)
+
+            create_table([user_info])
+
+            if user_type == "patient":
+                user = Patient(int(user_id), f"patient{user_id}", "", 
+                               user_info.get("email"), user_info.get("emergency_contact_email"),
+                               user_info.get("mhwp_id"))
+            elif user_type == "mhwp":
+                user = MHWP(int(user_id), f"mhwp{user_id}", "")
+
+
             self.delete_user(user)
+
             print(f"User {user_id} deleted successfully.")
         except ValueError as ve:
             print(f"Input Error: {ve}")
@@ -708,10 +778,3 @@ if __name__ == "__main__":
     admin_user = Admin(1, "admin", "")
     admin_controller = AdminController(admin_user)
     admin_controller.display_menu()
-
-# a = Admin(1,"tim","")
-# p = Patient(1,"bob","")
-# m = MHWP(1, "dr", "")
-
-# ac = AdminController(a)
-# ac.delete_user(m)

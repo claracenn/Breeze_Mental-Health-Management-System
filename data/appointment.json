@@ -442,7 +442,7 @@
     {
         "appointment_id": 41,
         "patient_id": 1,
-        "mhwp_id": "mhwp_id",
+        "mhwp_id": 21,
         "date": "2024-11-15",
         "time_slot": "09:00 - 10:00",
         "status": "PENDING",
@@ -453,7 +453,7 @@
     {
         "appointment_id": 42,
         "patient_id": 1,
-        "mhwp_id": "mhwp_id",
+        "mhwp_id": 21,
         "date": "2024-11-16",
         "time_slot": "10:00 - 11:00",
         "status": "PENDING",

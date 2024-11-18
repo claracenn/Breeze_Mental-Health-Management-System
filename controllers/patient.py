@@ -136,14 +136,14 @@ class PatientController:
         while True:
             choice = self.display_menu(
                 "📅 Appointment Menu",
-                ["View Appointment", "Make New Appointment", "Edit Appointment", "Back to Homepage"],
+                ["View Appointment", "Make New Appointment", "Cancel Appointment", "Back to Homepage"],
             )
             if choice == "1":
                 self.view_appointment()
             elif choice == "2":
                 self.make_appointment()
             elif choice == "3":
-                self.edit_appointment()
+                self.cancel_appointment()
             elif choice == "4":
                 break
             else:
@@ -546,7 +546,69 @@ class PatientController:
 # Section 4: Appointment methods
 # ----------------------------
     def view_appointment(self):
-        pass 
+        try:
+            patient_info = read_json(self.patient_info_file)
+            appointment = read_json(self.appointment_file)
+
+            patient = next((p for p in patient_info if p["patient_id"] == self.patient.user_id), None)
+            if not patient:
+                print("Patient not found.")
+                return
+            
+            # Filter appointments for the current patient
+            patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id]
+            if not patient_appointments:
+                print("No appointments found for this patient.")
+                return
+            
+            # # Sort appointments by date and time slot
+            # try:
+            #     patient_appointments.sort(
+            #         key=lambda x: (
+            #             datetime.strptime(x["date"], "%Y-%m-%d"),
+            #             x["time_slot"]
+            #         )
+            #     )
+            # except ValueError as e:
+            #     print(f"Warning: Some appointments have invalid date formats. Showing unsorted results.")
+            
+            # Prepare table data
+            mhwp_info = read_json(self.mhwp_info_file)
+            
+            table_data = {
+                "Date": [],
+                "Time Slot": [],
+                "Your MHWP": [],
+                "Notes": [],
+                "Status": []
+            }
+
+            # Create mapping between display index (the key) and actual appointment ID (the value)
+            self.appointment_id_map = {}  
+            
+            # Populate table data
+            for idx, appt in enumerate(patient_appointments, 1):
+                self.appointment_id_map[idx] = appt["appointment_id"]  
+                table_data["Date"].append(appt.get("date", "N/A"))
+                table_data["Time Slot"].append(appt.get("time_slot", "N/A"))
+                mhwp_name = next(
+                    (m["name"] for m in mhwp_info if m["mhwp_id"] == appt.get("mhwp_id")),
+                    "Unknown"
+                )
+                table_data["Your MHWP"].append(mhwp_name)
+                table_data["Notes"].append(appt.get("notes", ""))
+                table_data["Status"].append(appt.get("status", "Unknown"))
+            
+            # Display the table
+            create_table(
+                data=table_data,
+                title="Your Appointments",
+                display_title=True,
+                display_index=True  # Show display index
+            )
+
+        except Exception as e:
+            print(f"An error occurred while viewing appointments: {str(e)}")
 
     def make_appointment(self):
         """Make appointment with MHWP."""
@@ -649,8 +711,21 @@ class PatientController:
             print(f"An error occurred: {e}")
             
 
-    def edit_appointment(self):
-        pass
+    def cancel_appointment(self):
+        self.view_appointment()
+        try:
+            display_index = int(input("Enter the index of the appointment you want to cancel: "))
+            if display_index not in self.appointment_id_map:
+                print("Invalid number. Please choose a number from the list above.")
+                return
+                
+            actual_appointment_id = self.appointment_id_map[display_index]
+            if delete_entry(self.appointment_file, actual_appointment_id):
+                print("Appointment cancelled successfully!")
+            else:
+                print("Failed to cancel appointment. Please try again.")
+        except ValueError:
+            print("Please enter a valid number.")
 
 # ----------------------------
 # Section 5: Resource methods

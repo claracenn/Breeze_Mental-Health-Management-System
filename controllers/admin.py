@@ -263,6 +263,9 @@ class AdminController:
                 user_type = "patient"
             elif isinstance(user_del, MHWP):
                 user_type = "mhwp"
+            if file_path == "./data/user.json":
+                user_type = "user"
+
             fin_json = []
 
             for i in range(len(user_info)):
@@ -320,7 +323,8 @@ class AdminController:
                                 "./data/patient_info.json",
                                 "./data/patient_journal.json",
                                 "./data/patient_mood.json",
-                                "./data/patient_record.json"
+                                "./data/patient_record.json",
+                                "./data/user.json"
                                  ]
             
             for path in patient_file_paths:
@@ -330,8 +334,6 @@ class AdminController:
                 print(f"{Red}An error occurred while deleting user data: {e}{Reset}")
                 self.log_action(f"Failed to deleted user data: {e}", "error", self.admin.username)
 
-    #create a function that needs to delete from user.json???
-
     #deletes a specific MHWP based on their user id, writes json file
     #without the MHWP you want to delete
     def delete_mhwp(self, mhwp_del: MHWP):
@@ -339,58 +341,62 @@ class AdminController:
         if confirm != 'y':
             print(f"{Cyan}Action cancelled. Returning to Admin Menu...{Reset}")
             return
-
-        # Check for existing relationships with patients
-        patient_data = read_json("./data/patient_info.json")
-        patients_assigned = [patient for patient in patient_data if patient.get("mhwp_id") == mhwp_del.user_id]
-
-        if patients_assigned:
-            print(f"{Red}MHWP has assigned patients. Please reassign these patients before deleting.{Reset}")
-            self.log_action(f"Attempted to delete MHWP ID {mhwp_del.user_id} with assigned patients", "warning", self.admin.username)
-            return
         
-        # Check for any existing appointments with patients
-        # Checks future uncancelled appointments
-        appointment_data = read_json("./data/appointment.json")
-        current_datetime = datetime.now()
-        #checks mhwp id, if the appointment is in the future, and if the appointment is not cancelled
-        appointments_assigned = [
-                appt for appt in appointment_data
-                if appt.get("mhwp_id") == mhwp_del.user_id
-                and datetime.strptime(
-                    f"{appt.get('date')} {appt.get('time_slot').split(' - ')[0]}", "%Y-%m-%d %H:%M"
-                ) > current_datetime
-                and appt.get("status") != "CANCELED"
-            ]
+        try:
+            # Check for existing relationships with patients
+            patient_data = read_json("./data/patient_info.json")
+            patients_assigned = [patient for patient in patient_data if patient.get("mhwp_id") == mhwp_del.user_id]
 
-        if appointments_assigned:
-            print(f"{Red}MHWP has upcoming appointment with patients. Please reassign these patients before deleting the MHWP.{Reset}")
-            self.log_action(f"Attempted to delete MHWP ID {mhwp_del.user_id} with assigned patients", "warning", self.admin.username)
-            return
+            if patients_assigned:
+                print(f"{Red}MHWP has assigned patients. Please reassign these patients before deleting.{Reset}")
+                self.log_action(f"Attempted to delete MHWP ID {mhwp_del.user_id} with assigned patients", "warning", self.admin.username)
+                return
+            
+            # Check for any existing appointments with patients
+            # Checks future uncancelled appointments
+            appointment_data = read_json("./data/appointment.json")
+            current_datetime = datetime.now()
+            #checks mhwp id, if the appointment is in the future, and if the appointment is not cancelled
+            appointments_assigned = [
+                    appt for appt in appointment_data
+                    if appt.get("mhwp_id") == mhwp_del.user_id
+                    and datetime.strptime(
+                        f"{appt.get('date')} {appt.get('time_slot').split(' - ')[0]}", "%Y-%m-%d %H:%M"
+                    ) > current_datetime
+                    and appt.get("status") != "CANCELED"
+                ]
 
-        #edit patient related files
-        mhwp_file_paths = [
-                            "./data/mhwp_info.json",
-                            "./data/user.json"
-                          ]
+            if appointments_assigned:
+                print(f"{Red}MHWP has upcoming appointment with patients. Please reassign these patients before deleting the MHWP.{Reset}")
+                self.log_action(f"Attempted to delete MHWP ID {mhwp_del.user_id} with assigned appointments", "warning", self.admin.username)
+                return
+            
+            #checks if mhwp is mentioned in request_log.json
+            #they shouldn't be expecting any requests to change or be changed from
+            request_data = read_json("./data/request_log.json")
+            requests_assigned = [mhwp for mhwp in request_data 
+                                 if (mhwp.get("current_mhwp_id") == mhwp_del.user_id
+                                 or mhwp.get("target_mhwp_id") == mhwp_del.user_id)
+                                 and mhwp.get("status") == "pending"]
+            
+            
+            if requests_assigned:
+                print(f"{Red}MHWP has pending requests for switching from or to another MHWP. Please reassign the MHWP before deleting the MHWP.{Reset}")
+                self.log_action(f"Attempted to delete MHWP ID {mhwp_del.user_id} with pending requests", "warning", self.admin.username)
+                return
+
+            #edit patient related files
+            mhwp_file_paths = [
+                                "./data/mhwp_info.json",
+                                "./data/user.json"
+                              ]
+            
+            for path in mhwp_file_paths:
+                    self.delete_user_from_file(mhwp_del, path)
         
-        mhwp_data_path_name = "./data/mhwp_info.json"
-        mhwp_info = read_json(mhwp_data_path_name)
-        fin_json = []
-
-        for i in range(len(mhwp_info)):
-            mhwp = mhwp_info[i]
-
-            #Creating a new list of MHWPs
-            #checks id and username/email
-            if mhwp['mhwp_id'] != mhwp_del.user_id:
-                fin_json.append(mhwp)
-
-        #save it in the new MHWP info
-        with open('./data/mhwp_info.json', 'w+') as file:
-            json.dump(fin_json, file, indent=4)
-        print(f"{Green}MHWP {mhwp_del.user_id} deleted successfully.{Reset}")
-        self.log_action(f"Deleted MHWP ID {mhwp_del.user_id}", "info", self.admin.username)
+        except IOError as e:
+                print(f"{Red}An error occurred while deleting user data: {e}{Reset}")
+                self.log_action(f"Failed to deleted user data: {e}", "error", self.admin.username)
 
 
     def delete_user(self, user):
@@ -662,7 +668,7 @@ class AdminController:
 
             # Load user data based on user type
             user_data = read_json("./data/patient_info.json") if user_type == "patient" else read_json("./data/mhwp_info.json")           
-            user_ids = [str(patient["patient_id"]) for patient in user_data] if user_type == "patient" else [mhwp["mhwp_id"] for mhwp in user_data]
+            user_ids = [str(patient["patient_id"]) for patient in user_data] if user_type == "patient" else [str(mhwp["mhwp_id"]) for mhwp in user_data]
 
             # Prompt for User ID and validate if the user exists
             retry_attempts = 0
@@ -852,7 +858,7 @@ class AdminController:
 
             # Load user data based on user type
             user_data = read_json("./data/patient_info.json") if user_type == "patient" else read_json("./data/mhwp_info.json")           
-            user_ids = [patient["patient_id"] for patient in user_data] if user_type == "patient" else [mhwp["mhwp_id"] for mhwp in user_data]
+            user_ids = [str(patient["patient_id"]) for patient in user_data] if user_type == "patient" else [str(mhwp["mhwp_id"]) for mhwp in user_data]
 
 
             # Prompt for User ID and validate if the user exists
@@ -863,10 +869,10 @@ class AdminController:
                     print(f"{Red}User ID cannot be empty. Returning to the Admin Menu...{Reset}")
                     self.breadcrumbs.pop()
                     return
-                elif int(user_id) in user_ids:
+                elif user_id in user_ids:
                     print(f"{Green}{user_type.capitalize()} ID {user_id} found. {Reset}")
                     break
-                elif int(user_id) not in user_ids:
+                elif user_id not in user_ids:
                     retry_attempts += 1
                     if retry_attempts < 3:
                         print(f"{Red}{user_type.capitalize()} ID '{user_id}' not found. Please try again.{Reset}")

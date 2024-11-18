@@ -12,6 +12,17 @@ class MHWPController:
 
     def __init__(self, mhwp):
         self.mhwp = mhwp
+        self.icons = {
+            1: "\U0001F601",
+            2: "\U0001F642",
+            3: "\U0001F610",
+            4: "\U0001F615", 
+            5: "\U0001F61E",
+            6: "\U0001F621"
+        }
+
+
+
 
 
     def get_patients_info(self):
@@ -183,15 +194,6 @@ class MHWPController:
         cols = ["Patient ID", "Name", "Email", "Emergency Contact"]
         rows = [list(patient.values()) for patient in patients]
 
-        icons = {
-            1: "\U0001F601",
-            2: "\U0001F642",
-            3: "\U0001F610",
-            4: "\U0001F615", 
-            5: "\U0001F61E",
-            6: "\U0001F621"
-        }
-
         data = {
                 "Patient ID": [],
                 "Name": [],
@@ -206,11 +208,36 @@ class MHWPController:
             data["Name"].append(patient["name"])
             data["Email"].append(patient["email"])
             data["Emergency Contact"].append(patient["emergency_contact_email"])
-            data["Mood"].append(icons[patient["mood_code"]])
+            data["Mood"].append(self.icons[patient["mood_code"]])
 
         create_table(data,title="Toms's Patient Dashboard", display_title=True, display_index=False)
+
+
+
+    def view_patient_summary(self, patient_id):
+        patient_records = self.get_patient_records()
+        patients_info = self.get_patients_info()
+
+        target_record = next((x for x in patient_records if x["patient_id"] == patient_id), None)
+        target_info = next((x for x in patients_info if x["patient_id"] == patient_id), None)
+
+        data = {
+            "Key": ["Patient ID", "Name", "Email", "Emergency Contact Email", "Condition", "Notes", "Mood"],
+            "Information": [
+                target_info["patient_id"],
+                target_info["name"], 
+                target_info["email"],
+                target_info["emergency_contact_email"],
+                target_record["condition"],
+                target_record["notes"],
+                self.icons[target_info["mood_code"]]
+            ]
+        }
+        title = f"{target_info["name"]}'s Summary"
+        create_table(data, title=title, display_title=True)
+
  
-        
+
 if __name__ == "__main__":
     MHWP = {
             "mhwp_id": 21,
@@ -223,7 +250,8 @@ if __name__ == "__main__":
     # mhwp1.display_calendar()
     # mhwp1.choose_appointment()
     # print(mhwp1.get_appointments())
-    # print(mhwp1.get_patients_info())
-    mhwp1.display_patient_records()
+    # mhwp1.display_patient_records()
     # print(mhwp1.get_patient_records())
+    # print(mhwp1.get_patients_info())
     # print(mhwp1.get_patient_name(1))
+    mhwp1.view_patient_summary(6)

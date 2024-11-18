@@ -762,6 +762,6 @@ class PatientController:
 
 # Testing
 if __name__ == "__main__":
-    patient_controller = PatientController(Patient(1, "patient", "password", "email", "emergency_contact_email", "mhwp_id"))
+    patient_controller = PatientController(Patient(1, "patient", "password", "email", "emergency_contact_email", 21))
     patient_controller.display_patient_homepage()                  
 

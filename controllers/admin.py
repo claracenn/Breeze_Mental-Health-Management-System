@@ -257,9 +257,6 @@ class AdminController:
     def delete_patient_from_file(self, patient_del: Patient, file_path):
 
         try:
-            #-----------------------------------------------------------------
-            #-------------------Delete in patient_info file-------------------
-            #-----------------------------------------------------------------
             patient_info = read_json(file_path)
             fin_json = []
 
@@ -292,11 +289,25 @@ class AdminController:
         try:
             mhwp_file_path = "./data/mhwp_info.json"
 
-            #get mhwp id from patient_del
+            #get mhwp id from patient_del to update patient count
+            mhwp_id = patient_del.mhwp_id
+            mhwp_info = read_json(mhwp_file_path)
+            fin_json = []
 
-            #set patient count -= 1
+            #adjust patient count -= 1 for specific mhwp
+            for i in range(len(mhwp_info)):
+                mhwp = mhwp_info[i]
+
+                if mhwp['mhwp_id'] == mhwp_id:
+                    mhwp['patient_count'] -= 1
+
+                fin_json.append(mhwp)
 
             #write to mhwp_info.json
+            with open(mhwp_file_path, 'w') as file:
+                json.dump(fin_json, file, indent=4)
+            print(f"{Green}Patient {patient_del.user_id} deleted successfully.{Reset}")
+            self.log_action(f"Deleted Patient ID {patient_del.user_id}", "info", self.admin.username)
 
             patient_file_paths = [
                                 "./data/patient_info.json",
@@ -601,7 +612,7 @@ class AdminController:
             # Retry mechanism for user type input
             retry_attempts = 0
             while retry_attempts < 3:
-                user_type = self.get_user_input(f"{Cyan}{Italic}Enter user type (patient/mhwp):{Reset} ").lower()
+                user_type = self.get_user_input(f"{Cyan}{Italic}Enter user type (patient/mhwp):{Reset} ").strip().lower()
                 if user_type in ["patient", "mhwp"]:
                     break
                 else:
@@ -616,20 +627,33 @@ class AdminController:
 
             self.display_users(user_type)
 
-            # Prompt for User ID and validate if the user exists
-            user_id = self.get_user_input(f"{Cyan}{Italic}Enter User ID: {Reset}").strip()
-            if not user_id:
-                print(f"{Red}User ID cannot be empty. Returning to the Admin Menu...{Reset}")
-                self.breadcrumbs.pop()
-                return
-
             # Load user data based on user type
-            if user_type == "patient":
-                user_data = read_json("./data/patient_info.json")
-                user_info = next((u for u in user_data if str(u["patient_id"]) == user_id), None)
-            elif user_type == "mhwp":
-                user_data = read_json("./data/mhwp_info.json")
-                user_info = next((u for u in user_data if str(u["mhwp_id"]) == user_id), None)
+            user_data = read_json("./data/patient_info.json") if user_type == "patient" else read_json("./data/mhwp_info.json")           
+            user_ids = [patient["patient_id"] for patient in user_data] if user_type == "patient" else [mhwp["mhwp_id"] for mhwp in user_data]
+
+            # Prompt for User ID and validate if the user exists
+            retry_attempts = 0
+            while retry_attempts < 3:
+                user_id = self.get_user_input(f"{Cyan}{Italic}Enter User ID: {Reset}").strip()
+                if not user_id:
+                    print(f"{Red}User ID cannot be empty. Returning to the Admin Menu...{Reset}")
+                    self.breadcrumbs.pop()
+                    return
+                elif int(user_id) in user_ids:
+                    print(f"{Green}{user_type.capitalize()} ID {user_id} found. {Reset}")
+                    break
+                elif int(user_id) not in user_ids:
+                    retry_attempts += 1
+                    if retry_attempts < 3:
+                        print(f"{Red}{user_type.capitalize()} ID '{user_id}' not found. Please try again.{Reset}")
+                    else:
+                        print(f"{Red}You have exceeded the number of attempts. Returning to the Admin Menu...{Reset}")
+                        self.breadcrumbs.pop()
+                        return
+                    
+                self.print_divider()
+
+            user_info = next((u for u in user_data if str(u["patient_id"]) == user_id), None) if user_type == "patient" else next((u for u in user_data if str(u["mhwp_id"]) == user_id), None)
 
             if not user_info:
                 print(f"{Red}User ID {user_id} not found. Returning to the Admin Menu...{Reset}")
@@ -702,18 +726,48 @@ class AdminController:
         self.update_breadcrumbs("Disable User")
         self.show_breadcrumbs()
         try:
-            user_type = self.get_user_input(f"{Cyan}{Italic}Enter user type (patient/mhwp): {Reset}").strip().lower()
-            if user_type not in ["patient", "mhwp"]:
-                raise ValueError("Invalid user type. Must be 'patient' or 'mhwp'.")
+            # Retry mechanism for user type input
+            retry_attempts = 0
+            while retry_attempts < 3:
+                user_type = self.get_user_input(f"{Cyan}{Italic}Enter user type (patient/mhwp): {Reset}").strip().lower()
+                if user_type in ["patient", "mhwp"]:
+                    break
+                else:
+                    retry_attempts += 1
+                    if retry_attempts < 3:
+                        print(f"{Red}Invalid user type. Please enter 'patient' or 'mhwp'.{Reset}")
+                    else:
+                        print(f"{Red}You have exceeded the number of attempts. Returning to the Admin Menu...{Reset}")
+                        self.breadcrumbs.pop()
+                        return
+                self.print_divider()
             
             self.display_users(user_type)
 
-            user_id = self.get_user_input(f"{Cyan}{Italic}Enter User ID: {Reset}")
-            if not user_id:
-                raise ValueError("User ID cannot be empty.")
+            # Load user data based on user type
+            user_data = read_json("./data/patient_info.json") if user_type == "patient" else read_json("./data/mhwp_info.json")           
+            user_ids = [patient["patient_id"] for patient in user_data] if user_type == "patient" else [mhwp["mhwp_id"] for mhwp in user_data]
+
+            # Prompt for User ID and validate if the user exists
+            retry_attempts = 0
+            while retry_attempts < 3:
+                user_id = self.get_user_input(f"{Cyan}{Italic}Enter User ID: {Reset}").strip()
+                if not user_id:
+                    print(f"{Red}User ID cannot be empty. Returning to the Admin Menu...{Reset}")
+                    self.breadcrumbs.pop()
+                    return
+                elif int(user_id) in user_ids:
+                    print(f"{Green}{user_type.capitalize()} ID {user_id} found. {Reset}")
+                    break
+                elif int(user_id) not in user_ids:
+                    retry_attempts += 1
+                    if retry_attempts < 3:
+                        print(f"{Red}{user_type.capitalize()} ID '{user_id}' not found. Please try again.{Reset}")
+                    else:
+                        print(f"{Red}You have exceeded the number of attempts. Returning to the Admin Menu...{Reset}")
+                        self.breadcrumbs.pop()
+                        return
             
-            user_data_path = "./data/patient_info.json" if user_type == "patient" else "./data/mhwp_info.json"
-            user_data = read_json(user_data_path)
             user_info = next((u for u in user_data if str(u["patient_id"]) == user_id), None) if user_type == "patient" else next((u for u in user_data if str(u["mhwp_id"]) == user_id), None)
 
             create_table([user_info])
@@ -739,18 +793,49 @@ class AdminController:
         self.update_breadcrumbs("Delete User")
         self.show_breadcrumbs()
         try:
-            user_type = self.get_user_input(f"{Cyan}{Italic}Enter user type (patient/mhwp): {Reset}").strip().lower()
-            if user_type not in ["patient", "mhwp"]:
-                raise ValueError("Invalid user type. Must be 'patient' or 'mhwp'.")
+            # Retry mechanism for user type input
+            retry_attempts = 0
+            while retry_attempts < 3:
+                user_type = self.get_user_input(f"{Cyan}{Italic}Enter user type (patient/mhwp): {Reset}").strip().lower()
+                if user_type in ["patient", "mhwp"]:
+                    break
+                else:
+                    retry_attempts += 1
+                    if retry_attempts < 3:
+                        print(f"{Red}Invalid user type. Please enter 'patient' or 'mhwp'.{Reset}")
+                    else:
+                        print(f"{Red}You have exceeded the number of attempts. Returning to the Admin Menu...{Reset}")
+                        self.breadcrumbs.pop()
+                        return
+                self.print_divider()
             
             self.display_users(user_type)
 
-            user_id = self.get_user_input(f"{Cyan}{Italic}Enter User ID: {Reset}")
-            if not user_id:
-                raise ValueError("User ID cannot be empty.")
+            # Load user data based on user type
+            user_data = read_json("./data/patient_info.json") if user_type == "patient" else read_json("./data/mhwp_info.json")           
+            user_ids = [patient["patient_id"] for patient in user_data] if user_type == "patient" else [mhwp["mhwp_id"] for mhwp in user_data]
+
+
+            # Prompt for User ID and validate if the user exists
+            retry_attempts = 0
+            while retry_attempts < 3:
+                user_id = self.get_user_input(f"{Cyan}{Italic}Enter User ID: {Reset}").strip()
+                if not user_id:
+                    print(f"{Red}User ID cannot be empty. Returning to the Admin Menu...{Reset}")
+                    self.breadcrumbs.pop()
+                    return
+                elif int(user_id) in user_ids:
+                    print(f"{Green}{user_type.capitalize()} ID {user_id} found. {Reset}")
+                    break
+                elif int(user_id) not in user_ids:
+                    retry_attempts += 1
+                    if retry_attempts < 3:
+                        print(f"{Red}{user_type.capitalize()} ID '{user_id}' not found. Please try again.{Reset}")
+                    else:
+                        print(f"{Red}You have exceeded the number of attempts. Returning to the Admin Menu...{Reset}")
+                        self.breadcrumbs.pop()
+                        return
             
-            user_data_path = "./data/patient_info.json" if user_type == "patient" else "./data/mhwp_info.json"
-            user_data = read_json(user_data_path)
             user_info = next((u for u in user_data if str(u["patient_id"]) == user_id), None) if user_type == "patient" else next((u for u in user_data if str(u["mhwp_id"]) == user_id), None)
 
             create_table([user_info])

@@ -4,8 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import json
 from models.user import MHWP
 import pandas as pd
-from misc.table import create_table
-from utils.data_handler import read_json, update_json
+from utils.data_handler import create_table, read_json, save_json
 
 class MHWPController:
     '''Class to control various functions of the MHWPs.'''
@@ -86,6 +85,9 @@ class MHWPController:
 
 
     def handle_appointment(self, appointment):
+        # Check appointment status
+        # If status == PENDING, can confirm or cancel
+        # If status == CONFIRMED, can only cancel
         pass
 
         
@@ -100,7 +102,7 @@ class MHWPController:
             if id_input == "X": break
             else: id_input = int(id_input)
             for app in data_appointments:
-                if app["mhwp_id"] == self.mhwp["mhwp_id"] and app["appointment_id"] == id_input and app["status"] == "PENDING":
+                if app["mhwp_id"] == self.mhwp["mhwp_id"] and app["appointment_id"] == id_input and (app["status"] == "PENDING" or app['status'] == "CONFIRMED"):
                     data = {
                         "Appointment ID": [app["appointment_id"]],
                         "Name": [self.get_patient_name(app["patient_id"])],
@@ -112,9 +114,9 @@ class MHWPController:
                     self.handle_appointment(app)
                     id_input = "X"
                     break
-                else:
-                    print("Please enter valid appointment_id, or enter 'X' to exit.")
-                    break
+            else:
+                print("Please enter valid appointment_id, or enter 'X' to exit.")
+                break
 
     def display_patient_records(self):
         # Find list of patients for a particular MHWP
@@ -171,11 +173,11 @@ class MHWPController:
                             if mhwp_input == '1':
                                 condition = input("Please enter patient condition: ")
                                 record["condition"] = condition
-                                update_json('./data/patient_record.json', patient_records)
+                                save_json('./data/patient_record.json', patient_records)
                             elif mhwp_input == '2':
                                 note = input("Please enter note for patient: ")
                                 record["notes"] = note
-                                update_json('./data/patient_record.json', patient_records)
+                                save_json('./data/patient_record.json', patient_records)
                             elif mhwp_input == '3':
                                 break
                             else:
@@ -233,8 +235,37 @@ class MHWPController:
                 self.icons[target_info["mood_code"]]
             ]
         }
-        title = f"{target_info["name"]}'s Summary"
+        title = f"{target_info['name']}'s Summary"
         create_table(data, title=title, display_title=True)
+
+    @staticmethod
+    def calculate_patient_counts(patient_file, mhwp_file):
+        """
+        Calculate the number of patients assigned to each MHWP and update the patient_count field in mhwp_file.
+        :param patient_file: The file path to the JSON file containing patient information.
+        :param mhwp_file: The file path to the JSON file containing MHWP information.
+        """
+        patients = read_json(patient_file)
+        mhwp_data = read_json(mhwp_file)
+
+        mhwp_patient_counts = {}
+
+        # Count the number of patients assigned to each MHWP
+        for patient in patients:
+            mhwp_id = patient.get("mhwp_id")
+            if mhwp_id is not None:
+                mhwp_patient_counts[mhwp_id] = mhwp_patient_counts.get(mhwp_id, 0) + 1
+
+        # Update mhwp_data with patient counts
+        for mhwp in mhwp_data:
+            mhwp_id = mhwp.get("mhwp_id")
+            mhwp["patient_count"] = mhwp_patient_counts.get(mhwp_id, 0)
+
+        save_json(mhwp_file, mhwp_data)
+        
+        return mhwp_data
+
+ 
 
  
 
@@ -247,11 +278,11 @@ if __name__ == "__main__":
     mhwp1 = MHWPController(MHWP)
 
     # mhwp1.view_dashboard()
-    # mhwp1.display_calendar()
-    # mhwp1.choose_appointment()
+    mhwp1.display_calendar()
+    mhwp1.choose_appointment()
     # print(mhwp1.get_appointments())
     # mhwp1.display_patient_records()
     # print(mhwp1.get_patient_records())
     # print(mhwp1.get_patients_info())
     # print(mhwp1.get_patient_name(1))
-    mhwp1.view_patient_summary(6)
+    # mhwp1.view_patient_summary(6)

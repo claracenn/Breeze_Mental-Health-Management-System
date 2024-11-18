@@ -1,15 +1,7 @@
-from models.user import Admin, MHWP, Patient
-from controllers.admin import AdminController
+import json
 from controllers.patient import PatientController
-from controllers.mhwp import MHWPController
-import sys
-
-# Sample data
-users = {
-    "admin1": {"password": "", "role": "admin"},
-    "mhwp1": {"password": "", "role": "mhwp"},
-    "patient1": {"password": "", "role": "patient"},
-}
+from models.user import Patient  
+from utils.data_handler import *
 
 # Display the welcome page
 def display_welcome_page():
@@ -18,69 +10,66 @@ def display_welcome_page():
     print("-----------------------------------------------", end='\n\n')
     print(" ⬇️  Please login to continue. ⬇️", end='\n\n')
 
-# Handle user login
-def login():
-    username = input("Enter username: ")
-    password = input("Enter password: ")
 
-    # Check if the username exists
-    if username in users and users[username]["password"] == password:
-        role = users[username]["role"]
-        print(f"\nLogin successful! Welcome, {username}!")
-        print(f"Role: {role.capitalize()}\n")
-        return role
-    else:
-        print("\nInvalid username or password. Please try again.\n")
-        return None
+# Check whether the username and password match
+def login(users):
+    username = input('Enter username: ')
+    password = input('Enter password: ')
+    
+    
+    for user in users:
+        if user['username'] == username and user['password'] == password and user['status'] == "ACTIVE":
+            role = user['role']
+            print(f'\nLogin successful! Welcome, {username}')
+            print(f'Role: {role.capitalize()}')
+            return role, user  
 
-# Show options after login
-def show_options(role):
-    if role == "admin":
-        print("Welcome, Admin! Here are your options:")
-        print("1. Manage Patients and MHWPs")
-        print("2. View System Summary")
-        print("3. Logout")
-    elif role == "mhwp":
-        print("Welcome, MHWP! Here are your options:")
-        print("1. View Appointments")
-        print("2. Manage Patient Records")
-        print("3. Display Dashboard")
-        print("4. Logout")
-    elif role == "patient":
-        print("Welcome, Patient! Here are your options:")
-        print("1. Book/Cancel Appointment")
-        print("2. Enter Mood Track or Journal")
-        print("3. Logout")
-    else:
-        print("Unknown role.")
+    print('\nInvalid username or password. Try again.')
+    return None, None
+
+def get_patient_info_by_userid(user_id, filename='data/patient_info.json'):
+   
+    patient_data = read_json(filename) 
+    
+    for patient in patient_data:
+        if patient['patient_id'] == user_id:
+            return patient
+    
+    print(f"No patient found with userid '{user_id}' in {filename}.")
+    return None
 
 # Main function
 def main():
     display_welcome_page()
-
-    role = None
-    while role is None:
-        role = login()
-
-    show_options(role)
-
-    action = input("\nChoose an option (or 'logout' to exit): ").lower()
-    if action == "logout":
-        print("Logging out. Goodbye!")
-        sys.exit(0)
-    # Linked to Controllers to implement the functionality of each user role
-    else:
-        print("Functionality implementing...")
+    users = read_json('data/user.json')
     
+    if not users:
+        print("No users loaded. Exiting program.")
+        return
+
+    role, user_info = None, None
+    while role is None:
+        role, user_info = login(users)
+
+    if role == 'patient':
+            
+            patient_info = get_patient_info_by_userid(user_info['user_id'])
+            
+            if patient_info:
+                patient = Patient(
+                    user_id=patient_info['patient_id'],
+                    username=user_info['username'],
+                    password=user_info['password'],
+                    email=patient_info['email'],
+                    emergency_contact_email=patient_info['emergency_contact_email'],
+                    mhwp_id=patient_info.get('mhwp_id', "")
+                )
+                patient_controller = PatientController(patient)
+                patient_controller.display_patient_homepage()
+            else:
+                print("Patient information not found.")
+    else:
+        print(f"Role '{role}' not supported.")
 
 if __name__ == "__main__":
     main()
-
-
-# Font and color codes (for reference)
-    Red = "\033[31m"  # use for errors
-    Green = "\033[32m"  # use for success messages
-    Yellow = "\033[33m"  # use for warnings or prompts
-    Cyan = "\033[36m"  # use for general information
-    Reset = "\033[0m"  # to reset text to normal
-    Bold = "\033[1m"  # to make text bold

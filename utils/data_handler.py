@@ -17,25 +17,77 @@ def read_json(filepath):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return None
+    
 
-
-def update_json(filepath, data):
+def save_json(filepath, data):
     """
-    Overwrite contents of a JSON file.
-    WARNING: Only use function to update data in JSON files.
+    Writes data to a JSON file.
     """
     try:
         with open(filepath, 'w') as file:
             json.dump(data, file, indent=4)
-    except FileNotFoundError as e:
-        print(f"File not found: {e}")
-        return None
-    except json.JSONDecodeError as e:
-        print(f"Invalid JSON format in file: {filepath} - {e}")
-        return None
+        return True
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-        return None
+        return False
+    except json.JSONDecodeError as e:
+        print(f"Invalid JSON format in file: {filepath} - {e}")
+        return False
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return False
+
+
+def add_entry(filepath, entry):
+    """
+    Adds a new entry to a JSON file
+    """
+    data = read_json(filepath)
+    try:
+        if isinstance(data, list):
+            data.append(entry)
+            return save_json(filepath, data)
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return False
+
+
+def delete_entry(filepath, index):
+    """
+    Deletes an entry from a JSON file based on the index of the entry
+    """
+    data = read_json(filepath)
+    
+    try:
+        if isinstance(data, list):
+            if 1 <= index <= len(data):
+                del data[index-1]
+                return save_json(filepath, data)
+            else:
+                print(f"Invalid index: {index}")
+                return False
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return False
+
+
+def update_entry(filepath, index, new_entry):
+    """
+    Updates an entry in a JSON file based on a key value pair
+    """
+    data = read_json(filepath)
+    try:
+        if isinstance(data, list):
+            if 1 <= index <= len(data):
+                data[index-1].update(new_entry)
+                return save_json(filepath, data)
+            else:
+                print(f"Invalid index: {index}")
+                return False
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        return False
+
 
 def create_title(title, df, col_widths):
     """
@@ -79,6 +131,12 @@ def create_table(data, title="", display_title=False, display_index=False):
     """
     # create pandas dataframe and convert its values to strings
     df = pd.DataFrame(data=data).astype(str)
+
+    # add index to the DataFrame if display_index is True
+    if display_index:
+        df.index = [str(i + 1) for i in range(len(df))]
+        df.index.name = "Index" 
+        df = df.reset_index() 
 
     # calculate max_width for each col based on length of each val (headers and data)
     col_widths = {col: max(df[col].str.len().max(), len(col)) for col in df.columns}

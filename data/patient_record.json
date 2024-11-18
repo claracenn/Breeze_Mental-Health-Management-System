@@ -1,7 +1,7 @@
 [
     {
         "patient_id": 1,
-        "condition": "ADHD",
+        "condition": "Anxiety",
         "notes": "Patient shows improvement with weekly appointments",
         "name": "John Doe"
     },

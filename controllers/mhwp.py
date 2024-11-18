@@ -219,11 +219,11 @@ if __name__ == "__main__":
             }
     mhwp1 = MHWPController(MHWP)
 
-    mhwp1.view_dashboard()
+    # mhwp1.view_dashboard()
     # mhwp1.display_calendar()
     # mhwp1.choose_appointment()
     # print(mhwp1.get_appointments())
     # print(mhwp1.get_patients_info())
-    # mhwp1.display_patient_records()
+    mhwp1.display_patient_records()
     # print(mhwp1.get_patient_records())
     # print(mhwp1.get_patient_name(1))

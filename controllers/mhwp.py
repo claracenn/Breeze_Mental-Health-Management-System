@@ -58,6 +58,19 @@ class MHWPController:
             print("Patient ID provided does not correspond to any patient")
         else:
             return patient["name"]
+        
+    def is_integer(self, value):
+        '''
+        Checks if the given value can be safely converted to an integer for user input sanitation.
+        Args: value, The value to check.
+            
+        Returns: bool, True if the value is an integer, False otherwise.
+        '''
+        try:
+            int(value)  # Try converting to an integer
+            return True
+        except (ValueError, TypeError):
+            return False
 
 
     def display_calendar(self):
@@ -96,13 +109,19 @@ class MHWPController:
         # Select Pending appointment to confirm/cancel
 
         data_appointments = self.get_appointments()
+
         id_input = ""
-        while id_input != "X":
-            id_input = input("Choose pending appointment_id to confirm or cancel ('X' to exit): ")
-            if id_input == "X": break
-            else: id_input = int(id_input)
+        while id_input != 0:
+            id_input = input("Choose Pending or Confirmed appointment ID ('0' to exit): ")
+            if not self.is_integer(id_input):
+                print("Please enter an integer value.")
+                continue
+            else: 
+                id_input = int(id_input)
+            if id_input == 0:
+                continue
             for app in data_appointments:
-                if app["mhwp_id"] == self.mhwp["mhwp_id"] and app["appointment_id"] == id_input and (app["status"] == "PENDING" or app['status'] == "CONFIRMED"):
+                if app["appointment_id"] == id_input and (app["status"] == "PENDING" or app['status'] == "CONFIRMED"):
                     data = {
                         "Appointment ID": [app["appointment_id"]],
                         "Name": [self.get_patient_name(app["patient_id"])],
@@ -112,11 +131,13 @@ class MHWPController:
                     }
                     create_table(data, "Selected Appointment", display_title=True)
                     self.handle_appointment(app)
-                    id_input = "X"
+                    id_input = 0
                     break
             else:
-                print("Please enter valid appointment_id, or enter 'X' to exit.")
-                break
+                print("Please enter valid appointment_id, or enter '0' to exit.")
+        else:
+            print("Thank you for using the appointment system.")
+
 
     def display_patient_records(self):
         # Find list of patients for a particular MHWP
@@ -151,10 +172,15 @@ class MHWPController:
         patients = {patient["patient_id"]: patient["name"] for patient in patient_records}
         
         id_input = ""
-        while id_input != "X":
-            id_input = input("Choose patient_id to update record ('X' to exit): ")
-            if id_input == "X": break
-            else: id_input = int(id_input)
+        while id_input != 0:
+            id_input = input("Choose patient ID to update record ('0' to exit): ")
+            if not self.is_integer(id_input):
+                print("Please enter an integer value.")
+                continue
+            else: 
+                id_input = int(id_input)
+            if id_input == 0:
+                continue
             if id_input in patients.keys():
                 for record in patient_records:
                     if record["patient_id"] == id_input:
@@ -179,14 +205,18 @@ class MHWPController:
                                 record["notes"] = note
                                 save_json('./data/patient_record.json', patient_records)
                             elif mhwp_input == '3':
-                                break
+                                continue
                             else:
                                 print("Please enter 1, 2, or 3")
+                        else:
+                            print("Thank you for using the Patient Record system.")
 
                         break
                 break
             else:
                 print("Please enter valid patient id.")
+        else:
+            print("Thank you for using the Patient Record system.")
 
 
 
@@ -278,10 +308,10 @@ if __name__ == "__main__":
     mhwp1 = MHWPController(MHWP)
 
     # mhwp1.view_dashboard()
-    mhwp1.display_calendar()
-    mhwp1.choose_appointment()
+    # mhwp1.display_calendar()
+    # mhwp1.choose_appointment()
     # print(mhwp1.get_appointments())
-    # mhwp1.display_patient_records()
+    mhwp1.display_patient_records()
     # print(mhwp1.get_patient_records())
     # print(mhwp1.get_patients_info())
     # print(mhwp1.get_patient_name(1))

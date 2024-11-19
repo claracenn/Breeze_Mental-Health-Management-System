@@ -87,6 +87,9 @@ def update_entry(filepath, index, new_entry):
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         return False
+    
+
+
 
 
 def create_title(title, df, col_widths):
@@ -95,6 +98,8 @@ def create_title(title, df, col_widths):
     it covers the entire length of the table and the title is
     centered
     """
+
+    print("\n")
     # calculate the width of the current table including separators
     total_width = sum(col_widths.values()) + 3 * (len(df.columns)-1)
 
@@ -157,6 +162,26 @@ def create_table(data, title="", display_title=False, display_index=False):
     # now print row data (the first parameter is index if needed)
     for _, row in df.iterrows():
         print(" | ".join(row))
+
+    print("\n")
+
+
+
+
+def sanitise_data(data, valid_values):
+    """
+    Parameter: Type
+    data: Any type
+    valid_values: Set(Any Type)
+
+    Returns True if data exists in valid values, else returns false
+
+    Takes a user input and make sure it is correct by checking 
+    if it exists from a valid set of correct values
+    (We can also provide a list instead of a set, however, this is not advised due to the increase in the look up time from O(1) to O(N))
+    """
+    data = data.strip() if type(data) == str else data
+    return (data in valid_values)
 
 
 

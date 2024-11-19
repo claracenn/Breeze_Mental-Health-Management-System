@@ -2,8 +2,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from models.patient.patient_journal import Journal
-from models.patient.patient_mood import Mood
+
 from models.user import Patient
 from utils.data_handler import *
 from controllers.mhwp import MHWPController
@@ -344,12 +343,11 @@ class PatientController:
         
         current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         
-        journal = Journal(
-           patient_id=self.patient.user_id,
-           timestamp=current_timestamp,
-           journal_text=journal_text
-        ) 
-        journal = journal.to_dict()
+        journal = {
+            "patient_id": self.patient.user_id,
+            "timestamp": current_timestamp,
+            "journal_text": journal_text
+        }
                 
         if add_entry(self.journal_file, journal):
             print("Journal saved successfully!")
@@ -493,14 +491,12 @@ class PatientController:
 
         current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-        mood = Mood(
-            patient_id=self.patient.user_id,
-            timestamp=current_timestamp,
-            mood_color=mood_color,
-            mood_comments=mood_comments
-        )
-
-        mood = mood.to_dict()
+        mood = {
+            "patient_id": self.patient.user_id,
+            "timestamp": current_timestamp,
+            "mood_color": mood_color,
+            "mood_comments": mood_comments
+        }
 
         if add_entry(self.mood_file, mood):
             print("Mood logged successfully!")

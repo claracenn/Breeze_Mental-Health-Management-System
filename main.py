@@ -42,22 +42,40 @@ def reset_inactivity_timer():
     last_activity_time = time.time()
 
 def check_inactivity():
+    """Check for inactivity and log out if timeout duration is exceeded."""
     if time.time() - last_activity_time > timeout_duration:
         print(f"{Red}Session timed out due to inactivity. Logging out...{Reset}")
         log_action("Session timed out due to inactivity", "system")
         sys.exit()
 
-def get_patient_info_by_userid(user_id, filename='data/patient_info.json'):
-    patient_data = read_json(filename) 
+def get_user_info_by_userid(user_id, filepath):
+    """Retrieve basic user information by user_id from user.json."""
+    user_data = read_json(filepath)
     
-    for patient in patient_data:
-        if patient['patient_id'] == user_id:
-            return patient
+    for user in user_data:
+        # Check if the user_id matches
+        if 'user_id' in user and int(user['user_id']) == user_id:
+            return user  # Return the user dictionary if found
     
-    print(f"No patient found with userid '{user_id}' in {filename}.")
+    print(f"No user found with user id '{user_id}' in {filepath}.")
+    return None
+
+def get_role_specific_info(user_id, role, filepath):
+    """Retrieve role-specific information by user_id from role-specific files."""
+    user_data = read_json(filepath)
+    
+    # Determine the correct key for user_id based on the role
+    user_id_key = 'patient_id' if role == 'patient' else 'mhwp_id' if role == 'mhwp' else 'user_id'
+    
+    for user in user_data:
+        if user_id_key in user and int(user[user_id_key]) == user_id:
+            return user  # Return the role-specific user dictionary if found
+    
+    print(f"No {role} data found for user id '{user_id}' in {filepath}.")
     return None
 
 def login():
+    """Prompt user for login credentials and validate them."""
     retry_attempts = 3  # Set retry attempts for login
     users_data = read_json('./data/user.json')
     
@@ -115,28 +133,34 @@ def login():
 
 
 def role_navigation(user_role, user_id):
+    """Navigate based on the user's role and initialize the appropriate controller."""
     check_inactivity()
+    
+    user_info = get_user_info_by_userid(user_id, './data/user.json')
+    if not user_info:
+        print("User information not found.")
+        return
+
     if user_role == 'admin':
-        admin_user = Admin(user_id, "admin", "")
+        admin_user = Admin(
+            user_id=user_info['user_id'],
+            username=user_info['username'],
+            password=user_info['password']
+        )
         admin_controller = AdminController(admin_user)
         if hasattr(admin_controller, 'display_menu'):
-            admin_controller.display_menu()  # Call the appropriate menu method
+            admin_controller.display_menu()
         else:
             print(f"{Red}Error: Admin controller does not have a display_menu method.{Reset}")
-    elif user_role == 'mhwp':
-        mhwp_user = MHWP(user_id, f"mhwp{user_id}", "")
-        mhwp_controller = MHWPController(mhwp_user)
-        if hasattr(mhwp_controller, 'display_menu'):
-            mhwp_controller.display_menu()  # Call the appropriate menu method
-        else:
-            print(f"{Red}Error: MHWP controller does not have a display_menu method.{Reset}")
+
     elif user_role == 'patient':
-        patient_info = get_patient_info_by_userid(user_id)
+        patient_info = get_role_specific_info(user_id, 'patient', './data/patient_info.json')
         if patient_info:
             patient_user = Patient(
-                user_id=patient_info['patient_id'],
-                username=f"patient{user_id}",
-                password="",  # Assuming the password is not needed here
+                user_id=user_info['user_id'],
+                username=user_info['username'],
+                password=user_info['password'],
+                name=patient_info['name'],
                 email=patient_info['email'],
                 emergency_contact_email=patient_info['emergency_contact_email'],
                 mhwp_id=patient_info.get('mhwp_id', "")
@@ -147,10 +171,31 @@ def role_navigation(user_role, user_id):
             else:
                 print(f"{Red}Error: Patient controller does not have a display_patient_homepage method.{Reset}")
         else:
-            print("Patient information not found.")
+            print("Patient-specific information not found.")
+
+    elif user_role == 'mhwp':
+        mhwp_info = get_role_specific_info(user_id, 'mhwp', './data/mhwp_info.json')
+        if mhwp_info:
+            mhwp_user = MHWP(
+                user_id=user_info['user_id'],
+                username=user_info['username'],
+                password=user_info['password'],
+                name=mhwp_info['name'],
+                email=mhwp_info['email'],
+                patient_count=mhwp_info.get('patient_count', 0)
+            )
+            mhwp_controller = MHWPController(mhwp_user)
+            if hasattr(mhwp_controller, 'display_menu'):
+                mhwp_controller.display_menu()
+            else:
+                print(f"{Red}Error: MHWP controller does not have a display_menu method.{Reset}")
+        else:
+            print("MHWP-specific information not found.")
+
     else:
         print(f"{Red}User role is not recognized. Please contact the administrator.{Reset}")
         log_action(f"User role '{user_role}' not recognized for user '{user_id}'", "system")
+
 
 def main():
     while True:
@@ -165,6 +210,7 @@ def main():
                 print(f"{Cyan}Exiting... Goodbye!{Reset}")
                 log_action("User chose to exit the system", "system")
                 sys.exit()
+
 
 if __name__ == "__main__":
     main()

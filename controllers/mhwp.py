@@ -4,10 +4,35 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import json
 from models.user import MHWP
 import pandas as pd
+
 from utils.data_handler import create_table, read_json, save_json, sanitise_data
 
+
+"""
+==================================
+Initialise ANSI color codes
+==================================
+"""
+BOLD = "\033[1m"
+UNDERLINE = "\033[4m"
+BLACK = "\033[30m"  
+BROWN_RED = "\033[91m"  
+DARK_GREY = "\033[90m"
+RESET = "\033[0m"
+RED = "\033[91m\033[1m"
+LIGHT_RED = "\033[91m"
+ORANGE = "\033[93m\033[1m"
+YELLOW = "\033[93m"
+LIGHT_GREEN = "\033[92m"
+GREEN = "\033[92m\033[1m"
+
+"""
+==================================
+MHWP Controller Class
+==================================
+"""
+
 class MHWPController:
-    '''Class to control various functions of the MHWPs.'''
 
     def __init__(self, mhwp):
         self.mhwp = mhwp
@@ -20,6 +45,42 @@ class MHWPController:
             6: "\U0001F621"
         }
 
+
+    def view_menu(self, title, options):
+        """Generic method to display a menu with subdued styling."""
+        print(f"\n{BOLD}{UNDERLINE}{title}{RESET}")
+        print("-" * 50)  # Divider line
+        for index, option in enumerate(options, start=1):
+            # [1] Frame it
+            print(f"{BLACK}[{index}]{RESET} {option}")
+        print("-" * 50)
+        return input(f"{BROWN_RED}Choose an option ⏳: {RESET}")  
+
+
+    # Main menu
+    def view_MHWP_homepage(self):
+        """Display the MHWP homepage."""
+        while True:
+            choice = self.view_menu(
+                "🏠 MHWP Homepage",
+                [
+                    "View Appointments Calendar",
+                    "View Patient Dashboard",
+                    "View Patient Records",
+                    "Log Out",
+                ],
+            )
+            if choice == "1":
+                self.view_calendar()
+            elif choice == "2":
+                self.view_dashboard()
+            elif choice == "3":
+                self.view_patient_records()
+            elif choice == "4":
+                print(f"{BOLD}Logging out...{RESET}")
+                break
+            else:
+                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
 
 
 
@@ -74,7 +135,7 @@ class MHWPController:
             return False
 
 
-    def display_calendar(self):
+    def view_calendar(self):
         '''Display appointments for a MHWP'''
         appointments = self.get_appointments()
         # cols = ["Date", "Time", "Patient", "Status"]
@@ -157,7 +218,7 @@ class MHWPController:
         self.handle_appointment_status(appointment, appointment["status"] == "PENDING")
 
         # After appointment is handled display appointment screen
-        self.display_calendar()
+        self.view_calendar()
 
 
 
@@ -201,7 +262,7 @@ class MHWPController:
 
 
 
-    def display_patient_records(self):
+    def view_patient_records(self):
         # Find list of patients for a particular MHWP
         patient_info = self.get_patients_info()
         patient_records = self.get_patient_records()
@@ -370,10 +431,11 @@ if __name__ == "__main__":
     mhwp1 = MHWPController(MHWP)
 
     # mhwp1.view_dashboard()
-    mhwp1.display_calendar()
+    # mhwp1.view_calendar()
     # mhwp1.choose_appointment()
-    # mhwp1.display_patient_records()
+    # mhwp1.view_patient_records()
     # print(mhwp1.get_patient_records())
     # print(mhwp1.get_patients_info())
     # print(mhwp1.get_patient_name(1))
     # mhwp1.view_patient_summary(6)
+    mhwp1.view_MHWP_homepage()

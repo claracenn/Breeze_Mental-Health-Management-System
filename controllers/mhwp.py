@@ -4,7 +4,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import json
 from models.user import MHWP
 import pandas as pd
-from utils.data_handler import create_table, read_json, save_json
+from utils.data_handler import create_table, read_json, save_json, sanitise_data
 
 class MHWPController:
     '''Class to control various functions of the MHWPs.'''
@@ -67,6 +67,7 @@ class MHWPController:
         Returns: bool, True if the value is an integer, False otherwise.
         '''
         try:
+            value = value.strip()
             int(value)  # Try converting to an integer
             return True
         except (ValueError, TypeError):
@@ -94,14 +95,71 @@ class MHWPController:
             data["Status"].append(appointment["status"])
         create_table(data, "My Calendar", display_title=True)
 
+        self.choose_appointment()
+
+
+
+
+    def handle_appointment_status(self, appointment, isPending):
+        # at this point we are certain that the details provided are valid
+        appointments = self.get_appointments()
+        print(f"You are now handling the status of {appointment["appointment_id"]}.")
+        print("Press '0' to go back.")
+        print("Press '1' to cancel the appointment.")
+        if isPending: print("Press '2' to confirm the appointment.")
+
+
+        new_status = input("Please enter your choice here: ");
+        while new_status != 0:
+            if not self.is_integer(new_status):
+                new_status = input(f"Please enter an integer value from {"0-2" if isPending else "0-1"}: ")
+                continue
+            else: 
+                new_status = int(new_status)
+
+            if new_status == 0:
+                print("Exiting Appointment Handling Screen....")
+                break
+
+            # temporary data sanitation, make a method for it later
+            if (isPending and not sanitise_data(new_status, {1, 2})) or (not isPending and not sanitise_data(new_status, {1})):
+                print(f"Please enter an integer value from {"0-2" if isPending else "0-1"}: ")
+                new_status = ""
+                continue
+
+            for app in appointments:
+                if app["appointment_id"] is not appointment["appointment_id"]: continue
+                app["status"] = "CANCELED" if new_status == 1 else "CONFIRMED"
+                save_json('./data/appointment.json', appointments)
+                print(f"Appointment {appointment["appointment_id"]} status has successfully been changed to {"CANCELED" if new_status == 1 else "CONFIRMED"}")
+                new_status = 0
+                break
+            else:
+                print(f"Something went wrong. Was not able to change the status of appointment {appointment["appointment_id"]}")
+
+
+     
+
+
+
+
+
+
 
 
 
     def handle_appointment(self, appointment):
+
+
         # Check appointment status
         # If status == PENDING, can confirm or cancel
         # If status == CONFIRMED, can only cancel
-        pass
+        self.handle_appointment_status(appointment, appointment["status"] == "PENDING")
+
+        # After appointment is handled display appointment screen
+        self.display_calendar()
+
+
 
         
     def choose_appointment(self):
@@ -119,7 +177,12 @@ class MHWPController:
             else: 
                 id_input = int(id_input)
             if id_input == 0:
-                continue
+                print("Thank you for using the appointment system.")
+
+            # MAKE SURE IT IS A VALID ID HERE 
+            # if (sanitise_data(id_input, {list of id's})):
+            #     pass
+
             for app in data_appointments:
                 if app["appointment_id"] == id_input and (app["status"] == "PENDING" or app['status'] == "CONFIRMED"):
                     data = {
@@ -135,8 +198,7 @@ class MHWPController:
                     break
             else:
                 print("Please enter valid appointment_id, or enter '0' to exit.")
-        else:
-            print("Thank you for using the appointment system.")
+
 
 
     def display_patient_records(self):
@@ -308,10 +370,9 @@ if __name__ == "__main__":
     mhwp1 = MHWPController(MHWP)
 
     # mhwp1.view_dashboard()
-    # mhwp1.display_calendar()
+    mhwp1.display_calendar()
     # mhwp1.choose_appointment()
-    # print(mhwp1.get_appointments())
-    mhwp1.display_patient_records()
+    # mhwp1.display_patient_records()
     # print(mhwp1.get_patient_records())
     # print(mhwp1.get_patients_info())
     # print(mhwp1.get_patient_name(1))

@@ -80,23 +80,95 @@ class AdminController:
         print(f"{Red}Maximum number of attempts reached. Returning to previous menu...{Reset}")
         raise BackException()
 
+    def get_user_type(self):
+        return self.get_user_input(
+            f"{Cyan}{Italic}Enter user type (patient/mhwp): {Reset}",
+            valid_options=["patient", "mhwp"]
+        )
+
+    def get_user_id(self, user_type, user_ids):
+        return self.get_user_input(
+            f"{Cyan}{Italic}Enter {user_type.capitalize()} ID: {Reset}",
+            valid_options=user_ids
+        )
+
+    def get_user_info_by_id(self, user_type):
+        try:
+            # Load user data based on user type
+            if user_type == "patient":
+                user_data = read_json("../data/patient_info.json")
+            elif user_type == "mhwp":
+                user_data = read_json("../data/mhwp_info.json")
+            else:
+                raise ValueError("Invalid user type specified.")
+
+            # Extract user IDs based on user type
+            user_ids = [str(user["patient_id"]) for user in user_data] if user_type == "patient" else [
+                str(user["mhwp_id"]) for user in user_data]
+
+            # Prompt for User ID and validate if the user exists
+            user_id = self.get_user_input(f"{Cyan}{Italic}Enter User ID: {Reset}", valid_options=user_ids).strip()
+
+            # Retrieve and return the user info dictionary
+            user_info = next((user for user in user_data if str(user["patient_id"]) == user_id),
+                             None) if user_type == "patient" else next(
+                (user for user in user_data if str(user["mhwp_id"]) == user_id), None)
+
+            if not user_info:
+                print(f"{Red}User ID {user_id} not found. Returning to the Admin Menu...{Reset}")
+                raise BackException()
+
+            return user_info
+
+        except BackException:
+            # Handle the back scenario
+            raise BackException()
+        except Exception as e:
+            print(f"{Red}An error occurred while retrieving user information: {e}{Reset}")
+            self.log_action(f"Error in get_user_info_by_id: {e}", "error", self.admin.username)
+            return None
+
     def print_page_header(self, title):
         self.print_divider()
         self.print_centered_message(title, f"{Magenta}{Bold}")
         self.print_centered_message("Type 'back' at any time to return to the previous menu", f"{Grey}")
         self.print_divider()
 
+    def display_users(self, user_type, status_filter=None):
+        """Displays users of the given type, with an optional filter on status."""
+        user_data_path = "../data/patient_info.json" if user_type == "patient" else "../data/mhwp_info.json"
+        user_data = read_json(user_data_path)
 
-    def display_users(self, user_type):
-        #display the patient/mhwp tables so it is clearer
-        user_data = read_json("./data/patient_info.json") if user_type == "patient" else read_json("./data/mhwp_info.json")
         if user_data is None:
             print(f"{Red}Failed to load user data. Please check the file and try again.{Reset}")
             return
 
-        user_ids = [str(user["patient_id"]) for user in user_data] if user_type == "patient" else [str(user["mhwp_id"]) for user in user_data]
-        user_names = [str(user["name"]) for user in user_data]
-        user_dict = {"Patient Id": user_ids, "Patient Names": user_names}
+        # Load corresponding status information from user.json
+        user_status_data_path = "../data/user.json"
+        user_status_data = read_json(user_status_data_path)
+
+        if user_status_data is None:
+            print(f"{Red}Failed to load user status data. Please check the file and try again.{Reset}")
+            return
+
+        # Filter users based on status if a filter is provided
+        filtered_users = []
+        for user in user_data:
+            user_id = user["patient_id"] if user_type == "patient" else user["mhwp_id"]
+            user_record = next((u for u in user_status_data if u["user_id"] == user_id), None)
+
+            if user_record and (status_filter is None or user_record["status"] == status_filter):
+                filtered_users.append(user)
+
+        if not filtered_users:
+            print(f"{Yellow}No users found with status '{status_filter}'.{Reset}")
+            return
+
+        # Display the filtered users
+        user_ids = [str(user["patient_id"]) for user in filtered_users] if user_type == "patient" else [
+            str(user["mhwp_id"]) for user in filtered_users]
+        user_names = [str(user["name"]) for user in filtered_users]
+        user_dict = {"User ID": user_ids, "User Names": user_names}
         create_table(user_dict)
 
     # Function to get the element by patient_id or mhwp_id
@@ -130,12 +202,19 @@ class AdminController:
             self.log_action(f"Failed to find user: {ve}", "error", self.admin.username)
             return "save_error"
 
+    def display_user_info(self, user_info):
+        self.print_centered_message("Current User Information", f"{Blue}{Bold}")
+        print(f"{Blue}-" * 79 + f"{Reset}")
+        for key, value in user_info.items():
+            print(f"{key}: {value}{Reset}")
+        print(f"{Blue}-" * 79 + f"{Reset}")
+
     # Creates a dictionary of a patient and their respective MHWP
     # If the patient doesn't have a MHWP, assign them to MHWP
     # used as input
     def allocate_patient(self, mhwp: MHWP, patient: Patient):
 
-        patient_data_path_name = "./data/patient_info.json"
+        patient_data_path_name = "../data/patient_info.json"
         patient_info = read_json(patient_data_path_name)
 
         # Check if patient data loaded correctly
@@ -186,15 +265,13 @@ class AdminController:
 
         # Apply new values to the user object
         for field, value in new_data.items():
-            print(field, value)
-            print(editable_fields)
             if field in editable_fields:
                 setattr(user, field, value)
             else:
                 print(f"{Red}Warning: {field} is not editable for this user type.{Reset}")
 
         # Update data in the JSON file
-        user_data_path = "./data/patient_info.json" if isinstance(user, Patient) else "./data/mhwp_info.json"
+        user_data_path = "../data/patient_info.json" if isinstance(user, Patient) else "../data/mhwp_info.json"
         user_data = read_json(user_data_path)
         user_found = False
 
@@ -220,40 +297,93 @@ class AdminController:
             print(f"{Red}User not found in the data file.{Reset}")
             self.log_action(f"Failed to locate User ID {user.user_id} for editing", "error", self.admin.username)
 
-
-
-    def disable_user(self, user):
-
-        confirm = self.get_user_input(f"{Red}Are you sure you want to disable User ID {user.user_id}? (y/n): {Reset}", valid_options=["y", "n"])
-        if confirm == 'y':
-            user.is_disabled = True
-        elif confirm == 'n':
-            print(f"{Cyan}Action cancelled. Returning to Admin Menu...{Reset}")
-
+    def disable_user(self, user_record, user_info):
         try:
-            path = "./data/user.json"
-            user_info = read_json(path)
-            fin_json = []
+            # Get the path of user data file
+            user_data_path = "../data/user.json"
+            user_data = read_json(user_data_path)
 
-            for i in range(len(user_info)):
-                user_details = user_info[i]
+            if user_data is None:
+                print(f"{Red}Failed to load user data. Please check the file and try again.{Reset}")
+                return
 
-                # Creating a new lists of Patients
-                # checks id and username/email
-                if user_details["user_id"] == user.user_id:
-                    user_details["status"] = "DISABLED"
+            # Update the user's status to DISABLED
+            user_found = False
+            for user in user_data:
+                if user["user_id"] == user_record["user_id"]:
+                    if user.get("status") == "DISABLED":
+                        print(
+                            f"{Yellow}User {user_info['name']} (User ID: {user['user_id']}) is already disabled.{Reset}")
+                        return
+                    # Set user status to DISABLED
+                    user["status"] = "DISABLED"
+                    user_found = True
+                    break
 
-                fin_json.append(user_details)
+            # If for some reason the user isn't found in the data file, notify the admin
+            if not user_found:
+                print(f"{Red}User ID {user_record['user_id']} not found in the system.{Reset}")
+                return
 
-            # save it in the new patient info
-            with open(path, 'w') as file:
-                json.dump(fin_json, file, indent=4)
-            print(f"{Green}User {user.user_id} has been disabled successfully.{Reset}")
-            self.log_action(f"Disabled Patient ID {user.user_id}", "info", self.admin.username)
+            # Save the updated data back to the JSON file
+            with open(user_data_path, 'w') as file:
+                json.dump(user_data, file, indent=4)
+
+            # Log the action and inform the admin
+            print(
+                f"{Green}User {user_info['name']} (User ID: {user_record['user_id']}) has been disabled successfully.{Reset}")
+            self.log_action(f"Disabled User ID {user_record['user_id']}", "info", self.admin.username)
 
         except IOError as e:
-                print(f"{Red}An error occurred while saving the updated user data: {e}{Reset}")
-                self.log_action(f"Failed to save updated user data: {e}", "error", self.admin.username)
+            print(f"{Red}An error occurred while saving the updated user data: {e}{Reset}")
+            self.log_action(f"Failed to save updated user data: {e}", "error", self.admin.username)
+        except Exception as e:
+            print(f"{Red}An unexpected error occurred: {e}{Reset}")
+            self.log_action(f"Unexpected error in disable_user: {e}", "error", self.admin.username)
+
+    def activate_user(self, user_record, user_info):
+        try:
+            # Get the path of user data file
+            user_data_path = "../data/user.json"
+            user_data = read_json(user_data_path)
+
+            if user_data is None:
+                print(f"{Red}Failed to load user data. Please check the file and try again.{Reset}")
+                return
+
+            # Update the user's status to ACTIVE
+            user_found = False
+            for user in user_data:
+                if user["user_id"] == user_record["user_id"]:
+                    if user.get("status") == "ACTIVE":
+                        print(
+                            f"{Yellow}User {user_info['name']} (User ID: {user['user_id']}) is already active.{Reset}")
+                        return
+                    # Set user status to ACTIVE
+                    user["status"] = "ACTIVE"
+                    user_found = True
+                    break
+
+            # If for some reason the user isn't found in the data file, notify the admin
+            if not user_found:
+                print(f"{Red}User ID {user_record['user_id']} not found in the system.{Reset}")
+                return
+
+            # Save the updated data back to the JSON file
+            with open(user_data_path, 'w') as file:
+                json.dump(user_data, file, indent=4)
+
+            # Log the action and inform the admin
+            print(
+                f"{Green}User {user_info['name']} (User ID: {user_record['user_id']}) has been activated successfully.{Reset}")
+            self.log_action(f"Activated User ID {user_record['user_id']}", "info", self.admin.username)
+
+        except IOError as e:
+            print(f"{Red}An error occurred while saving the updated user data: {e}{Reset}")
+            self.log_action(f"Failed to save updated user data: {e}", "error", self.admin.username)
+        except Exception as e:
+            print(f"{Red}An unexpected error occurred: {e}{Reset}")
+            self.log_action(f"Unexpected error in activate_user: {e}", "error", self.admin.username)
 
     def delete_user_from_file(self, user_del, file_path):
 
@@ -263,7 +393,7 @@ class AdminController:
                 user_type = "patient"
             elif isinstance(user_del, MHWP):
                 user_type = "mhwp"
-            if file_path == "./data/user.json":
+            if file_path == "../data/user.json":
                 user_type = "user"
 
             fin_json = []
@@ -296,7 +426,7 @@ class AdminController:
 
         try:
             #get mhwp id from patient_del to update patient count
-            mhwp_file_path = "./data/mhwp_info.json"
+            mhwp_file_path = "../data/mhwp_info.json"
             mhwp_id = patient_del.mhwp_id
             mhwp_info = read_json(mhwp_file_path)
             fin_json = []
@@ -319,12 +449,12 @@ class AdminController:
 
             #edit patient related files
             patient_file_paths = [
-                                "./data/appointment.json",
-                                "./data/patient_info.json",
-                                "./data/patient_journal.json",
-                                "./data/patient_mood.json",
-                                "./data/patient_record.json",
-                                "./data/user.json"
+                                "../data/appointment.json",
+                                "../data/patient_info.json",
+                                "../data/patient_journal.json",
+                                "../data/patient_mood.json",
+                                "../data/patient_record.json",
+                                "../data/user.json"
                                  ]
             
             for path in patient_file_paths:
@@ -344,7 +474,7 @@ class AdminController:
         
         try:
             # Check for existing relationships with patients
-            patient_data = read_json("./data/patient_info.json")
+            patient_data = read_json("../data/patient_info.json")
             patients_assigned = [patient for patient in patient_data if patient.get("mhwp_id") == mhwp_del.user_id]
 
             if patients_assigned:
@@ -354,7 +484,7 @@ class AdminController:
             
             # Check for any existing appointments with patients
             # Checks future uncancelled appointments
-            appointment_data = read_json("./data/appointment.json")
+            appointment_data = read_json("../data/appointment.json")
             current_datetime = datetime.now()
             #checks mhwp id, if the appointment is in the future, and if the appointment is not cancelled
             appointments_assigned = [
@@ -373,7 +503,7 @@ class AdminController:
             
             #checks if mhwp is mentioned in request_log.json
             #they shouldn't be expecting any requests to change or be changed from
-            request_data = read_json("./data/request_log.json")
+            request_data = read_json("../data/request_log.json")
             requests_assigned = [mhwp for mhwp in request_data 
                                  if (mhwp.get("current_mhwp_id") == mhwp_del.user_id
                                  or mhwp.get("target_mhwp_id") == mhwp_del.user_id)
@@ -387,8 +517,8 @@ class AdminController:
 
             #edit patient related files
             mhwp_file_paths = [
-                                "./data/mhwp_info.json",
-                                "./data/user.json"
+                                "../data/mhwp_info.json",
+                                "../data/user.json"
                               ]
             
             for path in mhwp_file_paths:
@@ -417,14 +547,32 @@ class AdminController:
             # Read data from JSON files
             patient_info = read_json('../data/patient_info.json')
             mhwp_info = read_json('../data/mhwp_info.json')
+            user_info = read_json('../data/user.json')
 
-            # Display total numbers
-            print(f"{Cyan}Total Patients: {len(patient_info)}{Reset}")
-            print(f"{Cyan}Total MHWPs: {len(mhwp_info)}{Reset}")
+            # Check if files are loaded correctly
+            if patient_info is None or mhwp_info is None or user_info is None:
+                print(f"{Red}Failed to load user data. Please check the files and try again.{Reset}")
+                return
+
+            # Create dictionaries mapping user_id to their status for easier lookup
+            user_status_dict = {user["user_id"]: user["status"] for user in user_info}
+
+            # Add a 'status' column to both patient and MHWP data
+            for patient in patient_info:
+                patient_id = patient.get("patient_id")
+                patient["status"] = user_status_dict.get(patient_id, "Unknown")
+
+            for mhwp in mhwp_info:
+                mhwp_id = mhwp.get("mhwp_id")
+                mhwp["status"] = user_status_dict.get(mhwp_id, "Unknown")
 
             # Convert data to DataFrames for easier viewing
             df_patients = pd.DataFrame(patient_info)
             df_mhwps = pd.DataFrame(mhwp_info)
+
+            # Display total numbers
+            print(f"{Cyan}Total Patients: {len(df_patients)}{Reset}")
+            print(f"{Cyan}Total MHWPs: {len(df_mhwps)}{Reset}")
 
             # Display the first few rows as a preview (5 rows each)
             print(f"{Blue}\nPatients Data (First 5 Records):{Reset}")
@@ -458,6 +606,9 @@ class AdminController:
                     print(df_patients)
                     self.print_divider()
 
+                    # Clean up breadcrumb navigation
+                    self.breadcrumbs.pop()
+
                 elif user_choice == "2":
                     # Update breadcrumbs
                     self.update_breadcrumbs("Full Data [MHWPs Only]")
@@ -471,6 +622,9 @@ class AdminController:
                     self.print_centered_message("Full MHWPs Data", f"{Blue}{Bold}")
                     print(df_mhwps)
                     self.print_divider()
+
+                    # Clean up breadcrumb navigation
+                    self.breadcrumbs.pop()
 
                 elif user_choice == "3":
                     # Update breadcrumbs
@@ -487,14 +641,13 @@ class AdminController:
                     self.print_divider()
                     self.print_centered_message("Full MHWPs Data", f"{Blue}{Bold}")
                     print(df_mhwps)
+                    self.print_divider()
 
-                    # Ask user if they want to return to the main menu
-                    user_choice = self.get_user_input(
-                        f"{Cyan}{Italic}Press enter to return to the main menu...{Reset}", allow_back=False
-                    )
-                    break
+                    # Clean up breadcrumb navigation
+                    self.breadcrumbs.pop()
 
-                elif user_choice == "no":
+                elif user_choice == "4":
+                    # User chose to return to main menu
                     print(f"{Cyan}Returning to the main menu...{Reset}")
                     break
 
@@ -506,7 +659,7 @@ class AdminController:
             self.log_action(f"Error in display_summary: {e}", "system")
 
         finally:
-            # Clean up the breadcrumb navigation
+            # Clean up the breadcrumb navigation if any entry remains
             if self.breadcrumbs:
                 self.breadcrumbs.pop()
 
@@ -523,9 +676,11 @@ class AdminController:
             print(f"{Yellow}1. Allocate a Patient to a MHWP{Reset}")
             print(f"{Yellow}2. Edit User{Reset}")
             print(f"{Yellow}3. Disable User{Reset}")
-            print(f"{Yellow}4. Delete User{Reset}")
-            print(f"{Yellow}5. Display Summary{Reset}")
-            print(f"{Yellow}6. Log Out{Reset}")
+            print(f"{Yellow}4. Activate User{Reset}")
+            print(f"{Yellow}5. Delete User{Reset}")
+            print(f"{Yellow}6. Recover Deleted User{Reset}")
+            print(f"{Yellow}7. Display Summary{Reset}")
+            print(f"{Yellow}8. Log Out{Reset}")
             choice = input(f"{Cyan}{Italic}Enter your choice: {Reset}")
 
             if choice == '1':
@@ -535,10 +690,14 @@ class AdminController:
             elif choice == '3':
                 self.disable_user_menu()
             elif choice == '4':
-                self.delete_user_menu()
+                self.activate_user_menu()
             elif choice == '5':
-                self.display_summary()
+                self.delete_user_menu()
             elif choice == '6':
+                self.recover_user_menu()
+            elif choice == '7':
+                self.display_summary()
+            elif choice == '8':
                 self.print_centered_message("Logging out...", Cyan)
                 break
             else:
@@ -549,7 +708,7 @@ class AdminController:
         self.show_breadcrumbs()
         try:
             # Load patient data
-            patient_data = read_json("./data/patient_info.json")
+            patient_data = read_json("../data/patient_info.json")
             if patient_data is None:
                 print(f"{Red}Failed to load patient data. Please check the file and try again.{Reset}")
                 return
@@ -581,7 +740,7 @@ class AdminController:
                 self.print_divider()  # Divider for retry attempts
 
             # Ask for MHWP ID
-            mhwp_data = read_json("./data/mhwp_info.json")
+            mhwp_data = read_json("../data/mhwp_info.json")
             if mhwp_data is None:
                 print(f"{Red}Failed to load MHWP data. Please check the file and try again.{Reset}")
                 return
@@ -601,8 +760,8 @@ class AdminController:
                     #may need to fix this after merging
                     #update username & password
                     
-                    patient_data = self.get_user_by_id("./data/patient_info.json", "patient_id", int(patient_id))
-                    mhwp_data = self.get_user_by_id("./data/mhwp_info.json", "mhwp_id", int(mhwp_id))
+                    patient_data = self.get_user_by_id("../data/patient_info.json", "patient_id", int(patient_id))
+                    mhwp_data = self.get_user_by_id("../data/mhwp_info.json", "mhwp_id", int(mhwp_id))
 
                     patient = Patient(patient_id, f"patient{patient_id}", "", patient_data['email'], patient_data['emergency_contact_email'], patient_data['mhwp_id'])
                     mhwp = MHWP(mhwp_id, f"mhwp{mhwp_id}", "")
@@ -648,70 +807,30 @@ class AdminController:
         self.print_page_header("Edit User Page")
 
         try:
-            # Retry mechanism for user type input
-            retry_attempts = 0
-            while retry_attempts < 3:
-                user_type = self.get_user_input(f"{Cyan}{Italic}Enter user type (patient/mhwp):{Reset} ").strip().lower()
-                if user_type in ["patient", "mhwp"]:
-                    break
-                else:
-                    retry_attempts += 1
-                    if retry_attempts < 3:
-                        print(f"{Red}Invalid user type. Please enter 'patient' or 'mhwp'.{Reset}")
-                    else:
-                        print(f"{Red}You have exceeded the number of attempts. Returning to the Admin Menu...{Reset}")
-                        self.breadcrumbs.pop()
-                        return
-                self.print_divider()
+            # Get user type (patient or mhwp)
+            user_type = self.get_user_type()
 
+            # Display users based on the selected type
             self.display_users(user_type)
 
-            # Load user data based on user type
-            user_data = read_json("./data/patient_info.json") if user_type == "patient" else read_json("./data/mhwp_info.json")           
-            user_ids = [str(patient["patient_id"]) for patient in user_data] if user_type == "patient" else [str(mhwp["mhwp_id"]) for mhwp in user_data]
-
-            # Prompt for User ID and validate if the user exists
-            retry_attempts = 0
-            while retry_attempts < 3:
-                user_id = self.get_user_input(f"{Cyan}{Italic}Enter User ID: {Reset}").strip()
-                if not user_id:
-                    print(f"{Red}User ID cannot be empty. Returning to the Admin Menu...{Reset}")
-                    self.breadcrumbs.pop()
-                    return
-                elif user_id in user_ids:
-                    print(f"{Green}{user_type.capitalize()} ID {user_id} found. {Reset}")
-                    break
-                elif user_id not in user_ids:
-                    retry_attempts += 1
-                    if retry_attempts < 3:
-                        print(f"{Red}{user_type.capitalize()} ID '{user_id}' not found. Please try again.{Reset}")
-                    else:
-                        print(f"{Red}You have exceeded the number of attempts. Returning to the Admin Menu...{Reset}")
-                        self.breadcrumbs.pop()
-                        return
-                    
-                self.print_divider()
-
-            user_info = next((u for u in user_data if str(u["patient_id"]) == user_id), None) if user_type == "patient" else next((u for u in user_data if str(u["mhwp_id"]) == user_id), None)
-
+            # Retrieve user information based on the provided user type and ID
+            user_info = self.get_user_info_by_id(user_type)
             if not user_info:
-                print(f"{Red}User ID {user_id} not found. Returning to the Admin Menu...{Reset}")
-                self.breadcrumbs.pop()
-                return
+                return  # If the user chooses 'back' or the user does not exist, return to the previous menu
 
             # Show current user information
-            self.print_centered_message("Current User Information", f"{Blue}{Bold}")
-            print(f"{Blue}-" * 79 + f"{Reset}")
-            for key, value in user_info.items():
-                print(f"{key}: {value}{Reset}")
-            print(f"{Blue}-" * 79 + f"{Reset}")
+            self.display_user_info(user_info)
 
             # Collect fields to edit for patients and MHWPs
             new_data = {}
 
             # Get first name and last name separately, combine them into 'name' field
-            new_first_name = self.get_user_input(f"{Cyan}{Italic}Enter new first name (leave blank to keep current):{Reset} ").strip()
-            new_last_name = self.get_user_input(f"{Cyan}{Italic}Enter new last name (leave blank to keep current):{Reset} ").strip()
+            new_first_name = self.get_user_input(
+                f"{Cyan}{Italic}Enter new first name (leave blank to keep current):{Reset} "
+            ).strip()
+            new_last_name = self.get_user_input(
+                f"{Cyan}{Italic}Enter new last name (leave blank to keep current):{Reset} "
+            ).strip()
             if new_first_name or new_last_name:
                 current_name = user_info.get("name", "")
                 first_name, last_name = current_name.split(' ', 1) if ' ' in current_name else (current_name, "")
@@ -720,34 +839,125 @@ class AdminController:
                 new_data["name"] = f"{first_name} {last_name}"
 
             # Get email
-            new_email = self.get_user_input(f"{Cyan}{Italic}Enter new email (leave blank to keep current):{Reset} ").strip()
+            new_email = self.get_user_input(
+                f"{Cyan}{Italic}Enter new email (leave blank to keep current):{Reset} "
+            ).strip()
             if new_email:
                 new_data["email"] = new_email
 
             # Get emergency contact email for patients
             if user_type == "patient":
                 new_emergency_contact_email = self.get_user_input(
-                    f"{Cyan}{Italic}Enter new emergency contact email (leave blank to keep current):{Reset} ").strip()
+                    f"{Cyan}{Italic}Enter new emergency contact email (leave blank to keep current):{Reset} "
+                ).strip()
                 if new_emergency_contact_email:
                     new_data["emergency_contact_email"] = new_emergency_contact_email
 
             # Confirmation step before making changes
-            confirm = self.get_user_input(f"{Yellow}Are you sure you want to apply these changes? (y/n):{Reset} ").strip().lower()
+            confirm = self.get_user_input(
+                f"{Yellow}Are you sure you want to apply these changes? (y/n):{Reset} "
+            ).strip().lower()
             if confirm != 'y':
                 print(f"{Cyan}Edit operation cancelled. Returning to Admin Menu...{Reset}")
-                self.breadcrumbs.pop()
                 return
 
+            # Create user object with updated details
             if user_type == "patient":
-                user = Patient(int(user_id), f"patient{user_id}", "", 
-                               user_info.get("email"), user_info.get("emergency_contact_email"),
-                               user_info.get("mhwp_id"))
+                user = Patient(
+                    int(user_info["patient_id"]),
+                    user_info["name"],
+                    "",
+                    user_info.get("email"),
+                    user_info.get("emergency_contact_email"),
+                    user_info.get("mhwp_id")
+                )
             elif user_type == "mhwp":
-                user = MHWP(int(user_id), f"mhwp{user_id}", "")
+                user = MHWP(int(user_info["mhwp_id"]), user_info["name"], "")
 
             # Perform the edit operation
             self.edit_user(user, new_data)
-            print(f"{Green}User {user_id} edited successfully.{Reset}")
+            print(f"{Green}User ID {user.user_id} edited successfully.{Reset}")
+
+        except BackException:
+            print(f"{Grey}Returning to the previous menu...{Reset}")
+        except ValueError as ve:
+            print(f"{Red}Input Error: {ve}{Reset}")
+        except PermissionError as e:
+            print(f"{Red}Error: {e}{Reset}")
+        except Exception as e:
+            print(f"{Red}Error occurred: {e}{Reset}")
+            self.log_action(f"Error in edit_user_menu: {e}", "error", self.admin.username)
+        finally:
+            if self.breadcrumbs:
+                self.breadcrumbs.pop()
+
+    def disable_user_menu(self):
+        self.update_breadcrumbs("Disable User")
+        self.show_breadcrumbs()
+
+        # Print header and divider
+        self.print_page_header("Disable User Page")
+
+        try:
+            # Get the user type (patient or mhwp) - this will handle retries internally
+            user_type = self.get_user_type()
+
+            # Display users of the selected type that are currently ACTIVE
+            self.display_users(user_type, status_filter="ACTIVE")
+
+            # Get the user ID (includes retry and validation)
+            user_info = self.get_user_info_by_id(user_type)
+
+            # Display selected user information
+            self.display_user_info(user_info)
+
+            # Retrieve the corresponding user record from user.json for status checking
+            user_data_path = "../data/user.json"
+            user_data = read_json(user_data_path)
+
+            if user_data is None:
+                print(f"{Red}Failed to load user data. Please check the file and try again.{Reset}")
+                return
+
+            # Find the user in user.json to check their status
+            user_id = user_info.get("patient_id") if user_type == "patient" else user_info.get("mhwp_id")
+            user_record = next((u for u in user_data if u["user_id"] == user_id), None)
+
+            if not user_record:
+                print(f"{Red}User ID {user_id} not found in the user records. Returning to the Admin Menu...{Reset}")
+                return
+
+            # Check if the user is already disabled
+            if user_record.get("status") == "DISABLED":
+                # Inform admin that the user is already disabled
+                print(
+                    f"{Yellow}Warning: {user_info.get('name')} (User ID: {user_id}) is already disabled.{Reset}")
+
+                # Ask if the admin wants to disable another user or return
+                proceed = self.get_user_input(
+                    f"{Cyan}{Italic}Would you like to disable another user instead? (y/n): {Reset}",
+                    valid_options=["y", "n"]
+                ).strip().lower()
+
+                if proceed == 'y':
+                    # Restart the disable user menu to disable a different user
+                    self.disable_user_menu()
+                    return
+                elif proceed == 'n':
+                    print(f"{Cyan}Returning to the Admin Menu...{Reset}")
+                    return
+
+            # Confirmation to disable the user
+            confirm = self.get_user_input(
+                f"{Red}Are you sure you want to disable {user_info.get('name')} (User ID: {user_id})? (y/n): {Reset}",
+                valid_options=["y", "n"])
+
+            if confirm.lower() == 'n':
+                print(f"{Cyan}Action cancelled. Returning to Admin Menu...{Reset}")
+                return
+
+            # Proceed to disable the user if they are not already disabled
+            self.disable_user(user_record, user_info)
 
         except BackException:
             print(f"{Grey}Returning to the previous menu...{Reset}")
@@ -761,66 +971,73 @@ class AdminController:
             if self.breadcrumbs:
                 self.breadcrumbs.pop()
 
-    def disable_user_menu(self):
-        self.update_breadcrumbs("Disable User")
+    def activate_user_menu(self):
+        self.update_breadcrumbs("Activate User")
         self.show_breadcrumbs()
+
+        # Print header and divider
+        self.print_page_header("Activate User Page")
+
         try:
-            # Retry mechanism for user type input
-            retry_attempts = 0
-            while retry_attempts < 3:
-                user_type = self.get_user_input(f"{Cyan}{Italic}Enter user type (patient/mhwp): {Reset}").strip().lower()
-                if user_type in ["patient", "mhwp"]:
-                    break
-                else:
-                    retry_attempts += 1
-                    if retry_attempts < 3:
-                        print(f"{Red}Invalid user type. Please enter 'patient' or 'mhwp'.{Reset}")
-                    else:
-                        print(f"{Red}You have exceeded the number of attempts. Returning to the Admin Menu...{Reset}")
-                        self.breadcrumbs.pop()
-                        return
-                self.print_divider()
-            
-            self.display_users(user_type)
+            # Get the user type (patient or mhwp) - this will handle retries internally
+            user_type = self.get_user_type()
 
-            # Load user data based on user type
-            user_data = read_json("./data/patient_info.json") if user_type == "patient" else read_json("./data/mhwp_info.json")           
-            user_ids = [str(patient["patient_id"]) for patient in user_data] if user_type == "patient" else [mhwp["mhwp_id"] for mhwp in user_data]
+            # Display users of the selected type that are currently DISABLED
+            self.display_users(user_type, status_filter="DISABLED")
 
-            # Prompt for User ID and validate if the user exists
-            retry_attempts = 0
-            while retry_attempts < 3:
-                user_id = self.get_user_input(f"{Cyan}{Italic}Enter User ID: {Reset}").strip()
-                if not user_id:
-                    print(f"{Red}User ID cannot be empty. Returning to the Admin Menu...{Reset}")
-                    self.breadcrumbs.pop()
+            # Get the user ID (includes retry and validation)
+            user_info = self.get_user_info_by_id(user_type)
+
+            # Display selected user information
+            self.display_user_info(user_info)
+
+            # Retrieve the corresponding user record from user.json for status checking
+            user_data_path = "../data/user.json"
+            user_data = read_json(user_data_path)
+
+            if user_data is None:
+                print(f"{Red}Failed to load user data. Please check the file and try again.{Reset}")
+                return
+
+            # Find the user in user.json to check their status
+            user_id = user_info.get("patient_id") if user_type == "patient" else user_info.get("mhwp_id")
+            user_record = next((u for u in user_data if u["user_id"] == user_id), None)
+
+            if not user_record:
+                print(f"{Red}User ID {user_id} not found in the user records. Returning to the Admin Menu...{Reset}")
+                return
+
+            # Check if the user is already active
+            if user_record.get("status") == "ACTIVE":
+                # Inform admin that the user is already active
+                print(
+                    f"{Yellow}Warning: {user_info.get('name')} (User ID: {user_id}) is already active.{Reset}")
+
+                # Ask if the admin wants to activate another user or return
+                proceed = self.get_user_input(
+                    f"{Cyan}{Italic}Would you like to activate another user instead? (y/n): {Reset}",
+                    valid_options=["y", "n"]
+                ).strip().lower()
+
+                if proceed == 'y':
+                    # Restart the activate user menu to activate a different user
+                    self.activate_user_menu()
                     return
-                elif user_id in user_ids:
-                    print(f"{Green}{user_type.capitalize()} ID {user_id} found. {Reset}")
-                    break
-                elif user_id not in user_ids:
-                    retry_attempts += 1
-                    if retry_attempts < 3:
-                        print(f"{Red}{user_type.capitalize()} ID '{user_id}' not found. Please try again.{Reset}")
-                    else:
-                        print(f"{Red}You have exceeded the number of attempts. Returning to the Admin Menu...{Reset}")
-                        self.breadcrumbs.pop()
-                        return
-            
-            user_info = next((u for u in user_data if str(u["patient_id"]) == user_id), None) if user_type == "patient" else next((u for u in user_data if str(u["mhwp_id"]) == user_id), None)
+                elif proceed == 'n':
+                    print(f"{Cyan}Returning to the Admin Menu...{Reset}")
+                    return
 
-            create_table([user_info])
+            # Confirmation to activate the user
+            confirm = self.get_user_input(
+                f"{Green}Are you sure you want to activate {user_info.get('name')} (User ID: {user_id})? (y/n): {Reset}",
+                valid_options=["y", "n"])
 
-            if user_type == "patient":
-                user = Patient(int(user_id), f"patient{user_id}", "", 
-                               user_info.get("email"), user_info.get("emergency_contact_email"),
-                               user_info.get("mhwp_id"))
-            elif user_type == "mhwp":
-                user = MHWP(int(user_id), f"mhwp{user_id}", "")
+            if confirm.lower() == 'n':
+                print(f"{Cyan}Action cancelled. Returning to Admin Menu...{Reset}")
+                return
 
-            self.disable_user(user)
-
-            print(f"User {user_id} has been disabled.")
+            # Proceed to activate the user if they are not already active
+            self.activate_user(user_record, user_info)
 
         except BackException:
             print(f"{Grey}Returning to the previous menu...{Reset}")
@@ -837,62 +1054,42 @@ class AdminController:
     def delete_user_menu(self):
         self.update_breadcrumbs("Delete User")
         self.show_breadcrumbs()
+
+        # Print header and divider
+        self.print_page_header("Delete User Page")
+
         try:
-            # Retry mechanism for user type input
-            retry_attempts = 0
-            while retry_attempts < 3:
-                user_type = self.get_user_input(f"{Cyan}{Italic}Enter user type (patient/mhwp): {Reset}").strip().lower()
-                if user_type in ["patient", "mhwp"]:
-                    break
-                else:
-                    retry_attempts += 1
-                    if retry_attempts < 3:
-                        print(f"{Red}Invalid user type. Please enter 'patient' or 'mhwp'.{Reset}")
-                    else:
-                        print(f"{Red}You have exceeded the number of attempts. Returning to the Admin Menu...{Reset}")
-                        self.breadcrumbs.pop()
-                        return
-                self.print_divider()
-            
+            # Get user type ('patient' or 'mhwp') using a helper function
+            user_type = self.get_user_type()
+
+            # Display existing users of the selected type
             self.display_users(user_type)
 
-            # Load user data based on user type
-            user_data = read_json("./data/patient_info.json") if user_type == "patient" else read_json("./data/mhwp_info.json")           
-            user_ids = [str(patient["patient_id"]) for patient in user_data] if user_type == "patient" else [str(mhwp["mhwp_id"]) for mhwp in user_data]
+            # Load user data and get user IDs
+            user_data_path = "../data/patient_info.json" if user_type == "patient" else "../data/mhwp_info.json"
+            user_data = read_json(user_data_path)
+            user_ids = [str(user.get(f"{user_type}_id")) for user in user_data]
 
+            # Get valid user ID
+            user_id = self.get_user_id(user_type, user_ids)
 
-            # Prompt for User ID and validate if the user exists
-            retry_attempts = 0
-            while retry_attempts < 3:
-                user_id = self.get_user_input(f"{Cyan}{Italic}Enter User ID: {Reset}").strip()
-                if not user_id:
-                    print(f"{Red}User ID cannot be empty. Returning to the Admin Menu...{Reset}")
-                    self.breadcrumbs.pop()
-                    return
-                elif user_id in user_ids:
-                    print(f"{Green}{user_type.capitalize()} ID {user_id} found. {Reset}")
-                    break
-                elif user_id not in user_ids:
-                    retry_attempts += 1
-                    if retry_attempts < 3:
-                        print(f"{Red}{user_type.capitalize()} ID '{user_id}' not found. Please try again.{Reset}")
-                    else:
-                        print(f"{Red}You have exceeded the number of attempts. Returning to the Admin Menu...{Reset}")
-                        self.breadcrumbs.pop()
-                        return
-            
-            user_info = next((u for u in user_data if str(u["patient_id"]) == user_id), None) if user_type == "patient" else next((u for u in user_data if str(u["mhwp_id"]) == user_id), None)
+            # Retrieve the specific user information
+            user_info = self.get_user_by_id(user_data_path, f"{user_type}_id", int(user_id))
 
+            # Display user information in a table
             create_table([user_info])
 
+            # Instantiate the corresponding user object
             if user_type == "patient":
-                user = Patient(int(user_id), f"patient{user_id}", "", 
-                               user_info.get("email"), user_info.get("emergency_contact_email"),
-                               user_info.get("mhwp_id"))
+                user = Patient(
+                    int(user_id), f"patient{user_id}", "",
+                    user_info.get("email"), user_info.get("emergency_contact_email"),
+                    user_info.get("mhwp_id")
+                )
             elif user_type == "mhwp":
                 user = MHWP(int(user_id), f"mhwp{user_id}", "")
 
-
+            # Step 8: Call delete user
             self.delete_user(user)
 
         except BackException:
@@ -906,7 +1103,6 @@ class AdminController:
         finally:
             if self.breadcrumbs:
                 self.breadcrumbs.pop()
-
 
 if __name__ == "__main__":
     admin_user = Admin(1, "admin", "")

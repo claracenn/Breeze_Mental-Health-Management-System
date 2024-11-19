@@ -149,7 +149,7 @@ def role_navigation(user_role, user_id):
         )
         admin_controller = AdminController(admin_user)
         if hasattr(admin_controller, 'display_menu'):
-            admin_controller.display_menu()
+            admin_controller.display_menu() # TODO: Implement display_menu method in AdminController
         else:
             print(f"{Red}Error: Admin controller does not have a display_menu method.{Reset}")
 
@@ -186,7 +186,7 @@ def role_navigation(user_role, user_id):
             )
             mhwp_controller = MHWPController(mhwp_user)
             if hasattr(mhwp_controller, 'display_menu'):
-                mhwp_controller.display_menu()
+                mhwp_controller.display_menu() # TODO: Implement display_menu method in MHWPController
             else:
                 print(f"{Red}Error: MHWP controller does not have a display_menu method.{Reset}")
         else:

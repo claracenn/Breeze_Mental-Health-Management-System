@@ -753,11 +753,4 @@ class PatientController:
                 create_table(data, title="Meditation and Relaxation Resources", display_title=True, display_index=False)
 
         except requests.exceptions.RequestException as e:
-            print(f"An error occurred while fetching the webpage: {e}")
-
-
-# Testing
-if __name__ == "__main__":
-    patient_controller = PatientController(Patient(1, "patient", "password", "email", "emergency_contact_email", 21))
-    patient_controller.display_patient_homepage()                  
-
+            print(f"An error occurred while fetching the webpage: {e}")           

@@ -537,53 +537,27 @@ class AdminController:
 
     def display_summary(self):
         try:
-            # Update breadcrumbs
             self.update_breadcrumbs("Display Summary")
-            self.show_breadcrumbs()
 
-            # Print page header and divider
-            self.print_page_header("Display Summary")
-
-            # Read data from JSON files
-            patient_info = read_json('../data/patient_info.json')
-            mhwp_info = read_json('../data/mhwp_info.json')
-            user_info = read_json('../data/user.json')
-
-            # Check if files are loaded correctly
-            if patient_info is None or mhwp_info is None or user_info is None:
-                print(f"{Red}Failed to load user data. Please check the files and try again.{Reset}")
-                return
-
-            # Create dictionaries mapping user_id to their status for easier lookup
-            user_status_dict = {user["user_id"]: user["status"] for user in user_info}
-
-            # Add a 'status' column to both patient and MHWP data
-            for patient in patient_info:
-                patient_id = patient.get("patient_id")
-                patient["status"] = user_status_dict.get(patient_id, "Unknown")
-
-            for mhwp in mhwp_info:
-                mhwp_id = mhwp.get("mhwp_id")
-                mhwp["status"] = user_status_dict.get(mhwp_id, "Unknown")
-
-            # Convert data to DataFrames for easier viewing
-            df_patients = pd.DataFrame(patient_info)
-            df_mhwps = pd.DataFrame(mhwp_info)
-
-            # Display total numbers
-            print(f"{Cyan}Total Patients: {len(df_patients)}{Reset}")
-            print(f"{Cyan}Total MHWPs: {len(df_mhwps)}{Reset}")
-
-            # Display the first few rows as a preview (5 rows each)
-            print(f"{Blue}\nPatients Data (First 5 Records):{Reset}")
-            print(df_patients.head())
-            print(f"{Blue}\nMHWPs Data (First 5 Records):{Reset}")
-            print(df_mhwps.head())
-
-            # Ask the user if they want to see the full list
+            # Outer loop to continuously return to Display Summary until the user chooses otherwise
             while True:
+                self.show_breadcrumbs()
+                self.print_page_header("Display Summary")
+
+                # Load data and check for any issues
+                patient_info, mhwp_info, user_info = self.load_summary_data()
+                if not all([patient_info, mhwp_info, user_info]):
+                    return
+
+                # Add status information to data
+                self.add_user_status_to_data(patient_info, mhwp_info, user_info)
+
+                # Display data summary (total patients, MHWPs, and a preview of 5 rows each)
+                self.display_summary_overview(patient_info, mhwp_info)
+
+                # Ask the user if they want to see the full list
                 user_choice = self.get_user_input(
-                    f"{Cyan}{Italic}Would you like to see the full list of data?{Reset}\n"
+                    f"{Cyan}{Italic}Select an option to view detailed data:{Reset}\n"
                     f"{Yellow}1. Patients Full Data\n"
                     f"{Yellow}2. MHWPs Full Data\n"
                     f"{Yellow}3. Patients and MHWPs Full Data\n"
@@ -593,61 +567,15 @@ class AdminController:
                 )
 
                 if user_choice == "1":
-                    # Update breadcrumbs
-                    self.update_breadcrumbs("Full Data [Patients Only]")
-                    self.show_breadcrumbs()
-
-                    # Print page header and divider
-                    self.print_page_header("Full Data [Patients Only]")
-
-                    # Display full list of patients
-                    self.print_divider()
-                    self.print_centered_message("Full Patients Data", f"{Blue}{Bold}")
-                    print(df_patients)
-                    self.print_divider()
-
-                    # Clean up breadcrumb navigation
-                    self.breadcrumbs.pop()
+                    self.view_full_data("Patients", patient_info)
 
                 elif user_choice == "2":
-                    # Update breadcrumbs
-                    self.update_breadcrumbs("Full Data [MHWPs Only]")
-                    self.show_breadcrumbs()
-
-                    # Print page header and divider
-                    self.print_page_header("Full Data [MHWPs Only]")
-
-                    # Display full list of MHWPs
-                    self.print_divider()
-                    self.print_centered_message("Full MHWPs Data", f"{Blue}{Bold}")
-                    print(df_mhwps)
-                    self.print_divider()
-
-                    # Clean up breadcrumb navigation
-                    self.breadcrumbs.pop()
+                    self.view_full_data("MHWPs", mhwp_info)
 
                 elif user_choice == "3":
-                    # Update breadcrumbs
-                    self.update_breadcrumbs("Full Data [Patient & MHWP]")
-                    self.show_breadcrumbs()
-
-                    # Print page header and divider
-                    self.print_page_header("Full Data [Patient & MHWP]")
-
-                    # Display full lists of patients and MHWPs
-                    self.print_divider()
-                    self.print_centered_message("Full Patients Data", f"{Blue}{Bold}")
-                    print(df_patients)
-                    self.print_divider()
-                    self.print_centered_message("Full MHWPs Data", f"{Blue}{Bold}")
-                    print(df_mhwps)
-                    self.print_divider()
-
-                    # Clean up breadcrumb navigation
-                    self.breadcrumbs.pop()
+                    self.view_full_data("Patients and MHWPs", patient_info, mhwp_info)
 
                 elif user_choice == "4":
-                    # User chose to return to main menu
                     print(f"{Cyan}Returning to the main menu...{Reset}")
                     break
 
@@ -659,9 +587,75 @@ class AdminController:
             self.log_action(f"Error in display_summary: {e}", "system")
 
         finally:
-            # Clean up the breadcrumb navigation if any entry remains
             if self.breadcrumbs:
                 self.breadcrumbs.pop()
+
+    # Helper Functions for Display Summary
+    def load_summary_data(self):
+        patient_info = read_json('../data/patient_info.json')
+        mhwp_info = read_json('../data/mhwp_info.json')
+        user_info = read_json('../data/user.json')
+
+        # Check if files are loaded correctly
+        if patient_info is None or mhwp_info is None or user_info is None:
+            print(f"{Red}Failed to load user data. Please check the files and try again.{Reset}")
+            return None, None, None
+
+        return patient_info, mhwp_info, user_info
+
+    def add_user_status_to_data(self, patient_info, mhwp_info, user_info):
+        user_status_dict = {user["user_id"]: user["status"] for user in user_info}
+
+        for patient in patient_info:
+            patient_id = patient.get("patient_id")
+            patient["status"] = user_status_dict.get(patient_id, "Unknown")
+
+        for mhwp in mhwp_info:
+            mhwp_id = mhwp.get("mhwp_id")
+            mhwp["status"] = user_status_dict.get(mhwp_id, "Unknown")
+
+    def display_summary_overview(self, patient_info, mhwp_info):
+        df_patients = pd.DataFrame(patient_info)
+        df_mhwps = pd.DataFrame(mhwp_info)
+
+        print(f"{Cyan}Total Patients: {len(df_patients)}{Reset}")
+        print(f"{Cyan}Total MHWPs: {len(df_mhwps)}{Reset}")
+
+        print(f"{Blue}\nPatients Data (First 5 Records):{Reset}")
+        print(df_patients.head())
+        print(f"{Blue}\nMHWPs Data (First 5 Records):{Reset}")
+        print(df_mhwps.head())
+
+    def view_full_data(self, data_type, *data_frames):
+        self.update_breadcrumbs(f"Full Data [{data_type}]")
+        self.show_breadcrumbs()
+
+        try:
+            while True:
+                # Print page header and divider
+                self.print_page_header(f"Full Data [{data_type}]")
+
+                for df, title in zip(data_frames, data_type.split(" and ")):
+                    self.print_centered_message(f"Full {title} Data", f"{Blue}{Bold}")
+
+                    # Check if df is a DataFrame and display it
+                    if isinstance(df, pd.DataFrame):
+                        print(df)
+                    else:
+                        df = pd.DataFrame(df)
+                        print(df)
+
+                    self.print_divider()
+
+                # Provide an option to go back
+                self.get_user_input(
+                    f"{Cyan}{Italic}Press 'back' to return to the Display Summary menu...{Reset}",
+                    allow_back=True
+                )
+
+        except BackException:
+            # Back to the previous menu
+            self.breadcrumbs.pop()
 
     def display_menu(self):
         while True:

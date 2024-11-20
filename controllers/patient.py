@@ -716,10 +716,17 @@ class PatientController:
                 return
                 
             actual_appointment_id = self.appointment_id_map[display_index]
-            if delete_entry(self.appointment_file, actual_appointment_id):
-                print("Appointment cancelled successfully!")
-            else:
-                print("Failed to cancel appointment. Please try again.")
+
+            appointments = read_json(self.appointment_file)
+            
+            for appointment in appointments:
+                if appointment["appointment_id"] == actual_appointment_id:
+                    appointment["status"] = "CANCELLED"
+                    appointment["last_updated"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+                    if save_json(self.appointment_file, appointments):
+                        print("✅ Appointment cancelled successfully!")
+                        return
+            print("❌ Failed to cancel appointment. Please try again.")
         except ValueError:
             print("Please enter a valid number.")
 
@@ -754,3 +761,8 @@ class PatientController:
 
         except requests.exceptions.RequestException as e:
             print(f"An error occurred while fetching the webpage: {e}")           
+
+# Testing
+if __name__ == "__main__":
+    patient_controller = PatientController(Patient(1, "patient", "password", "name", "email", "emergency_contact_email", 21))
+    patient_controller.display_patient_homepage()

@@ -100,11 +100,7 @@ def login():
                 continue
 
             user_data = users_dict[username]
-            if user_data.get('status') == 'DELETED':
-                print(f"{Red}Your account has been deleted.{Reset}")
-                log_action(f"Failed login attempt: Username '{username}' has been deleted", "system")
-                sys.exit()  # Exit immediately if account is deleted
-
+            
             # Even if account is disabled, allow login
             if user_data.get('status') == 'DISABLED':
                 print(f"{Yellow}Your account has been disabled, but you can still log in.{Reset}")
@@ -115,7 +111,7 @@ def login():
             reset_inactivity_timer()
 
             # Validate credentials directly from the user dictionary
-            if user_data['password'] == password and user_data['status'] != "DELETED":
+            if user_data['password'] == password :
                 user_role = user_data['role']
                 log_action(f"Successful login: Username '{username}'", username)
 

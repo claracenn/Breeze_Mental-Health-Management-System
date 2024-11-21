@@ -5,6 +5,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from models.user import Patient
 from utils.data_handler import *
+from utils.display_manager import DisplayManager
 from controllers.mhwp import MHWPController
 import requests
 from bs4 import BeautifulSoup
@@ -31,6 +32,9 @@ ORANGE = "\033[93m\033[1m"
 YELLOW = "\033[93m"
 LIGHT_GREEN = "\033[92m"
 GREEN = "\033[92m\033[1m"
+GREY = "\033[90m"
+MAGENTA = "\033[95m"
+CYAN = "\033[96m"
 
 """
 ==================================
@@ -38,8 +42,9 @@ Patient Controller Class
 ==================================
 """
 class PatientController:
-    def __init__(self, patient: Patient):
+    def __init__(self, patient):
         self.patient = patient
+        self.display_manager = DisplayManager()
         self.journal_file = "data/patient_journal.json"
         self.mood_file = "data/patient_mood.json"
         self.patient_info_file = "data/patient_info.json"
@@ -47,134 +52,98 @@ class PatientController:
         self.request_log_file = "data/mhwp_change_request.json"
         self.mhwp_info_file = "data/mhwp_info.json"
 
-    def display_menu(self, title, options):
-        """Generic method to display a menu with subdued styling."""
-        print(f"\n{BOLD}{UNDERLINE}{title}{RESET}")
-        print("-" * 50)  # Divider line
-        for index, option in enumerate(options, start=1):
-            # [1] Frame it
-            print(f"{BLACK}[{index}]{RESET} {option}")
-        print("-" * 50)
-        return input(f"{BROWN_RED}Choose an option ⏳: {RESET}")  
     def display_patient_homepage(self):
         """Display the patient homepage."""
-        while True:
-            user_status = self.patient.status
-            
+        title = "🏠 Patient Homepage"
+        main_menu_title = "🏠 Patient Homepage"
+        options = [
+            "Profile",
+            "Journal",
+            "Mood",
+            "Appointments",
+            "Resources",
+            "Log Out",
+        ]
+        action_map = {
+            "1": self.profile_menu,
+            "2": self.journal_menu,
+            "3": self.mood_menu,
+            "4": self.appointment_menu,
+            "5": self.resource_menu,
+            "6":lambda: None # Log Out handled in navigate_menu
+        }
+        self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
 
-            choice = self.display_menu(
-                "🏠 Patient Homepage",
-                [
-                    "Profile",
-                    "Journal",
-                    "Mood",
-                    "Appointments",
-                    "Resources",
-                    "Log Out",
-                ]
-            )
-
-            if user_status == "DISABLED":
-                if choice != "6":  
-                    print(f"{RED}Your account is disabled. You can only log out.{RESET}")
-                    continue 
-            else:
-                
-                if choice == "1":
-                    self.profile_menu()
-                elif choice == "2":
-                    self.journal_menu()
-                elif choice == "3":
-                    self.mood_menu()
-                elif choice == "4":
-                    self.appointment_menu()
-                elif choice == "5":
-                    self.resource_menu()
-
-            
-            if choice == "6":  
-                print(f"{BOLD}Logging out...{RESET}")
-                break
-            else:
-                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
-
-
-
-
-
-
-    # Sub menus
     def profile_menu(self):
         """Display the profile menu."""
-        while True:
-            choice = self.display_menu(
-                "👤 Profile Menu", ["View Profile", "Edit Profile", "Back to Homepage"]
-            )
-            if choice == "1":
-                self.view_profile()
-            elif choice == "2":
-                self.edit_profile()
-            elif choice == "3":
-                break
-            else:
-                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+        title = "👤 Profile Menu"
+        main_menu_title = "🏠 Patient Homepage"
+        options = ["View Profile", "Edit Profile", "Back to Homepage"]
+        action_map = {
+            "1": self.view_profile,
+            "2": self.edit_profile,
+            "3": lambda: None,  # Back to Homepage handled in navigate_menu
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == main_menu_title:
+            self.display_patient_homepage()
 
     def journal_menu(self):
-        while True:
-            choice = self.display_menu(
-                "📔 Journal Menu", ["View Journal Entries", "Add Journal Entry", "Back to Homepage"]
-            )
-            if choice == "1":
-                self.view_journals()
-            elif choice == "2":
-                self.add_journal()
-            elif choice == "3":
-                break
-            else:
-                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+        title = "📔 Journal Menu"
+        main_menu_title = "🏠 Patient Homepage"
+        options = ["View Journal Entries", "Add Journal Entry", "Back to Homepage"]
+        action_map = {
+            "1": self.view_journals,
+            "2": self.add_journal,
+            "3": lambda: None,  # Back to Homepage handled in navigate_menu
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == main_menu_title:
+            self.display_patient_homepage()
 
     def mood_menu(self):
-        while True:
-            choice = self.display_menu(
-                "😊 Mood Menu", ["View Mood Log", "Add Mood Entry", "Back to Homepage"]
-            )
-            if choice == "1":
-                self.view_moods()
-            elif choice == "2":
-                self.add_mood()
-            elif choice == "3":
-                break
-            else:
-                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+        title = "😊 Mood Menu"
+        main_menu_title = "🏠 Patient Homepage"
+        options = ["View Mood Log", "Add Mood Entry", "Back to Homepage"]
+        action_map = {
+            "1": self.view_moods,
+            "2": self.add_mood,
+            "3": lambda: None,  # Back to Homepage handled in navigate_menu
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == main_menu_title:
+            self.display_patient_homepage()
 
     def appointment_menu(self):
-        while True:
-            choice = self.display_menu(
-                "📅 Appointment Menu",
-                ["View Appointment", "Make New Appointment", "Cancel Appointment", "Back to Homepage"],
-            )
-            if choice == "1":
-                self.view_appointment()
-            elif choice == "2":
-                self.make_appointment()
-            elif choice == "3":
-                self.cancel_appointment()
-            elif choice == "4":
-                break
-            else:
-                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+        title = "📅 Appointment Menu"
+        main_menu_title = "🏠 Patient Homepage"
+        options = [
+            "View Appointment",
+            "Make New Appointment",
+            "Cancel Appointment",
+            "Back to Homepage",
+        ]
+        action_map = {
+            "1": self.view_appointment,
+            "2": self.make_appointment,
+            "3": self.cancel_appointment,
+            "4": lambda: None,  # Back to Homepage handled in navigate_menu
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == main_menu_title:
+            self.display_patient_homepage()
 
     def resource_menu(self):
-        while True:
-            choice = self.display_menu(
-                "🔍 Search Resources", ["Search by Keyword", "Back to Homepage"]
-            )
-            if choice == "1":
-                self.search_by_keyword()
-            elif choice == "2":
-                break
-            else:
-                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+        title = "📚 Resource Menu"
+        main_menu_title = "🏠 Patient Homepage"
+        options = ["Search by Keyword", "Back to Homepage"]
+        action_map = {
+            "1": self.search_by_keyword,
+            "2": lambda: None,  # Back to Homepage handled in navigate_menu
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == main_menu_title:
+            self.display_patient_homepage()
 
 
 # ----------------------------
@@ -201,42 +170,62 @@ class PatientController:
 
             for patient in data:
                 if patient["patient_id"] == self.patient.user_id:
-                    print(f"\nEdit Profile:")
+                    print(f"\n{BOLD}📃 Edit Profile:")
                     while True:
-                        choice = self.display_menu(
-                            "Select the field you want to edit (Current value in parentheses)",
-                            [
-                                f"Name (current: {patient['name']})",
-                                f"Email (current: {patient['email']})",
-                                f"Emergency Contact (current: {patient['emergency_contact_email']})",
-                                f"MHWP (current: {patient.get('mhwp_id', 'None')})",
-                                "Edit All",
-                                "Back to Profile Menu",
-                            ]
-                        )
+                        # Display a simple menu for editing profile
+                        print(f"{BOLD}{MAGENTA}Select the field you want to edit:{RESET}")
+                        print(f"1. Name (current: {patient['name']})")
+                        print(f"2. Email (current: {patient['email']})")
+                        print(f"3. Emergency Contact (current: {patient['emergency_contact_email']})")
+                        print(f"4. Change MHWP (current: {patient.get('mhwp_id', 'None')})")
+                        print(f"5. Edit All")
+                        print(f"6. Back to Profile Menu")
                         
+                        # Get user choice and handle it
+                        choice = input(f"{CYAN}{BOLD}Choose an option ⏳: {RESET}").strip()
+                        if choice == "back":
+                            self.display_manager.back_operation()
+                            return
                         if choice == "4":
                             self.display_eligible_mhwps(patient["patient_id"], patient["mhwp_id"])
                             return  
                         elif choice == "1":
                             new_name = input("Enter new name: ").strip()
+                            if new_name == "back":
+                                self.display_manager.back_operation()
+                                return
                             if new_name:
                                 patient["name"] = new_name
                                 print("Name updated successfully.")
                         elif choice == "2":
                             new_email = input("Enter new email: ").strip()
+                            if new_email == "back":
+                                self.display_manager.back_operation()
+                                return
                             if new_email:
                                 patient["email"] = new_email
                                 print("Email updated successfully.")
                         elif choice == "3":
                             new_contact = input("Enter new emergency contact email: ").strip()
+                            if new_contact == "back":
+                                self.display_manager.back_operation()
+                                return
                             if new_contact:
                                 patient["emergency_contact_email"] = new_contact
                                 print("Emergency contact updated successfully.")
                         elif choice == "5":
                             new_name = input("Enter new name: ").strip()
+                            if new_name == "back":
+                                self.display_manager.back_operation()
+                                return
                             new_email = input("Enter new email: ").strip()
+                            if new_email == "back":
+                                self.display_manager.back_operation()
+                                return
                             new_contact = input("Enter new emergency contact email: ").strip()
+                            if new_contact == "back":
+                                self.display_manager.back_operation()
+                                return
                             if new_name:
                                 patient["name"] = new_name
                             if new_email:
@@ -249,11 +238,13 @@ class PatientController:
                             break
                         else:
                             print("Invalid choice. Please try again.")
-
+                            
+                    # Save the updated data back to the file
                     save_json(self.patient_info_file, data)
                     break
             else:
                 print("Patient not found.")
+
 
     def display_eligible_mhwps(self, patient_id, current_mhwp_id):
         """Display a list of eligible MHWPs (patient_count < 4) for the patient to select from."""

@@ -32,7 +32,7 @@ class TestController:
         options = ["Second Layer", "Exit"]
         action_map = {
         "1": self.second_layer,
-        "2": self.exit_program,
+        "2": lambda: None,  # Left it to be None to return to log out
         }
         main_menu_title = "🏠 Main Menu"
         self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
@@ -88,11 +88,6 @@ class TestController:
         print(f"Name: {name}, Age: {age}")
         print("Action 2 executed!")
     
-    def exit_program(self):
-        """Exits the program."""
-        print("Exiting...")
-        exit()
-
 if __name__ == "__main__":
     controller = TestController()
     controller.main_menu()

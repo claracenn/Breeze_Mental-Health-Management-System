@@ -79,10 +79,11 @@ class DisplayManager:
 
             if choice == "back":
                 self.back_operation()
+                return
             elif choice.isdigit() and int(choice) == len(current_options):
                 # If the user is now in main menu, exit the program
                 if current_title == main_menu_title:
-                    print(f"{RED}Exiting the program. Goodbye!{RESET}")
+                    print(f"{RED}Logging out... Goodbye!{RESET}")
                     sys.exit()
                 else:
                     # If not in the main menu, reset breadcrumbs and menu stack to the main menu

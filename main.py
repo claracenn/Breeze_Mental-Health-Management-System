@@ -7,6 +7,7 @@ from controllers.patient import PatientController
 from models.user import Admin, MHWP, Patient
 from utils.data_handler import *
 
+
 # Font and color codes (for reference)
 Red = "\033[91m"  # use for errors (bright red for visibility)
 Green = "\033[92m"  # use for success messages (bright green)
@@ -99,23 +100,26 @@ def login():
                 continue
 
             user_data = users_dict[username]
-            if user_data.get('status') == 'DISABLED':
-                print(f"{Red}This account has been disabled. Please contact the administrator.{Reset}")
-                log_action(f"Failed login attempt: Username '{username}' is disabled", "system")
-                continue
+            if user_data.get('status') == 'DELETED':
+                print(f"{Red}Your account has been deleted.{Reset}")
+                log_action(f"Failed login attempt: Username '{username}' has been deleted", "system")
+                sys.exit()  # Exit immediately if account is deleted
 
+            # Even if account is disabled, allow login
+            if user_data.get('status') == 'DISABLED':
+                print(f"{Yellow}Your account has been disabled, but you can still log in.{Reset}")
+                log_action(f"User '{username}' logged in despite being disabled", "system")
+            
             # Prompt for password
             password = input(f"{Cyan}Enter your password: {Reset}")
             reset_inactivity_timer()
 
             # Validate credentials directly from the user dictionary
-            if user_data['password'] == password and user_data['status'] == "ACTIVE":
+            if user_data['password'] == password and user_data['status'] != "DELETED":
                 user_role = user_data['role']
                 log_action(f"Successful login: Username '{username}'", username)
 
-                # Greet user after successful login
                 print(f"{Green}{Bold}Welcome, {username}!{Reset}")
-
                 return user_role, user_data['user_id']
             else:
                 print(f"{Red}Invalid password or account not active. Please try again. Attempts left: {retry_attempts - attempt - 1}{Reset}")
@@ -130,6 +134,10 @@ def login():
     print(f"{Red}Exceeded the maximum number of login attempts. Exiting...{Reset}")
     log_action("Exceeded maximum login attempts", "system")
     sys.exit()
+
+
+
+
 
 
 def role_navigation(user_role, user_id):
@@ -163,15 +171,18 @@ def role_navigation(user_role, user_id):
                 name=patient_info['name'],
                 email=patient_info['email'],
                 emergency_contact_email=patient_info['emergency_contact_email'],
-                mhwp_id=patient_info.get('mhwp_id', "")
+                mhwp_id=patient_info.get('mhwp_id', ""),
+                status=user_info['status']  # 从 user_info 获取 status
             )
-            patient_controller = PatientController(patient_user)
+            patient_controller = PatientController(patient_user)  # 直接传递 patient_user
             if hasattr(patient_controller, 'display_patient_homepage'):
                 patient_controller.display_patient_homepage()
             else:
                 print(f"{Red}Error: Patient controller does not have a display_patient_homepage method.{Reset}")
         else:
             print("Patient-specific information not found.")
+
+            
 
     elif user_role == 'mhwp':
         mhwp_info = get_role_specific_info(user_id, 'mhwp', './data/mhwp_info.json')

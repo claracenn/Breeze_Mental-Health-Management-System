@@ -13,6 +13,7 @@ from datetime import datetime, timedelta
 import json
 
 
+
 """
 ==================================
 Initialise ANSI color codes
@@ -55,11 +56,12 @@ class PatientController:
             print(f"{BLACK}[{index}]{RESET} {option}")
         print("-" * 50)
         return input(f"{BROWN_RED}Choose an option ⏳: {RESET}")  
-
-    # Main menu
     def display_patient_homepage(self):
         """Display the patient homepage."""
         while True:
+            user_status = self.patient.status
+            
+
             choice = self.display_menu(
                 "🏠 Patient Homepage",
                 [
@@ -69,23 +71,37 @@ class PatientController:
                     "Appointments",
                     "Resources",
                     "Log Out",
-                ],
+                ]
             )
-            if choice == "1":
-                self.profile_menu()
-            elif choice == "2":
-                self.journal_menu()
-            elif choice == "3":
-                self.mood_menu()
-            elif choice == "4":
-                self.appointment_menu()
-            elif choice == "5":
-                self.resource_menu()
-            elif choice == "6":
+
+            if user_status == "DISABLED":
+                if choice != "6":  
+                    print(f"{RED}Your account is disabled. You can only log out.{RESET}")
+                    continue 
+            else:
+                
+                if choice == "1":
+                    self.profile_menu()
+                elif choice == "2":
+                    self.journal_menu()
+                elif choice == "3":
+                    self.mood_menu()
+                elif choice == "4":
+                    self.appointment_menu()
+                elif choice == "5":
+                    self.resource_menu()
+
+            
+            if choice == "6":  
                 print(f"{BOLD}Logging out...{RESET}")
                 break
             else:
                 print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+
+
+
+
+
 
     # Sub menus
     def profile_menu(self):

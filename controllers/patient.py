@@ -70,7 +70,7 @@ class PatientController:
             "3": self.mood_menu,
             "4": self.appointment_menu,
             "5": self.resource_menu,
-            "6":lambda: None # Log Out handled in navigate_menu
+            "6": lambda: None # Log Out handled in navigate_menu
         }
         self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
 
@@ -85,7 +85,7 @@ class PatientController:
             "3": lambda: None,  # Back to Homepage handled in navigate_menu
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
-        if result == main_menu_title:
+        if result == "main_menu":
             self.display_patient_homepage()
 
     def journal_menu(self):
@@ -98,7 +98,7 @@ class PatientController:
             "3": lambda: None,  # Back to Homepage handled in navigate_menu
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
-        if result == main_menu_title:
+        if result == "main_menu":
             self.display_patient_homepage()
 
     def mood_menu(self):
@@ -111,7 +111,7 @@ class PatientController:
             "3": lambda: None,  # Back to Homepage handled in navigate_menu
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
-        if result == main_menu_title:
+        if result == "main_menu":
             self.display_patient_homepage()
 
     def appointment_menu(self):
@@ -130,7 +130,7 @@ class PatientController:
             "4": lambda: None,  # Back to Homepage handled in navigate_menu
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
-        if result == main_menu_title:
+        if result == "main_menu":
             self.display_patient_homepage()
 
     def resource_menu(self):
@@ -142,7 +142,7 @@ class PatientController:
             "2": lambda: None,  # Back to Homepage handled in navigate_menu
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
-        if result == main_menu_title:
+        if result == "main_menu":
             self.display_patient_homepage()
 
 
@@ -654,7 +654,12 @@ class PatientController:
                 
                 try:
                     # Select date
-                    selected_date_idx = int(input("Select a date by index: ").strip()) - 1
+                    selected_date_idx = input("Select a date by index: ").strip()
+                    if selected_date_idx == "back":
+                        self.display_manager.back_operation()
+                        self.appointment_menu()
+                        return
+                    selected_date_idx = int(selected_date_idx) - 1
                     if selected_date_idx < 0 or selected_date_idx >= len(available_dates):
                         print("❌ Invalid selection.")
                         continue
@@ -666,7 +671,7 @@ class PatientController:
                         print("❗️ You already have an appointment on this date. Please choose another date.")
                         continue #return to date selection
                     break
-                except Exception as e:
+                except ValueError:
                     print("❌ Invalid selection.")
             
             # Display available time slots
@@ -683,13 +688,18 @@ class PatientController:
 
                 # Select time slot
                 try:
-                    selected_slot_index = int(input("Select a time slot: ")) - 1
+                    selected_slot_index = input("Select a time slot: ")
+                    if selected_slot_index == "back":
+                        self.display_manager.back_operation()
+                        self.appointment_menu()
+                        return
+                    selected_slot_index = int(selected_slot_index) - 1
                     if selected_slot_index not in range(len(available_time_slots)):
                         print("❌ Invalid selection.") 
                         continue #return to time slot selection
                     selected_time_slot = available_time_slots[selected_slot_index]
                     break
-                except Exception as e:
+                except ValueError:
                     print("❌ Invalid selection.")
 
             # Confirm appointment
@@ -717,15 +727,23 @@ class PatientController:
     def cancel_appointment(self):
         self.view_appointment()
         try:
-            display_index = int(input("Enter the index of the appointment you want to cancel: "))
-            if display_index not in self.appointment_id_map:
-                print("Invalid number. Please choose a number from the list above.")
+            display_index = input("Enter the index of the appointment you want to cancel: ")
+            if display_index == "back":
+                self.display_manager.back_operation()
+                self.appointment_menu()
+                return
+            try:
+                display_index = int(display_index)
+                if display_index not in self.appointment_id_map:
+                    print("Invalid number. Please choose a number from the list above.")
+                    return
+            except ValueError:
+                print("Invalid input. Please enter a valid number.")
                 return
                 
             actual_appointment_id = self.appointment_id_map[display_index]
 
             appointments = read_json(self.appointment_file)
-            
             for appointment in appointments:
                 if appointment["appointment_id"] == actual_appointment_id:
                     appointment["status"] = "CANCELLED"
@@ -742,6 +760,10 @@ class PatientController:
 # ----------------------------
     def search_by_keyword(self):
         keyword = input("Enter a keyword to search for related resources: ")
+        if keyword == "back":
+            self.display_manager.back_operation()
+            self.resource_menu()
+            return
         url = f"https://www.freemindfulness.org/_/search?query={keyword}"
 
         try:

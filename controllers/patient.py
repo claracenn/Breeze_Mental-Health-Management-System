@@ -60,7 +60,7 @@ class PatientController:
         """Display the patient homepage."""
         while True:
             user_status = self.patient.status
-            print(f"Debug: User status is {user_status}")  # 这里打印出状态，确认是否为 "DISABLED"
+            
 
             choice = self.display_menu(
                 "🏠 Patient Homepage",
@@ -75,11 +75,11 @@ class PatientController:
             )
 
             if user_status == "DISABLED":
-                if choice != "6":  # 如果用户选择的是不是 Log Out，提示错误
+                if choice != "6":  
                     print(f"{RED}Your account is disabled. You can only log out.{RESET}")
-                    continue  # 重新显示菜单，跳过其他选项的操作
+                    continue 
             else:
-                # 当状态不是 DISABLED 时，正常处理选项
+                
                 if choice == "1":
                     self.profile_menu()
                 elif choice == "2":
@@ -91,12 +91,11 @@ class PatientController:
                 elif choice == "5":
                     self.resource_menu()
 
-            # 如果选择了 Log Out，就退出
+            
             if choice == "6":  
                 print(f"{BOLD}Logging out...{RESET}")
                 break
             else:
-                # 如果选择无效，提示错误
                 print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
 
 

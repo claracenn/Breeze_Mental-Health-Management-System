@@ -40,48 +40,6 @@ CYAN = "\033[96m"
 ==================================
 Patient Controller Class
 ==================================
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-
-from models.user import Patient
-from utils.data_handler import *
-from utils.display_manager import DisplayManager
-from controllers.mhwp import MHWPController
-import requests
-from bs4 import BeautifulSoup
-import pandas as pd
-from datetime import datetime, timedelta
-import json
-
-
-
-"""
-==================================
-Initialise ANSI color codes
-==================================
-"""
-BOLD = "\033[1m"
-UNDERLINE = "\033[4m"
-BLACK = "\033[30m"  
-BROWN_RED = "\033[91m"  
-DARK_GREY = "\033[90m"
-RESET = "\033[0m"
-RED = "\033[91m\033[1m"
-LIGHT_RED = "\033[91m"
-ORANGE = "\033[93m\033[1m"
-YELLOW = "\033[93m"
-LIGHT_GREEN = "\033[92m"
-GREEN = "\033[92m\033[1m"
-GREY = "\033[90m"
-MAGENTA = "\033[95m"
-CYAN = "\033[96m"
-
-"""
-==================================
-Patient Controller Class
-==================================
 """
 class PatientController:
     def __init__(self, patient):
@@ -366,7 +324,6 @@ class PatientController:
         # Save the updated request log back to the file
         save_json(self.request_log_file, request_log)
         print("Your request to change MHWP has been submitted and is pending approval.")
-
 
 # ----------------------------
 # Section 2: Journal methods

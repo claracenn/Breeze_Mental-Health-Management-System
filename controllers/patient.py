@@ -49,14 +49,14 @@ class PatientController:
         self.mood_file = "data/patient_mood.json"
         self.patient_info_file = "data/patient_info.json"
         self.appointment_file = "data/appointment.json"
-        self.request_log_file = "data/mhwp_change_request.json"
+        self.request_log_file = "data/request_log.json"
         self.mhwp_info_file = "data/mhwp_info.json"
         self.feedback_file = "data/feedback.json"
 
     def display_patient_homepage(self):
-        """Display the patient homepage."""
         title = "🏠 Patient Homepage"
         main_menu_title = "🏠 Patient Homepage"
+        
         options = [
             "Profile",
             "Journal",
@@ -73,9 +73,30 @@ class PatientController:
             "4": self.appointment_menu,
             "5": self.resource_menu,
             "6": self.feedback_menu,
-            "7": lambda: None # Log Out handled in navigate_menu
+            "7": lambda: print(f"{BOLD}Logging out...{RESET}") 
         }
-        self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+
+        # Modify options and actions for disabled patients
+        if self.patient.status == "DISABLED":
+            print(f"{RED}Your account is disabled. You can only log out.{RESET}")
+            options = [f"{option} (Disabled)" for option in options[:-1]] + ["Log Out"]
+            action_map = {"7": lambda: print(f"{BOLD}Logging out...{RESET}")}
+
+        # Call the navigate_menu method from the DisplayManager to show the menu
+        while True:
+            choice = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+
+            if choice == "7":
+                break  # Log out
+            elif choice in action_map:
+                if self.patient.status == "DISABLED" and choice != "7":
+                    print(f"{RED}Your account is disabled. You can only log out.{RESET}")
+                else:
+                    action_map[choice]()  # Execute the selected action
+            else:
+                print(f"{RED}Invalid choice. Please try again.{RESET}")  
+
+
 
     def profile_menu(self):
         """Display the profile menu."""
@@ -298,7 +319,13 @@ class PatientController:
 
     def create_mhwp_change_request(self, patient_id, current_mhwp_id, target_mhwp_id, reason):
         """Create a new MHWP change request and save it to request_log.json."""
+        # Ensure request_log is initialized properly
         request_log = read_json(self.request_log_file)
+        
+        # If read_json returns None, initialize an empty list
+        if request_log is None:
+            request_log = []
+        
         new_request = {
             "user_id": patient_id,
             "current_mhwp_id": current_mhwp_id,
@@ -307,9 +334,13 @@ class PatientController:
             "status": "pending",
             "requested_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-        request_log.append(new_request)
-        save_json(self.request_log_file, request_log)
 
+        # Append the new request
+        request_log.append(new_request)
+
+        # Save the updated request log back to the file
+        save_json(self.request_log_file, request_log)
+        print("Your request to change MHWP has been submitted and is pending approval.")
 
 # ----------------------------
 # Section 2: Journal methods

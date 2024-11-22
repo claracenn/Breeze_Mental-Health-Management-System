@@ -6,8 +6,32 @@ from models.user import MHWP
 import pandas as pd
 from utils.data_handler import create_table, read_json, save_json, sanitise_data
 
+
+"""
+==================================
+Initialise ANSI color codes
+==================================
+"""
+BOLD = "\033[1m"
+UNDERLINE = "\033[4m"
+BLACK = "\033[30m"  
+BROWN_RED = "\033[91m"  
+DARK_GREY = "\033[90m"
+RESET = "\033[0m"
+RED = "\033[91m\033[1m"
+LIGHT_RED = "\033[91m"
+ORANGE = "\033[93m\033[1m"
+YELLOW = "\033[93m"
+LIGHT_GREEN = "\033[92m"
+GREEN = "\033[92m\033[1m"
+
+"""
+==================================
+MHWP Controller Class
+==================================
+"""
+
 class MHWPController:
-    '''Class to control various functions of the MHWPs.'''
 
     def __init__(self, mhwp):
         self.mhwp = mhwp
@@ -20,9 +44,40 @@ class MHWPController:
             6: "\U0001F621"
         }
 
+    def view_menu(self, title, options):
+        """Generic method to display a menu with subdued styling."""
+        print(f"\n{BOLD}{UNDERLINE}{title}{RESET}")
+        print("-" * 50)  # Divider line
+        for index, option in enumerate(options, start=1):
+            # [1] Frame it
+            print(f"{BLACK}[{index}]{RESET} {option}")
+        print("-" * 50)
+        return input(f"{BROWN_RED}Choose an option ⏳: {RESET}")  
 
-
-
+    # Main menu
+    def view_MHWP_homepage(self):
+        """Display the MHWP homepage."""
+        while True:
+            choice = self.view_menu(
+                "🏠 MHWP Homepage",
+                [
+                    "View Appointments Calendar",
+                    "View Patient Dashboard",
+                    "View Patient Records",
+                    "Log Out",
+                ],
+            )
+            if choice == "1":
+                self.view_calendar()
+            elif choice == "2":
+                self.view_dashboard()
+            elif choice == "3":
+                self.view_patient_records()
+            elif choice == "4":
+                print(f"{BOLD}Logging out...{RESET}")
+                break
+            else:
+                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
 
     def get_patients_info(self):
         '''Returns a list of patient information for current MHWP'''
@@ -54,7 +109,7 @@ class MHWPController:
         '''Returns patient name from patients id'''
         patients = self.get_patients_info()
         patient = next((x for x in patients if x["patient_id"] == patient_id), None)
-        if (patient == None):
+        if patient is None:
             print("Patient ID provided does not correspond to any patient")
         else:
             return patient["name"]
@@ -74,10 +129,9 @@ class MHWPController:
             return False
 
 
-    def display_calendar(self):
+    def view_calendar(self):
         '''Display appointments for a MHWP'''
         appointments = self.get_appointments()
-        # cols = ["Date", "Time", "Patient", "Status"]
 
         data = {
             "Appointment ID": [],
@@ -97,91 +151,56 @@ class MHWPController:
 
         self.choose_appointment()
 
-
-
-
     def handle_appointment_status(self, appointment, isPending):
-        # at this point we are certain that the details provided are valid
         appointments = self.get_appointments()
-        print(f"You are now handling the status of {appointment["appointment_id"]}.")
+        print(f"You are now handling the status of {appointment['appointment_id']}.")
         print("Press '0' to go back.")
         print("Press '1' to cancel the appointment.")
         if isPending: print("Press '2' to confirm the appointment.")
 
-
-        new_status = input("Please enter your choice here: ");
-        while new_status != 0:
+        new_status = input("Please enter your choice here: ")
+        while new_status != "0":
             if not self.is_integer(new_status):
-                new_status = input(f"Please enter an integer value from {"0-2" if isPending else "0-1"}: ")
+                new_status = input(f"Please enter an integer value from {'0-2' if isPending else '0-1'}: ")
                 continue
-            else: 
+            else:
                 new_status = int(new_status)
 
             if new_status == 0:
                 print("Exiting Appointment Handling Screen....")
                 break
 
-            # temporary data sanitation, make a method for it later
             if (isPending and not sanitise_data(new_status, {1, 2})) or (not isPending and not sanitise_data(new_status, {1})):
-                print(f"Please enter an integer value from {"0-2" if isPending else "0-1"}: ")
-                new_status = ""
+                print(f"Please enter an integer value from {'0-2' if isPending else '0-1'}: ")
                 continue
 
             for app in appointments:
-                if app["appointment_id"] is not appointment["appointment_id"]: continue
+                if app["appointment_id"] != appointment["appointment_id"]: continue
                 app["status"] = "CANCELED" if new_status == 1 else "CONFIRMED"
                 save_json('./data/appointment.json', appointments)
-                print(f"Appointment {appointment["appointment_id"]} status has successfully been changed to {"CANCELED" if new_status == 1 else "CONFIRMED"}")
-                new_status = 0
+                print(f"Appointment {appointment['appointment_id']} status has successfully been changed to {'CANCELED' if new_status == 1 else 'CONFIRMED'}")
                 break
             else:
-                print(f"Something went wrong. Was not able to change the status of appointment {appointment["appointment_id"]}")
-
-
-     
-
-
-
-
-
-
-
-
+                print(f"Something went wrong. Was not able to change the status of appointment {appointment['appointment_id']}")
 
     def handle_appointment(self, appointment):
-
-
-        # Check appointment status
-        # If status == PENDING, can confirm or cancel
-        # If status == CONFIRMED, can only cancel
         self.handle_appointment_status(appointment, appointment["status"] == "PENDING")
+        self.view_calendar()
 
-        # After appointment is handled display appointment screen
-        self.display_calendar()
-
-
-
-        
     def choose_appointment(self):
         '''MHWP can select Pending appointment to Confirm/Cancel'''
-        # Select Pending appointment to confirm/cancel
-
         data_appointments = self.get_appointments()
 
         id_input = ""
-        while id_input != 0:
+        while id_input != "0":
             id_input = input("Choose Pending or Confirmed appointment ID ('0' to exit): ")
             if not self.is_integer(id_input):
                 print("Please enter an integer value.")
                 continue
-            else: 
+            else:
                 id_input = int(id_input)
             if id_input == 0:
                 print("Thank you for using the appointment system.")
-
-            # MAKE SURE IT IS A VALID ID HERE 
-            # if (sanitise_data(id_input, {list of id's})):
-            #     pass
 
             for app in data_appointments:
                 if app["appointment_id"] == id_input and (app["status"] == "PENDING" or app['status'] == "CONFIRMED"):
@@ -194,15 +213,11 @@ class MHWPController:
                     }
                     create_table(data, "Selected Appointment", display_title=True)
                     self.handle_appointment(app)
-                    id_input = 0
                     break
             else:
                 print("Please enter valid appointment_id, or enter '0' to exit.")
 
-
-
-    def display_patient_records(self):
-        # Find list of patients for a particular MHWP
+    def view_patient_records(self):
         patient_info = self.get_patients_info()
         patient_records = self.get_patient_records()
 
@@ -218,15 +233,7 @@ class MHWPController:
             data["Conditions"].append(patient["condition"])
             data["Notes"].append(patient["notes"])
 
-
         create_table(data, title="Patients Records", display_title=True)
-        '''
-        SCHEMA IS A BIT IFFY ASK ARNAB ABOUT IT, IT IS STILL DOABLE BUT 
-        DOESN'T REALLY MAKE SENSE (acc maybe it does, look at it from a 
-        pov where we are inputting data, so that we need to update in as little
-        places as possible)
-        '''
-
         self.update_patient_record()
 
     def update_patient_record(self):
@@ -234,12 +241,12 @@ class MHWPController:
         patients = {patient["patient_id"]: patient["name"] for patient in patient_records}
         
         id_input = ""
-        while id_input != 0:
+        while id_input != "0":
             id_input = input("Choose patient ID to update record ('0' to exit): ")
             if not self.is_integer(id_input):
                 print("Please enter an integer value.")
                 continue
-            else: 
+            else:
                 id_input = int(id_input)
             if id_input == 0:
                 continue
@@ -284,7 +291,6 @@ class MHWPController:
 
     def view_dashboard(self):
         patients = self.get_patients_info()
-        # add some sort of sorting/filtering functionality
         cols = ["Patient ID", "Name", "Email", "Emergency Contact"]
         rows = [list(patient.values()) for patient in patients]
 
@@ -293,7 +299,6 @@ class MHWPController:
                 "Name": [],
                 "Email": [], 
                 "Emergency Contact": [], 
-                # "Conditions": [], 
                 "Mood": []
             }
         
@@ -357,10 +362,6 @@ class MHWPController:
         
         return mhwp_data
 
- 
-
- 
-
 if __name__ == "__main__":
     MHWP = {
             "mhwp_id": 21,
@@ -368,12 +369,4 @@ if __name__ == "__main__":
             "email": "robert.lewandowski@example.com",
             }
     mhwp1 = MHWPController(MHWP)
-
-    # mhwp1.view_dashboard()
-    mhwp1.display_calendar()
-    # mhwp1.choose_appointment()
-    # mhwp1.display_patient_records()
-    # print(mhwp1.get_patient_records())
-    # print(mhwp1.get_patients_info())
-    # print(mhwp1.get_patient_name(1))
-    # mhwp1.view_patient_summary(6)
+    mhwp1.view_MHWP_homepage()

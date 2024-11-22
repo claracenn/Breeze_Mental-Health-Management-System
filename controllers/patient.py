@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime, timedelta
 import json
-
+import smtplib as smtplib
 
 
 """
@@ -51,6 +51,7 @@ class PatientController:
         self.appointment_file = "data/appointment.json"
         self.request_log_file = "data/mhwp_change_request.json"
         self.mhwp_info_file = "data/mhwp_info.json"
+        self.feedback_file = "data/feedback.json"
 
     def display_patient_homepage(self):
         """Display the patient homepage."""
@@ -62,6 +63,7 @@ class PatientController:
             "Mood",
             "Appointments",
             "Resources",
+            "Feedback",
             "Log Out",
         ]
         action_map = {
@@ -70,7 +72,8 @@ class PatientController:
             "3": self.mood_menu,
             "4": self.appointment_menu,
             "5": self.resource_menu,
-            "6": lambda: None # Log Out handled in navigate_menu
+            "6": self.feedback_menu,
+            "7": lambda: None # Log Out handled in navigate_menu
         }
         self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
 
@@ -144,6 +147,19 @@ class PatientController:
         action_map = {
             "1": self.search_by_keyword,
             "2": lambda: None,  # Back to Homepage handled in navigate_menu
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == "main_menu":
+            self.display_patient_homepage()
+
+    def feedback_menu(self):
+        title = "📚 Feedback Menu"
+        main_menu_title = "🏠 Patient Homepage"
+        options = ["Provide a feedback", "View your feedbacks", "Back to Homepage"]
+        action_map = {
+            "1": self.add_feedback,
+            "2": self.view_feedback,
+            "3": lambda: None,  # Back to Homepage handled in navigate_menu
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
         if result == "main_menu":
@@ -603,7 +619,7 @@ class PatientController:
 # ----------------------------
 # Section 4: Appointment methods
 # ----------------------------
-    def view_appointment(self):
+    def view_appointment(self, status=None):
         try:
             patient_info = read_json(self.patient_info_file)
             appointment = read_json(self.appointment_file)
@@ -614,7 +630,10 @@ class PatientController:
                 return
             
             # Filter appointments for the current patient
-            patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id]
+            if status:
+                patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id and a["status"] == status]
+            else:
+                patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id]
             if not patient_appointments:
                 print("No appointments found for this patient.")
                 return
@@ -782,7 +801,7 @@ class PatientController:
     def cancel_appointment(self):
         self.view_appointment()
         try:
-            display_index = input("Enter the index of the appointment you want to cancel: ")
+            display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to cancel: {RESET}\n").strip()
             if display_index == "back":
                 self.display_manager.back_operation()
                 self.appointment_menu()
@@ -814,7 +833,7 @@ class PatientController:
 # Section 5: Resource methods
 # ----------------------------
     def search_by_keyword(self):
-        keyword = input("Enter a keyword to search for related resources: ")
+        keyword = input(f"{CYAN}{BOLD}Enter a keyword to search for related resources: {RESET}\n").strip()
         if keyword == "back":
             self.display_manager.back_operation()
             self.resource_menu()
@@ -845,6 +864,113 @@ class PatientController:
 
         except requests.exceptions.RequestException as e:
             print(f"An error occurred while fetching the webpage: {e}")           
+
+
+# ----------------------------
+# Section 6: Feedback methods
+# ----------------------------
+    def add_feedback(self):
+        # show all appointments
+        self.view_feedback()
+
+        # Let patient choose which appointment to provide feedback for
+        while True:
+            try:
+                display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to provide feedback for: {RESET}\n").strip()
+                if display_index == "back":
+                    self.display_manager.back_operation()
+                    self.feedback_menu()
+                    return
+                display_index = int(display_index)
+                if display_index not in self.appointment_id_map:
+                    print("Invalid number. Please choose a number from the list above.")
+                    continue
+                break
+            except ValueError:
+                print("Invalid input. Please enter a valid number.")
+
+        # Get the feedback
+        feedback_content = input(f"{CYAN}{BOLD}Please enter your feedback: {RESET}\n").strip()
+        if feedback_content == "back":
+            self.display_manager.back_operation()
+            self.feedback_menu()
+            return
+        
+        # Add feedback to feedback.json file
+        current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        actual_appointment_id = self.appointment_id_map[display_index]
+        feedback = {
+            "appointment_id": actual_appointment_id,
+            "feedback": feedback_content,
+            "create_time": current_timestamp
+        }
+
+        if add_entry(self.feedback_file, feedback):
+            print("✅ Feedback added successfully!")
+            return
+        else:
+            print("❌ Failed to add feedback. Please try again.")
+
+    def view_feedback(self):
+        try:
+            patient_info = read_json(self.patient_info_file)
+            appointment = read_json(self.appointment_file)
+            mhwp_info = read_json(self.mhwp_info_file)
+            feedback_info = read_json(self.feedback_file)
+
+            patient = next((p for p in patient_info if p["patient_id"] == self.patient.user_id), None)
+            if not patient:
+                print("Patient not found.")
+                return
+            
+            # Filter appointments for the current patient
+            patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id and a["status"] == "CONFIRMED"]
+            if not patient_appointments:
+                print("No appointments found for this patient.")
+                return
+            
+            # Prepare table data
+            
+            
+            table_data = {
+                "Date": [],
+                "Time Slot": [],
+                "Your MHWP": [],
+                "Notes": [],
+                "Your Feedback": []
+            }
+
+            # Create mapping between display index (the key) and actual appointment ID (the value)
+            self.appointment_id_map = {}  
+            
+            # Populate table data
+            for idx, appt in enumerate(patient_appointments, 1):
+                self.appointment_id_map[idx] = appt["appointment_id"]  
+                table_data["Date"].append(appt.get("date", "N/A"))
+                table_data["Time Slot"].append(appt.get("time_slot", "N/A"))
+                mhwp_name = next(
+                    (m["name"] for m in mhwp_info if m["mhwp_id"] == appt.get("mhwp_id")),
+                    "Unknown"
+                )
+                table_data["Your MHWP"].append(mhwp_name)
+                table_data["Notes"].append(appt.get("notes", ""))
+                feedback = next(
+                    (f["feedback"] for f in feedback_info if f["appointment_id"] == appt.get("appointment_id")),
+                    "N/A"
+                )
+                table_data["Your Feedback"].append(feedback)
+            
+            # Display the table
+            create_table(
+                data=table_data,
+                title="Your Feedbacks",
+                display_title=True,
+                display_index=True  # Show display index
+            )
+
+        except Exception as e:
+            print(f"An error occurred while viewing feedbacks: {str(e)}")
+
 
 # Testing
 if __name__ == "__main__":

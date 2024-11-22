@@ -92,7 +92,13 @@ class DisplayManager:
                     self.breadcrumbs = [main_menu_title]
                     return "main_menu"
             elif choice.isdigit() and 1 <= int(choice) <= len(current_options):
-                current_action_map[str(choice)]()
+                str_choice = str(choice)  # Ensure the choice is a string to match action_map keys
+                if str_choice in current_action_map:
+                    current_action_map[str_choice]()
+                else:
+                    print(f"{RED}Invalid choice. Please try again.{RESET}")
             else:
+                # Handle invalid choices (non-digit or out of range)
                 print(f"{RED}Invalid choice. Please try again.{RESET}")
-    
+
+        

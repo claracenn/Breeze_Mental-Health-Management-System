@@ -65,12 +65,14 @@ class TestController:
     def action_1(self):
         print("Enter your details for Action 1:")
         name = input("Enter your name: ").strip()
-        if name.lower() == "back":
+        if name.lower() == "back": # For actions that ask for user input, use back_operation+layer function to return to layer before input.
             self.display_manager.back_operation()
+            self.second_layer()
             return
         age = input("Enter your age: ").strip()
         if age.lower() == "back":
             self.display_manager.back_operation()
+            self.second_layer()
             return
         print(f"Name: {name}, Age: {age}")
         print("Action 1 executed!")
@@ -79,11 +81,11 @@ class TestController:
         print("Enter your details for Action 1:")
         name = input("Enter your name: ").strip()
         if name.lower() == "back":
-            self.display_manager.back_operation()
+            self.second_layer()
             return
         age = input("Enter your age: ").strip()
         if age.lower() == "back":
-            self.display_manager.back_operation()
+            self.second_layer()
             return
         print(f"Name: {name}, Age: {age}")
         print("Action 2 executed!")

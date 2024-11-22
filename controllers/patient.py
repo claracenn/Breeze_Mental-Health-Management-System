@@ -40,6 +40,48 @@ CYAN = "\033[96m"
 ==================================
 Patient Controller Class
 ==================================
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+
+from models.user import Patient
+from utils.data_handler import *
+from utils.display_manager import DisplayManager
+from controllers.mhwp import MHWPController
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+from datetime import datetime, timedelta
+import json
+
+
+
+"""
+==================================
+Initialise ANSI color codes
+==================================
+"""
+BOLD = "\033[1m"
+UNDERLINE = "\033[4m"
+BLACK = "\033[30m"  
+BROWN_RED = "\033[91m"  
+DARK_GREY = "\033[90m"
+RESET = "\033[0m"
+RED = "\033[91m\033[1m"
+LIGHT_RED = "\033[91m"
+ORANGE = "\033[93m\033[1m"
+YELLOW = "\033[93m"
+LIGHT_GREEN = "\033[92m"
+GREEN = "\033[92m\033[1m"
+GREY = "\033[90m"
+MAGENTA = "\033[95m"
+CYAN = "\033[96m"
+
+"""
+==================================
+Patient Controller Class
+==================================
 """
 class PatientController:
     def __init__(self, patient):
@@ -49,13 +91,12 @@ class PatientController:
         self.mood_file = "data/patient_mood.json"
         self.patient_info_file = "data/patient_info.json"
         self.appointment_file = "data/appointment.json"
-        self.request_log_file = "data/mhwp_change_request.json"
+        self.request_log_file = "data/request_log.json"
         self.mhwp_info_file = "data/mhwp_info.json"
-
     def display_patient_homepage(self):
-        """Display the patient homepage."""
         title = "🏠 Patient Homepage"
         main_menu_title = "🏠 Patient Homepage"
+        
         options = [
             "Profile",
             "Journal",
@@ -70,9 +111,30 @@ class PatientController:
             "3": self.mood_menu,
             "4": self.appointment_menu,
             "5": self.resource_menu,
-            "6": lambda: None # Log Out handled in navigate_menu
+            "6": lambda: print(f"{BOLD}Logging out...{RESET}") 
         }
-        self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+
+        # Modify options and actions for disabled patients
+        if self.patient.status == "DISABLED":
+            print(f"{RED}Your account is disabled. You can only log out.{RESET}")
+            options = [f"{option} (Disabled)" for option in options[:-1]] + ["Log Out"]
+            action_map = {"6": lambda: print(f"{BOLD}Logging out...{RESET}")}
+
+        # Call the navigate_menu method from the DisplayManager to show the menu
+        while True:
+            choice = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+
+            if choice == "6":
+                break  # Log out
+            elif choice in action_map:
+                if self.patient.status == "DISABLED" and choice != "6":
+                    print(f"{RED}Your account is disabled. You can only log out.{RESET}")
+                else:
+                    action_map[choice]()  # Execute the selected action
+            else:
+                print(f"{RED}Invalid choice. Please try again.{RESET}")  
+
+
 
     def profile_menu(self):
         """Display the profile menu."""
@@ -282,7 +344,13 @@ class PatientController:
 
     def create_mhwp_change_request(self, patient_id, current_mhwp_id, target_mhwp_id, reason):
         """Create a new MHWP change request and save it to request_log.json."""
+        # Ensure request_log is initialized properly
         request_log = read_json(self.request_log_file)
+        
+        # If read_json returns None, initialize an empty list
+        if request_log is None:
+            request_log = []
+        
         new_request = {
             "user_id": patient_id,
             "current_mhwp_id": current_mhwp_id,
@@ -291,8 +359,13 @@ class PatientController:
             "status": "pending",
             "requested_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
+
+        # Append the new request
         request_log.append(new_request)
+
+        # Save the updated request log back to the file
         save_json(self.request_log_file, request_log)
+        print("Your request to change MHWP has been submitted and is pending approval.")
 
 
 # ----------------------------

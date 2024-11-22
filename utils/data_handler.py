@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+import re
 
 def read_json(filepath):
     """
@@ -144,11 +145,36 @@ def create_table(data, title="", display_title=False, display_index=False):
         df = df.reset_index() 
 
     # calculate max_width for each col based on length of each val (headers and data)
-    col_widths = {col: max(df[col].str.len().max(), len(col)) for col in df.columns}
+    col_widths = {}
+    for col in df.columns:
+        # Strip ANSI color codes when calculating string lengths
+        clean_values = [re.sub(r'\033\[[0-9;]*m', '', str(val)) for val in df[col]]
+        clean_header = re.sub(r'\033\[[0-9;]*m', '', str(col))
+        
+        # Add extra width for columns containing emojis
+        if col == "Mood":
+            # Add 1 extra space for each emoji in the string
+            emoji_padding = 1
+            clean_values = [val + " " * emoji_padding if "😊" in val or "😕" in val or "😐" in val or 
+                          "🙂" in val or "😃" in val or "😢" in val else val for val in clean_values]
+        
+        col_widths[col] = max(max(len(val) for val in clean_values), len(clean_header))
 
     # center align the values in each cell
     for col, width in col_widths.items():
-        df[col] = df[col].str.center(width)
+        if col == "Mood":
+            # For the Mood column, we need to handle ANSI codes differently
+            def center_with_ansi(text, width):
+                # Strip ANSI codes for length calculation
+                clean_text = re.sub(r'\033\[[0-9;]*m', '', text)
+                padding = width - len(clean_text)
+                left_padding = padding // 2
+                right_padding = padding - left_padding
+                return " " * left_padding + text + " " * right_padding
+            
+            df[col] = df[col].apply(lambda x: center_with_ansi(x, width))
+        else:
+            df[col] = df[col].str.center(width)
 
     #print title
     if display_title:

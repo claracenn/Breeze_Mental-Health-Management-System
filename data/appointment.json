@@ -460,5 +460,16 @@
         "notes": "",
         "create_time": "2024-11-14T16:38:18",
         "last_updated": "2024-11-14T16:38:18"
+    },
+    {
+        "appointment_id": 43,
+        "patient_id": 1,
+        "mhwp_id": 21,
+        "date": "2024-11-27",
+        "time_slot": "14:00 - 15:00",
+        "status": "CANCELLED",
+        "notes": "",
+        "create_time": "2024-11-20T13:27:19",
+        "last_updated": "2024-11-20T13:27:42"
     }
 ]

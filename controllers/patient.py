@@ -91,11 +91,13 @@ class PatientController:
     def journal_menu(self):
         title = "📔 Journal Menu"
         main_menu_title = "🏠 Patient Homepage"
-        options = ["View Journal Entries", "Add Journal Entry", "Back to Homepage"]
+        options = ["View Journal Entries", "Add Journal Entry", "Update Journal", "Delete Journal", "Back to Homepage"]
         action_map = {
-            "1": self.view_journals,
+            "1": self.view_journals,  # Changed to new submenu function
             "2": self.add_journal,
-            "3": lambda: None,  # Back to Homepage handled in navigate_menu
+            "3": self.update_journal,
+            "4": self.delete_journal,
+            "5": lambda: None,  # Back to Homepage handled in navigate_menu
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
         if result == main_menu_title:
@@ -104,11 +106,13 @@ class PatientController:
     def mood_menu(self):
         title = "😊 Mood Menu"
         main_menu_title = "🏠 Patient Homepage"
-        options = ["View Mood Log", "Add Mood Entry", "Back to Homepage"]
+        options = ["View Mood Log", "Add Mood Entry", "Update Mood Entry", "Delete Mood Entry", "Back to Homepage"]
         action_map = {
             "1": self.view_moods,
             "2": self.add_mood,
-            "3": lambda: None,  # Back to Homepage handled in navigate_menu
+            "3": self.update_mood,
+            "4": self.delete_mood,
+            "5": lambda: None,  # Back to Homepage handled in navigate_menu
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
         if result == main_menu_title:
@@ -345,8 +349,11 @@ class PatientController:
     
     def add_journal(self):
         """Add a new journal entry for the current patient."""
-        print("Type your journal, tap enter when you finish:")
-        journal_text = input().strip()
+        journal_text = input(f"{CYAN}{BOLD}Type your journal, tap enter when you finish: {RESET}\n").strip()
+        if journal_text == "back":
+            self.display_manager.back_operation() 
+            self.journal_menu()
+            return
         
         current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         
@@ -362,8 +369,16 @@ class PatientController:
             print("Failed to save journal. Please try again.")
 
     def delete_journal(self):
+        # display the journal
+        self.view_journals()
+
         """Delete a journal entry for the current patient."""
-        journal_index = int(input("Enter the index of the journal entry you want to delete: ").strip())
+        journal_index = input(f"{CYAN}{BOLD}Enter the index of the journal entry you want to delete: {RESET}\n").strip()
+        if journal_index == "back":
+            self.display_manager.back_operation() 
+            self.journal_menu()
+            return
+        journal_index = int(journal_index)
         # Retrieve the actual index in the JSON file
         actual_index = self.current_patient_journal_map.get(journal_index)
         
@@ -377,8 +392,16 @@ class PatientController:
             print("Failed to delete journal entry. Please try again.")
 
     def update_journal(self):
+        # Display all journals for the current patient in a table format
+        self.view_journals()
+
         """Update a journal entry for the current patient."""
-        journal_index = int(input("Enter the index of the journal entry you want to update: ").strip())
+        journal_index = input(f"{CYAN}{BOLD}Enter the index of the journal entry you want to update: {RESET}\n").strip()
+        if journal_index == "back":
+            self.display_manager.back_operation() 
+            self.journal_menu()
+            return
+        journal_index = int(journal_index)
         # Retrieve the actual index in the JSON file
         actual_index = self.current_patient_journal_map.get(journal_index)
         
@@ -386,7 +409,14 @@ class PatientController:
             print("Invalid index for the current patient.")
             return
         
-        new_journal_text = input("Enter the new journal text: ").strip()
+        # Get the new journal text
+        new_journal_text = input(f"{CYAN}{BOLD}Type your new journal text, tap enter when you finish: {RESET}\n").strip()
+        if new_journal_text == "back":
+            self.display_manager.back_operation() 
+            self.journal_menu()
+            return
+        
+        # Update the journal entry in the JSON file
         if update_entry(self.journal_file, actual_index + 1, {"journal_text": new_journal_text}):
             print("Journal entry updated successfully!")
         else:
@@ -477,7 +507,12 @@ class PatientController:
         
         while True:
             try:
-                mood_choice = int(input("\nPlease select your mood (1-6):").strip())
+                mood_choice = input(f"{CYAN}{BOLD}Please select your mood (1-6): {RESET}\n").strip()
+                if mood_choice == "back":
+                    self.display_manager.back_operation() 
+                    self.mood_menu()
+                    return
+                mood_choice = int(mood_choice)
                 if 1 <= mood_choice <= 6:
                     break
                 print("Please enter a number between 1 and 6.")
@@ -494,7 +529,11 @@ class PatientController:
         }
         mood_color = mood_colors[mood_choice]
 
-        mood_comments = input("Please enter your mood comments:").strip()
+        mood_comments = input(f"{CYAN}{BOLD}Please enter your mood comments: {RESET}\n").strip()
+        if mood_comments == "back":
+            self.display_manager.back_operation()
+            self.mood_menu()
+            return
 
         current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
@@ -511,9 +550,15 @@ class PatientController:
             print("Failed to log mood. Please try again.")
 
     def delete_mood(self):
+        self.view_moods()
         """Delete a mood entry for the current patient."""
-        mood_index = int(input("Enter the index of the mood entry you want to delete: ").strip())
-        
+        mood_index = input(f"{CYAN}{BOLD}Enter the index of the mood entry you want to delete: {RESET}\n").strip()
+        if mood_index == "back":
+            self.display_manager.back_operation()
+            self.mood_menu()
+            return
+        mood_index = int(mood_index)
+
         # Get the actual JSON index from the mapping
         actual_index = self.current_patient_mood_map.get(mood_index)
         
@@ -527,8 +572,14 @@ class PatientController:
             print("Failed to delete mood entry. Please try again.")
 
     def update_mood(self):
+        self.view_moods()
         """Update a mood entry for the current patient."""
-        mood_index = int(input("Enter the index of the mood entry you want to update: ").strip())
+        mood_index = input(f"{CYAN}{BOLD}Enter the index of the mood entry you want to update: {RESET}\n").strip()
+        if mood_index == "back":
+            self.display_manager.back_operation()
+            self.mood_menu()
+            return
+        mood_index = int(mood_index)
         
         # Get the actual JSON index from the mapping
         actual_index = self.current_patient_mood_map.get(mood_index)
@@ -537,7 +588,11 @@ class PatientController:
             print("Invalid index for the current patient.")
             return
         
-        new_mood_comments = input("Enter the new mood comments: ").strip()
+        new_mood_comments = input(f"{CYAN}{BOLD}Enter the new mood comments: {RESET}\n").strip()
+        if new_mood_comments == "back":
+            self.display_manager.back_operation()
+            self.mood_menu()
+            return
         
         if update_entry(self.mood_file, actual_index + 1, {"mood_comments": new_mood_comments}):  
             print("Mood entry updated successfully!")

@@ -5,3 +5,12 @@
 2024-11-23 12:27:59,925 - Action: Successful login: Username 'mhwp2', Performed by: mhwp2
 2024-11-23 12:29:27,163 - Action: Successful login: Username 'admin1', Performed by: admin1
 2024-11-23 12:30:37,692 - Action: Successful login: Username 'mhwp2', Performed by: mhwp2
+2024-11-23 12:36:11,159 - Action: Successful login: Username 'mhwp2', Performed by: mhwp2
+2024-11-23 12:38:23,739 - Action: Successful login: Username 'mhwp2', Performed by: mhwp2
+2024-11-23 12:50:58,767 - Action: Successful login: Username 'patient2', Performed by: patient2
+2024-11-23 13:04:44,073 - Action: Successful login: Username 'mhwp2', Performed by: mhwp2
+2024-11-23 13:06:37,340 - Action: Successful login: Username 'mhwp2', Performed by: mhwp2
+2024-11-23 13:28:58,403 - Action: Successful login: Username 'mhwp2', Performed by: mhwp2
+2024-11-23 13:29:32,715 - Action: Successful login: Username 'patient1', Performed by: patient1
+2024-11-23 13:31:44,099 - Action: User 'patient3' logged in despite being disabled, Performed by: system
+2024-11-23 13:31:48,507 - Action: Successful login: Username 'patient3', Performed by: patient3

@@ -19,9 +19,10 @@ class Patient(User):
         self.mhwp_id = mhwp_id
 
 class MHWP(User):
-    def __init__(self, user_id, username, password, name, email, patient_count):
-        super().__init__(user_id, username, password, "mhwp")
+    def __init__(self, user_id, username, password, name, email, patient_count, status):
+        super().__init__(user_id, username, password, "mhwp", status)
         self.name = name
         self.email = email
         self.patient_count = patient_count
+        self.mhwp_id = user_id
     

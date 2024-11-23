@@ -189,11 +189,12 @@ def role_navigation(user_role, user_id):
                 password=user_info['password'],
                 name=mhwp_info['name'],
                 email=mhwp_info['email'],
-                patient_count=mhwp_info.get('patient_count', 0)
+                patient_count=mhwp_info.get('patient_count', 0),
+                status = user_info['status']
             )
             mhwp_controller = MHWPController(mhwp_user)
-            if hasattr(mhwp_controller, 'display_menu'):
-                mhwp_controller.display_menu() # TODO: Implement display_menu method in MHWPController
+            if hasattr(mhwp_controller, 'view_MHWP_homepage'):
+                mhwp_controller.view_MHWP_homepage()
             else:
                 print(f"{Red}Error: MHWP controller does not have a display_menu method.{Reset}")
         else:

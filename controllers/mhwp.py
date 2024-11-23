@@ -47,27 +47,50 @@ class MHWPController:
     # Main menu
     def view_MHWP_homepage(self):
         """Display the MHWP homepage."""
-        while True:
-            choice = self.view_menu(
-                "🏠 MHWP Homepage",
-                [
-                    "View Appointments Calendar",
-                    "View Patient Dashboard",
-                    "View Patient Records",
-                    "Log Out",
-                ],
-            )
-            if choice == "1":
-                self.view_calendar()
-            elif choice == "2":
-                self.view_dashboard()
-            elif choice == "3":
-                self.view_patient_records()
-            elif choice == "4":
-                print(f"{BOLD}Logging out...{RESET}")
-                break
-            else:
-                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+        # Check if account is active
+        if self.mhwp.status == "ACTIVE":
+            while True:
+                choice = self.view_menu(
+                    "🏠 MHWP Homepage",
+                    [
+                        "View Appointments Calendar",
+                        "View Patient Dashboard",
+                        "View Patient Records",
+                        "Log Out",
+                    ],
+                )
+                if choice == "1":
+                    self.view_calendar()
+                elif choice == "2":
+                    self.view_dashboard()
+                elif choice == "3":
+                    self.view_patient_records()
+                elif choice == "4":
+                    print(f"{BOLD}Logging out...{RESET}")
+                    break
+                else:
+                    print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+        else:
+            # Disabled account can only log out
+            print(f"{RED}Your account is disabled. You can only log out.{RESET}")
+            while True:
+                choice = self.view_menu(
+                    "🏠 MHWP Homepage",
+                    [
+                        "View Appointments Calendar (disabled)",
+                        "View Patient Dashboard (disabled)",
+                        "View Patient Records (disabled)",
+                        "Log Out",
+                    ],
+                )
+                if choice == "1" or choice == "2" or choice == "3":
+                    print("Your account has been disabled. You cannot access this option.")
+                elif choice == "4":
+                    print(f"{BOLD}Logging out...{RESET}")
+                    break
+                else:
+                    print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+
 
     def get_patients_info(self):
         '''Returns a list of patient information for current MHWP'''

@@ -6,7 +6,7 @@ from controllers.mhwp import MHWPController
 from controllers.patient import PatientController
 from models.user import Admin, MHWP, Patient
 from utils.data_handler import read_json
-from utils.validation import validate_credentials
+# from utils.validation import validate_credentials
 
 # Font and color codes (for reference)
 Red = "\033[91m"  # use for errors (bright red for visibility)

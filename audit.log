@@ -1,1 +1,4 @@
 2024-11-23 12:05:31,643 - Action: Successful login: Username 'patient1', Performed by: patient1
+2024-11-23 12:11:37,256 - Action: User 'mhwp1' logged in despite being disabled, Performed by: system
+2024-11-23 12:11:42,122 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
+2024-11-23 12:12:10,479 - Action: Successful login: Username 'mhwp2', Performed by: mhwp2

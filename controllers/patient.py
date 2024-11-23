@@ -7,12 +7,14 @@ from models.user import Patient
 from utils.data_handler import *
 from utils.display_manager import DisplayManager
 from controllers.mhwp import MHWPController
-import requests
-from bs4 import BeautifulSoup
+import urllib.request
+import urllib.parse
+import ssl
+from html.parser import HTMLParser
 import pandas as pd
 from datetime import datetime, timedelta
 import json
-import smtplib as smtplib
+import smtplib
 
 
 """
@@ -864,37 +866,85 @@ class PatientController:
 # Section 5: Resource methods
 # ----------------------------
     def search_by_keyword(self):
-        keyword = input(f"{CYAN}{BOLD}Enter a keyword to search for related resources: {RESET}\n").strip()
+        """Search for meditation and relaxation resources by keyword."""
+        def parse_results(response_content):
+            results = []
+            is_target_div = False
+            is_target_link = False
+            current_link = None
+            current_title = []
+
+            def handle_starttag(tag, attrs):
+                """ HTMLParser callback for handling start tags """
+                nonlocal is_target_div, is_target_link, current_link
+                attrs_dict = dict(attrs)
+
+                # Detect the target div with class "gtazFe"
+                if tag == "div" and attrs_dict.get("class", "").strip() == "gtazFe":
+                    is_target_div = True
+                # Detect the <a> tag and start accumulating the link and text
+                elif is_target_div and tag == "a":
+                    is_target_link = True
+                    current_link = attrs_dict.get("href")
+
+            def handle_endtag(tag):
+                """ HTMLParser callback for handling end tags """
+                nonlocal is_target_div, is_target_link, current_link, current_title
+                # End of the <a> tag
+                if tag == "a" and is_target_link:
+                    is_target_link = False
+                # End of the target div
+                if tag == "div" and is_target_div:
+                    is_target_div = False
+                    if current_link and current_title:
+                        # Join all accumulated title parts and append to results
+                        full_title = "".join(current_title).strip()
+                        results.append({"Title": full_title, "URL": current_link})
+                        current_link = None
+                        current_title = []
+
+            def handle_data(data):
+                """ HTMLParser callback for handling data """
+                nonlocal current_title
+                if is_target_link:
+                    current_title.append(data)
+
+            # Create the HTML parser
+            parser = HTMLParser()
+            parser.handle_starttag = handle_starttag
+            parser.handle_endtag = handle_endtag
+            parser.handle_data = handle_data
+
+            # Feed the parser with the HTML content
+            parser.feed(response_content)
+            return results
+
+        # Fetch the HTML content and parse results
+        keyword = input(f"{CYAN}{BOLD}Enter a keyword to search for related resources 🔍: {RESET}").strip()
         if keyword == "back":
             self.display_manager.back_operation()
             self.resource_menu()
             return
+
         url = f"https://www.freemindfulness.org/_/search?query={keyword}"
 
         try:
-            response = requests.get(url, timeout=10) 
-            html_content = response.text 
-            soup = BeautifulSoup(html_content, "html.parser")
+            import ssl
+            import urllib.request
+            context = ssl._create_unverified_context()
+            with urllib.request.urlopen(url, context=context) as response:
+                html_content = response.read().decode("utf-8")
 
-            results = []
-            for div in soup.find_all('div', class_='gtazFe'):
-                a_tag = div.find('a')
-                if a_tag:
-                    title = a_tag.text.strip()
-                    href = a_tag['href']
-                    results.append({'Title': title, 'URL': href})
-
-            if len(results) == 0:
-                # Print the constructed file path and current working directory
-                print("Journal file path:", self.journal_file)
-                print("Current working directory:", os.getcwd())
-                print("No related resources found.")
-            else:
+            results = parse_results(html_content)
+            if results:
+                print(f"{BOLD}{MAGENTA}Found {len(results)} resource ⬇️ : {RESET}")
                 data = {key: [result[key] for result in results] for key in results[0]}
                 create_table(data, title="Meditation and Relaxation Resources", display_title=True, display_index=False)
+            else:
+                print("No related resources found.")
 
-        except requests.exceptions.RequestException as e:
-            print(f"An error occurred while fetching the webpage: {e}")           
+        except Exception as e:
+            print(f"Error occurred: {e}")
 
 
 # ----------------------------

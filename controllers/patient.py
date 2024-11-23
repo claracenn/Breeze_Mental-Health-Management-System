@@ -2,16 +2,17 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from models.patient.patient_journal import Journal
-from models.patient.patient_mood import Mood
+
 from models.user import Patient
 from utils.data_handler import *
+from utils.display_manager import DisplayManager
 from controllers.mhwp import MHWPController
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
 from datetime import datetime, timedelta
 import json
+import smtplib as smtplib
 
 
 """
@@ -31,6 +32,9 @@ ORANGE = "\033[93m\033[1m"
 YELLOW = "\033[93m"
 LIGHT_GREEN = "\033[92m"
 GREEN = "\033[92m\033[1m"
+GREY = "\033[90m"
+MAGENTA = "\033[95m"
+CYAN = "\033[96m"
 
 """
 ==================================
@@ -38,128 +42,149 @@ Patient Controller Class
 ==================================
 """
 class PatientController:
-    def __init__(self, patient: Patient):
+    def __init__(self, patient):
         self.patient = patient
+        self.display_manager = DisplayManager()
         self.journal_file = "data/patient_journal.json"
         self.mood_file = "data/patient_mood.json"
         self.patient_info_file = "data/patient_info.json"
         self.appointment_file = "data/appointment.json"
-        self.request_log_file = "data/mhwp_change_request.json"
+        self.request_log_file = "data/request_log.json"
         self.mhwp_info_file = "data/mhwp_info.json"
+        self.feedback_file = "data/feedback.json"
 
-    def display_menu(self, title, options):
-        """Generic method to display a menu with subdued styling."""
-        print(f"\n{BOLD}{UNDERLINE}{title}{RESET}")
-        print("-" * 50)  # Divider line
-        for index, option in enumerate(options, start=1):
-            # [1] Frame it
-            print(f"{BLACK}[{index}]{RESET} {option}")
-        print("-" * 50)
-        return input(f"{BROWN_RED}Choose an option ⏳: {RESET}")  
-
-    # Main menu
     def display_patient_homepage(self):
-        """Display the patient homepage."""
-        while True:
-            choice = self.display_menu(
-                "🏠 Patient Homepage",
-                [
-                    "Profile",
-                    "Journal",
-                    "Mood",
-                    "Appointments",
-                    "Resources",
-                    "Log Out",
-                ],
-            )
-            if choice == "1":
-                self.profile_menu()
-            elif choice == "2":
-                self.journal_menu()
-            elif choice == "3":
-                self.mood_menu()
-            elif choice == "4":
-                self.appointment_menu()
-            elif choice == "5":
-                self.resource_menu()
-            elif choice == "6":
-                print(f"{BOLD}Logging out...{RESET}")
-                break
-            else:
-                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+        title = "🏠 Patient Homepage"
+        main_menu_title = "🏠 Patient Homepage"
+        
+        options = [
+            "Profile",
+            "Journal",
+            "Mood",
+            "Appointments",
+            "Resources",
+            "Feedback",
+            "Log Out",
+        ]
+        action_map = {
+            "1": self.profile_menu,
+            "2": self.journal_menu,
+            "3": self.mood_menu,
+            "4": self.appointment_menu,
+            "5": self.resource_menu,
+            "6": self.feedback_menu,
+            "7": lambda: print(f"{BOLD}Logging out...{RESET}") 
+        }
 
-    # Sub menus
+        # Modify options and actions for disabled patients
+        if self.patient.status == "DISABLED":
+            print(f"{RED}Your account is disabled. You can only log out.{RESET}")
+            options = [f"{option} (Disabled)" for option in options[:-1]] + ["Log Out"]
+            action_map = {"7": lambda: print(f"{BOLD}Logging out...{RESET}")}
+
+        # Call the navigate_menu method from the DisplayManager to show the menu
+        while True:
+            choice = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+
+            if choice == "7":
+                break  # Log out
+            elif choice in action_map:
+                if self.patient.status == "DISABLED" and choice != "7":
+                    print(f"{RED}Your account is disabled. You can only log out.{RESET}")
+                else:
+                    action_map[choice]()  # Execute the selected action
+            else:
+                print(f"{RED}Invalid choice. Please try again.{RESET}")  
+
+
+
     def profile_menu(self):
         """Display the profile menu."""
-        while True:
-            choice = self.display_menu(
-                "👤 Profile Menu", ["View Profile", "Edit Profile", "Back to Homepage"]
-            )
-            if choice == "1":
-                self.view_profile()
-            elif choice == "2":
-                self.edit_profile()
-            elif choice == "3":
-                break
-            else:
-                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+        title = "👤 Profile Menu"
+        main_menu_title = "🏠 Patient Homepage"
+        options = ["View Profile", "Edit Profile", "Back to Homepage"]
+        action_map = {
+            "1": self.view_profile,
+            "2": self.edit_profile,
+            "3": lambda: None,  # Back to Homepage handled in navigate_menu
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == "main_menu":
+            self.display_patient_homepage()
 
     def journal_menu(self):
-        while True:
-            choice = self.display_menu(
-                "📔 Journal Menu", ["View Journal Entries", "Add Journal Entry", "Back to Homepage"]
-            )
-            if choice == "1":
-                self.view_journals()
-            elif choice == "2":
-                self.add_journal()
-            elif choice == "3":
-                break
-            else:
-                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+        title = "📔 Journal Menu"
+        main_menu_title = "🏠 Patient Homepage"
+        options = ["View Journal Entries", "Add Journal Entry", "Update Journal", "Delete Journal", "Back to Homepage"]
+        action_map = {
+            "1": self.view_journals,  # Changed to new submenu function
+            "2": self.add_journal,
+            "3": self.update_journal,
+            "4": self.delete_journal,
+            "5": lambda: None,  # Back to Homepage handled in navigate_menu
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == "main_menu":
+            self.display_patient_homepage()
 
     def mood_menu(self):
-        while True:
-            choice = self.display_menu(
-                "😊 Mood Menu", ["View Mood Log", "Add Mood Entry", "Back to Homepage"]
-            )
-            if choice == "1":
-                self.view_moods()
-            elif choice == "2":
-                self.add_mood()
-            elif choice == "3":
-                break
-            else:
-                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+        title = "😊 Mood Menu"
+        main_menu_title = "🏠 Patient Homepage"
+        options = ["View Mood Log", "Add Mood Entry", "Update Mood Entry", "Delete Mood Entry", "Back to Homepage"]
+        action_map = {
+            "1": self.view_moods,
+            "2": self.add_mood,
+            "3": self.update_mood,
+            "4": self.delete_mood,
+            "5": lambda: None,  # Back to Homepage handled in navigate_menu
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == "main_menu":
+            self.display_patient_homepage()
 
     def appointment_menu(self):
-        while True:
-            choice = self.display_menu(
-                "📅 Appointment Menu",
-                ["View Appointment", "Make New Appointment", "Cancel Appointment", "Back to Homepage"],
-            )
-            if choice == "1":
-                self.view_appointment()
-            elif choice == "2":
-                self.make_appointment()
-            elif choice == "3":
-                self.cancel_appointment()
-            elif choice == "4":
-                break
-            else:
-                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+        title = "📅 Appointment Menu"
+        main_menu_title = "🏠 Patient Homepage"
+        options = [
+            "View Appointment",
+            "Make New Appointment",
+            "Cancel Appointment",
+            "Back to Homepage",
+        ]
+        action_map = {
+            "1": self.view_appointment,
+            "2": self.make_appointment,
+            "3": self.cancel_appointment,
+            "4": lambda: None,  # Back to Homepage handled in navigate_menu
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == "main_menu":
+            self.display_patient_homepage()
 
     def resource_menu(self):
-        while True:
-            choice = self.display_menu(
-                "🔍 Search Resources", ["Search by Keyword", "Back to Homepage"]
-            )
-            if choice == "1":
-                self.search_by_keyword()
-            elif choice == "2":
-                break
-            else:
-                print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+        title = "📚 Resource Menu"
+        main_menu_title = "🏠 Patient Homepage"
+        options = ["Search by Keyword", "Back to Homepage"]
+        action_map = {
+            "1": self.search_by_keyword,
+            "2": lambda: None,  # Back to Homepage handled in navigate_menu
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == "main_menu":
+            self.display_patient_homepage()
+
+    def feedback_menu(self):
+        title = "📚 Feedback Menu"
+        main_menu_title = "🏠 Patient Homepage"
+        options = ["Provide a feedback", "View your feedbacks", "Back to Homepage"]
+        action_map = {
+            "1": self.add_feedback,
+            "2": self.view_feedback,
+            "3": lambda: None,  # Back to Homepage handled in navigate_menu
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == "main_menu":
+            self.display_patient_homepage()
 
 
 # ----------------------------
@@ -186,42 +211,62 @@ class PatientController:
 
             for patient in data:
                 if patient["patient_id"] == self.patient.user_id:
-                    print(f"\nEdit Profile:")
+                    print(f"\n{BOLD}📃 Edit Profile:")
                     while True:
-                        choice = self.display_menu(
-                            "Select the field you want to edit (Current value in parentheses)",
-                            [
-                                f"Name (current: {patient['name']})",
-                                f"Email (current: {patient['email']})",
-                                f"Emergency Contact (current: {patient['emergency_contact_email']})",
-                                f"MHWP (current: {patient.get('mhwp_id', 'None')})",
-                                "Edit All",
-                                "Back to Profile Menu",
-                            ]
-                        )
+                        # Display a simple menu for editing profile
+                        print(f"{BOLD}{MAGENTA}Select the field you want to edit:{RESET}")
+                        print(f"1. Name (current: {patient['name']})")
+                        print(f"2. Email (current: {patient['email']})")
+                        print(f"3. Emergency Contact (current: {patient['emergency_contact_email']})")
+                        print(f"4. Change MHWP (current: {patient.get('mhwp_id', 'None')})")
+                        print(f"5. Edit All")
+                        print(f"6. Back to Profile Menu")
                         
+                        # Get user choice and handle it
+                        choice = input(f"{CYAN}{BOLD}Choose an option ⏳: {RESET}").strip()
+                        if choice == "back":
+                            self.display_manager.back_operation()
+                            return
                         if choice == "4":
                             self.display_eligible_mhwps(patient["patient_id"], patient["mhwp_id"])
                             return  
                         elif choice == "1":
                             new_name = input("Enter new name: ").strip()
+                            if new_name == "back":
+                                self.display_manager.back_operation()
+                                return
                             if new_name:
                                 patient["name"] = new_name
                                 print("Name updated successfully.")
                         elif choice == "2":
                             new_email = input("Enter new email: ").strip()
+                            if new_email == "back":
+                                self.display_manager.back_operation()
+                                return
                             if new_email:
                                 patient["email"] = new_email
                                 print("Email updated successfully.")
                         elif choice == "3":
                             new_contact = input("Enter new emergency contact email: ").strip()
+                            if new_contact == "back":
+                                self.display_manager.back_operation()
+                                return
                             if new_contact:
                                 patient["emergency_contact_email"] = new_contact
                                 print("Emergency contact updated successfully.")
                         elif choice == "5":
                             new_name = input("Enter new name: ").strip()
+                            if new_name == "back":
+                                self.display_manager.back_operation()
+                                return
                             new_email = input("Enter new email: ").strip()
+                            if new_email == "back":
+                                self.display_manager.back_operation()
+                                return
                             new_contact = input("Enter new emergency contact email: ").strip()
+                            if new_contact == "back":
+                                self.display_manager.back_operation()
+                                return
                             if new_name:
                                 patient["name"] = new_name
                             if new_email:
@@ -234,11 +279,13 @@ class PatientController:
                             break
                         else:
                             print("Invalid choice. Please try again.")
-
+                            
+                    # Save the updated data back to the file
                     save_json(self.patient_info_file, data)
                     break
             else:
                 print("Patient not found.")
+
 
     def display_eligible_mhwps(self, patient_id, current_mhwp_id):
         """Display a list of eligible MHWPs (patient_count < 4) for the patient to select from."""
@@ -272,7 +319,13 @@ class PatientController:
 
     def create_mhwp_change_request(self, patient_id, current_mhwp_id, target_mhwp_id, reason):
         """Create a new MHWP change request and save it to request_log.json."""
+        # Ensure request_log is initialized properly
         request_log = read_json(self.request_log_file)
+        
+        # If read_json returns None, initialize an empty list
+        if request_log is None:
+            request_log = []
+        
         new_request = {
             "user_id": patient_id,
             "current_mhwp_id": current_mhwp_id,
@@ -281,9 +334,13 @@ class PatientController:
             "status": "pending",
             "requested_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
-        request_log.append(new_request)
-        save_json(self.request_log_file, request_log)
 
+        # Append the new request
+        request_log.append(new_request)
+
+        # Save the updated request log back to the file
+        save_json(self.request_log_file, request_log)
+        print("Your request to change MHWP has been submitted and is pending approval.")
 
 # ----------------------------
 # Section 2: Journal methods
@@ -339,17 +396,19 @@ class PatientController:
     
     def add_journal(self):
         """Add a new journal entry for the current patient."""
-        print("Type your journal, tap enter when you finish:")
-        journal_text = input().strip()
+        journal_text = input(f"{CYAN}{BOLD}Type your journal, tap enter when you finish: {RESET}\n").strip()
+        if journal_text == "back":
+            self.display_manager.back_operation() 
+            self.journal_menu()
+            return
         
         current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
         
-        journal = Journal(
-           patient_id=self.patient.user_id,
-           timestamp=current_timestamp,
-           journal_text=journal_text
-        ) 
-        journal = journal.to_dict()
+        journal = {
+            "patient_id": self.patient.user_id,
+            "timestamp": current_timestamp,
+            "journal_text": journal_text
+        }
                 
         if add_entry(self.journal_file, journal):
             print("Journal saved successfully!")
@@ -357,8 +416,16 @@ class PatientController:
             print("Failed to save journal. Please try again.")
 
     def delete_journal(self):
+        # display the journal
+        self.view_journals()
+
         """Delete a journal entry for the current patient."""
-        journal_index = int(input("Enter the index of the journal entry you want to delete: ").strip())
+        journal_index = input(f"{CYAN}{BOLD}Enter the index of the journal entry you want to delete: {RESET}\n").strip()
+        if journal_index == "back":
+            self.display_manager.back_operation() 
+            self.journal_menu()
+            return
+        journal_index = int(journal_index)
         # Retrieve the actual index in the JSON file
         actual_index = self.current_patient_journal_map.get(journal_index)
         
@@ -372,8 +439,16 @@ class PatientController:
             print("Failed to delete journal entry. Please try again.")
 
     def update_journal(self):
+        # Display all journals for the current patient in a table format
+        self.view_journals()
+
         """Update a journal entry for the current patient."""
-        journal_index = int(input("Enter the index of the journal entry you want to update: ").strip())
+        journal_index = input(f"{CYAN}{BOLD}Enter the index of the journal entry you want to update: {RESET}\n").strip()
+        if journal_index == "back":
+            self.display_manager.back_operation() 
+            self.journal_menu()
+            return
+        journal_index = int(journal_index)
         # Retrieve the actual index in the JSON file
         actual_index = self.current_patient_journal_map.get(journal_index)
         
@@ -381,7 +456,14 @@ class PatientController:
             print("Invalid index for the current patient.")
             return
         
-        new_journal_text = input("Enter the new journal text: ").strip()
+        # Get the new journal text
+        new_journal_text = input(f"{CYAN}{BOLD}Type your new journal text, tap enter when you finish: {RESET}\n").strip()
+        if new_journal_text == "back":
+            self.display_manager.back_operation() 
+            self.journal_menu()
+            return
+        
+        # Update the journal entry in the JSON file
         if update_entry(self.journal_file, actual_index + 1, {"journal_text": new_journal_text}):
             print("Journal entry updated successfully!")
         else:
@@ -472,7 +554,12 @@ class PatientController:
         
         while True:
             try:
-                mood_choice = int(input("\nPlease select your mood (1-6):").strip())
+                mood_choice = input(f"{CYAN}{BOLD}Please select your mood (1-6): {RESET}\n").strip()
+                if mood_choice == "back":
+                    self.display_manager.back_operation() 
+                    self.mood_menu()
+                    return
+                mood_choice = int(mood_choice)
                 if 1 <= mood_choice <= 6:
                     break
                 print("Please enter a number between 1 and 6.")
@@ -489,18 +576,20 @@ class PatientController:
         }
         mood_color = mood_colors[mood_choice]
 
-        mood_comments = input("Please enter your mood comments:").strip()
+        mood_comments = input(f"{CYAN}{BOLD}Please enter your mood comments: {RESET}\n").strip()
+        if mood_comments == "back":
+            self.display_manager.back_operation()
+            self.mood_menu()
+            return
 
         current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-        mood = Mood(
-            patient_id=self.patient.user_id,
-            timestamp=current_timestamp,
-            mood_color=mood_color,
-            mood_comments=mood_comments
-        )
-
-        mood = mood.to_dict()
+        mood = {
+            "patient_id": self.patient.user_id,
+            "timestamp": current_timestamp,
+            "mood_color": mood_color,
+            "mood_comments": mood_comments
+        }
 
         if add_entry(self.mood_file, mood):
             print("Mood logged successfully!")
@@ -508,9 +597,15 @@ class PatientController:
             print("Failed to log mood. Please try again.")
 
     def delete_mood(self):
+        self.view_moods()
         """Delete a mood entry for the current patient."""
-        mood_index = int(input("Enter the index of the mood entry you want to delete: ").strip())
-        
+        mood_index = input(f"{CYAN}{BOLD}Enter the index of the mood entry you want to delete: {RESET}\n").strip()
+        if mood_index == "back":
+            self.display_manager.back_operation()
+            self.mood_menu()
+            return
+        mood_index = int(mood_index)
+
         # Get the actual JSON index from the mapping
         actual_index = self.current_patient_mood_map.get(mood_index)
         
@@ -524,8 +619,14 @@ class PatientController:
             print("Failed to delete mood entry. Please try again.")
 
     def update_mood(self):
+        self.view_moods()
         """Update a mood entry for the current patient."""
-        mood_index = int(input("Enter the index of the mood entry you want to update: ").strip())
+        mood_index = input(f"{CYAN}{BOLD}Enter the index of the mood entry you want to update: {RESET}\n").strip()
+        if mood_index == "back":
+            self.display_manager.back_operation()
+            self.mood_menu()
+            return
+        mood_index = int(mood_index)
         
         # Get the actual JSON index from the mapping
         actual_index = self.current_patient_mood_map.get(mood_index)
@@ -534,7 +635,11 @@ class PatientController:
             print("Invalid index for the current patient.")
             return
         
-        new_mood_comments = input("Enter the new mood comments: ").strip()
+        new_mood_comments = input(f"{CYAN}{BOLD}Enter the new mood comments: {RESET}\n").strip()
+        if new_mood_comments == "back":
+            self.display_manager.back_operation()
+            self.mood_menu()
+            return
         
         if update_entry(self.mood_file, actual_index + 1, {"mood_comments": new_mood_comments}):  
             print("Mood entry updated successfully!")
@@ -545,7 +650,7 @@ class PatientController:
 # ----------------------------
 # Section 4: Appointment methods
 # ----------------------------
-    def view_appointment(self):
+    def view_appointment(self, status=None):
         try:
             patient_info = read_json(self.patient_info_file)
             appointment = read_json(self.appointment_file)
@@ -556,7 +661,10 @@ class PatientController:
                 return
             
             # Filter appointments for the current patient
-            patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id]
+            if status:
+                patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id and a["status"] == status]
+            else:
+                patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id]
             if not patient_appointments:
                 print("No appointments found for this patient.")
                 return
@@ -651,7 +759,12 @@ class PatientController:
                 
                 try:
                     # Select date
-                    selected_date_idx = int(input("Select a date by index: ").strip()) - 1
+                    selected_date_idx = input("Select a date by index: ").strip()
+                    if selected_date_idx == "back":
+                        self.display_manager.back_operation()
+                        self.appointment_menu()
+                        return
+                    selected_date_idx = int(selected_date_idx) - 1
                     if selected_date_idx < 0 or selected_date_idx >= len(available_dates):
                         print("❌ Invalid selection.")
                         continue
@@ -663,7 +776,7 @@ class PatientController:
                         print("❗️ You already have an appointment on this date. Please choose another date.")
                         continue #return to date selection
                     break
-                except Exception as e:
+                except ValueError:
                     print("❌ Invalid selection.")
             
             # Display available time slots
@@ -680,13 +793,18 @@ class PatientController:
 
                 # Select time slot
                 try:
-                    selected_slot_index = int(input("Select a time slot: ")) - 1
+                    selected_slot_index = input("Select a time slot: ")
+                    if selected_slot_index == "back":
+                        self.display_manager.back_operation()
+                        self.appointment_menu()
+                        return
+                    selected_slot_index = int(selected_slot_index) - 1
                     if selected_slot_index not in range(len(available_time_slots)):
                         print("❌ Invalid selection.") 
                         continue #return to time slot selection
                     selected_time_slot = available_time_slots[selected_slot_index]
                     break
-                except Exception as e:
+                except ValueError:
                     print("❌ Invalid selection.")
 
             # Confirm appointment
@@ -714,16 +832,31 @@ class PatientController:
     def cancel_appointment(self):
         self.view_appointment()
         try:
-            display_index = int(input("Enter the index of the appointment you want to cancel: "))
-            if display_index not in self.appointment_id_map:
-                print("Invalid number. Please choose a number from the list above.")
+            display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to cancel: {RESET}\n").strip()
+            if display_index == "back":
+                self.display_manager.back_operation()
+                self.appointment_menu()
+                return
+            try:
+                display_index = int(display_index)
+                if display_index not in self.appointment_id_map:
+                    print("Invalid number. Please choose a number from the list above.")
+                    return
+            except ValueError:
+                print("Invalid input. Please enter a valid number.")
                 return
                 
             actual_appointment_id = self.appointment_id_map[display_index]
-            if delete_entry(self.appointment_file, actual_appointment_id):
-                print("Appointment cancelled successfully!")
-            else:
-                print("Failed to cancel appointment. Please try again.")
+
+            appointments = read_json(self.appointment_file)
+            for appointment in appointments:
+                if appointment["appointment_id"] == actual_appointment_id:
+                    appointment["status"] = "CANCELLED"
+                    appointment["last_updated"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+                    if save_json(self.appointment_file, appointments):
+                        print("✅ Appointment cancelled successfully!")
+                        return
+            print("❌ Failed to cancel appointment. Please try again.")
         except ValueError:
             print("Please enter a valid number.")
 
@@ -731,7 +864,11 @@ class PatientController:
 # Section 5: Resource methods
 # ----------------------------
     def search_by_keyword(self):
-        keyword = input("Enter a keyword to search for related resources: ")
+        keyword = input(f"{CYAN}{BOLD}Enter a keyword to search for related resources: {RESET}\n").strip()
+        if keyword == "back":
+            self.display_manager.back_operation()
+            self.resource_menu()
+            return
         url = f"https://www.freemindfulness.org/_/search?query={keyword}"
 
         try:
@@ -757,11 +894,116 @@ class PatientController:
                 create_table(data, title="Meditation and Relaxation Resources", display_title=True, display_index=False)
 
         except requests.exceptions.RequestException as e:
-            print(f"An error occurred while fetching the webpage: {e}")
+            print(f"An error occurred while fetching the webpage: {e}")           
+
+
+# ----------------------------
+# Section 6: Feedback methods
+# ----------------------------
+    def add_feedback(self):
+        # show all appointments
+        self.view_feedback()
+
+        # Let patient choose which appointment to provide feedback for
+        while True:
+            try:
+                display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to provide feedback for: {RESET}\n").strip()
+                if display_index == "back":
+                    self.display_manager.back_operation()
+                    self.feedback_menu()
+                    return
+                display_index = int(display_index)
+                if display_index not in self.appointment_id_map:
+                    print("Invalid number. Please choose a number from the list above.")
+                    continue
+                break
+            except ValueError:
+                print("Invalid input. Please enter a valid number.")
+
+        # Get the feedback
+        feedback_content = input(f"{CYAN}{BOLD}Please enter your feedback: {RESET}\n").strip()
+        if feedback_content == "back":
+            self.display_manager.back_operation()
+            self.feedback_menu()
+            return
+        
+        # Add feedback to feedback.json file
+        current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        actual_appointment_id = self.appointment_id_map[display_index]
+        feedback = {
+            "appointment_id": actual_appointment_id,
+            "feedback": feedback_content,
+            "create_time": current_timestamp
+        }
+
+        if add_entry(self.feedback_file, feedback):
+            print("✅ Feedback added successfully!")
+            return
+        else:
+            print("❌ Failed to add feedback. Please try again.")
+
+    def view_feedback(self):
+        try:
+            patient_info = read_json(self.patient_info_file)
+            appointment = read_json(self.appointment_file)
+            mhwp_info = read_json(self.mhwp_info_file)
+            feedback_info = read_json(self.feedback_file)
+
+            patient = next((p for p in patient_info if p["patient_id"] == self.patient.user_id), None)
+            if not patient:
+                print("Patient not found.")
+                return
+            
+            # Filter appointments for the current patient
+            patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id and a["status"] == "CONFIRMED"]
+            if not patient_appointments:
+                print("No appointments found for this patient.")
+                return
+            
+            # Prepare table data
+            
+            
+            table_data = {
+                "Date": [],
+                "Time Slot": [],
+                "Your MHWP": [],
+                "Notes": [],
+                "Your Feedback": []
+            }
+
+            # Create mapping between display index (the key) and actual appointment ID (the value)
+            self.appointment_id_map = {}  
+            
+            # Populate table data
+            for idx, appt in enumerate(patient_appointments, 1):
+                self.appointment_id_map[idx] = appt["appointment_id"]  
+                table_data["Date"].append(appt.get("date", "N/A"))
+                table_data["Time Slot"].append(appt.get("time_slot", "N/A"))
+                mhwp_name = next(
+                    (m["name"] for m in mhwp_info if m["mhwp_id"] == appt.get("mhwp_id")),
+                    "Unknown"
+                )
+                table_data["Your MHWP"].append(mhwp_name)
+                table_data["Notes"].append(appt.get("notes", ""))
+                feedback = next(
+                    (f["feedback"] for f in feedback_info if f["appointment_id"] == appt.get("appointment_id")),
+                    "N/A"
+                )
+                table_data["Your Feedback"].append(feedback)
+            
+            # Display the table
+            create_table(
+                data=table_data,
+                title="Your Feedbacks",
+                display_title=True,
+                display_index=True  # Show display index
+            )
+
+        except Exception as e:
+            print(f"An error occurred while viewing feedbacks: {str(e)}")
 
 
 # Testing
 if __name__ == "__main__":
-    patient_controller = PatientController(Patient(1, "patient", "password", "email", "emergency_contact_email", 21))
-    patient_controller.display_patient_homepage()                  
-
+    patient_controller = PatientController(Patient(1, "patient", "password", "name", "email", "emergency_contact_email", 21, "ACTIVE"))
+    patient_controller.display_patient_homepage()

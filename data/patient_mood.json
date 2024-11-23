@@ -244,5 +244,11 @@
         "timestamp": "2024-11-11T19:11:48",
         "mood_color": "5_light_green",
         "mood_comments": "Wooooo!"
+    },
+    {
+        "patient_id": 1,
+        "timestamp": "2024-11-19T11:47:03",
+        "mood_color": "3_orange",
+        "mood_comments": "Too cold today, soso.."
     }
 ]

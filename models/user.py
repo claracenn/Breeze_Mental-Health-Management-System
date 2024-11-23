@@ -25,4 +25,9 @@ class MHWP(User):
         self.email = email
         self.patient_count = patient_count
         self.mhwp_id = user_id
+
+    def __getitem__(self, key):
+        if key == "mhwp_id":
+            return self.mhwp_id
+        raise KeyError(f"Key {key} not found")
     

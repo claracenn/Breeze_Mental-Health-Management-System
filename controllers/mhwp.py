@@ -376,12 +376,5 @@ class MHWPController:
         return mhwp_data
 
 if __name__ == "__main__":
-    # MHWP = {
-    #         "mhwp_id": 21,
-    #         "name": "Robert Lewandowski",
-    #         "email": "robert.lewandowski@example.com",
-    #         }
-    # mhwp1 = MHWPController(MHWP)
-    # mhwp1.view_MHWP_homepage()
-    mhwp_controller = MHWPController(MHWP(22, "mhwp2", "", "Erling Haaland", "erling.haaland@example.com", 3, "ACTIVE"))
+    mhwp_controller = MHWPController(MHWP(22, "mhwp", "password", "name", "email", 3, "ACTIVE"))
     mhwp_controller.view_MHWP_homepage()

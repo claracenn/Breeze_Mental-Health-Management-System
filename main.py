@@ -5,8 +5,8 @@ from controllers.admin import AdminController
 from controllers.mhwp import MHWPController
 from controllers.patient import PatientController
 from models.user import Admin, MHWP, Patient
-from utils.data_handler import *
-
+from utils.data_handler import read_json
+from utils.validation import validate_credentials
 
 # Font and color codes (for reference)
 Red = "\033[91m"  # use for errors (bright red for visibility)
@@ -203,7 +203,6 @@ def role_navigation(user_role, user_id):
         print(f"{Red}User role is not recognized. Please contact the administrator.{Reset}")
         log_action(f"User role '{user_role}' not recognized for user '{user_id}'", "system")
 
-
 def main():
     while True:
         display_welcome_page()
@@ -217,7 +216,6 @@ def main():
                 print(f"{Cyan}Exiting... Goodbye!{Reset}")
                 log_action("User chose to exit the system", "system")
                 sys.exit()
-
 
 if __name__ == "__main__":
     main()

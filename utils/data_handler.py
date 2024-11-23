@@ -138,12 +138,6 @@ def create_table(data, title="", display_title=False, display_index=False):
     # create pandas dataframe and convert its values to strings
     df = pd.DataFrame(data=data).astype(str)
 
-    # add index to the DataFrame if display_index is True
-    if display_index:
-        df.index = [str(i + 1) for i in range(len(df))]
-        df.index.name = "Index" 
-        df = df.reset_index() 
-
     # calculate max_width for each col based on length of each val (headers and data)
     col_widths = {}
     for col in df.columns:
@@ -208,7 +202,6 @@ def sanitise_data(data, valid_values):
     """
     data = data.strip() if type(data) == str else data
     return (data in valid_values)
-
 
 
 

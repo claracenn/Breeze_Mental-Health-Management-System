@@ -1,7 +1,4 @@
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-import json
+
 from models.user import MHWP
 import pandas as pd
 
@@ -36,14 +33,6 @@ class MHWPController:
 
     def __init__(self, mhwp):
         self.mhwp = mhwp
-        self.icons = {
-            1: "\U0001F601",
-            2: "\U0001F642",
-            3: "\U0001F610",
-            4: "\U0001F615", 
-            5: "\U0001F61E",
-            6: "\U0001F621"
-        }
 
     def view_menu(self, title, options):
         """Generic method to display a menu with subdued styling."""

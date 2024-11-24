@@ -55,6 +55,33 @@ class PatientController:
         self.mhwp_info_file = "data/mhwp_info.json"
         self.feedback_file = "data/feedback.json"
 
+    def get_upcoming_appointments(self):
+        """Get appointments within the next 7 days for the patient."""
+        current_date = datetime.datetime.now()
+        seven_days_later = current_date + datetime.timedelta(days=7)
+
+        # Read appointment data
+        appointments = read_json(self.appointment_file)
+        if not appointments:
+            return []
+
+        # Read MHWP info to get mhwp_name
+        mhwp_info = read_json(self.mhwp_info_file)
+
+        # Filter appointments within the next 7 days for the current patient
+        upcoming_appointments = []
+        for appointment in appointments:
+            if appointment["patient_id"] == self.patient.user_id:
+                appointment_date = datetime.datetime.strptime(appointment["date"], "%Y-%m-%d")
+                if current_date <= appointment_date <= seven_days_later:
+                    # Find the MHWP name based on mhwp_id
+                    mhwp_id = appointment["mhwp_id"]
+                    mhwp_name = next((mhwp["name"] for mhwp in mhwp_info if mhwp["mhwp_id"] == mhwp_id), "Unknown MHWP")
+                    appointment["mhwp_name"] = mhwp_name  # Add mhwp_name to the appointment
+                    upcoming_appointments.append(appointment)
+
+        return upcoming_appointments
+
     def display_patient_homepage(self):
         title = "🏠 Patient Homepage"
         main_menu_title = "🏠 Patient Homepage"
@@ -83,6 +110,15 @@ class PatientController:
             print(f"{RED}Your account is disabled. You can only log out.{RESET}")
             options = [f"{option} (Disabled)" for option in options[:-1]] + ["Log Out"]
             action_map = {"7": lambda: print(f"{BOLD}Logging out...{RESET}")}
+
+        # Display upcoming appointments if any
+        upcoming_appointments = self.get_upcoming_appointments()
+        if upcoming_appointments:
+            print(f"{GREEN}Upcoming Appointments in the next 7 days:{RESET}")
+            for appt in upcoming_appointments:
+                print(f"{BOLD}{appt['date']} {appt['time_slot']} - {appt['status']} with {appt['mhwp_name']}{RESET}")
+        else:
+            print(f"{LIGHT_GREEN}No appointments in the next 7 days.{RESET}")
 
         # Call the navigate_menu method from the DisplayManager to show the menu
         while True:

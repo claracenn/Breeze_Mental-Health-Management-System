@@ -14,7 +14,7 @@ from html.parser import HTMLParser
 import pandas as pd
 from datetime import datetime, timedelta
 import json
-import smtplib
+from utils.email_helper import send_email
 
 
 """
@@ -857,6 +857,22 @@ class PatientController:
                     appointment["last_updated"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
                     if save_json(self.appointment_file, appointments):
                         print("✅ Appointment cancelled successfully!")
+                        mhwp_info = read_json(self.mhwp_info_file)
+                        mhwp_email = next((m["email"] for m in mhwp_info if m["mhwp_id"] == appointment["mhwp_id"]), None)
+                        subject = "Your Patient Canceled an Appointment"
+                        message_body = f'''
+                            Your Patient Canceled an Appointment.\n
+                            Patient Name: {self.patient.name}\n
+                            Patient ID: {self.patient.user_id}\n
+                            Date: {appointment["date"]}\n
+                            Time Slot: {appointment["time_slot"]}\n
+                            Breeze Mental Health and Wellbeing App
+                        '''
+                        if mhwp_email:
+                            send_email(mhwp_email, subject, message_body)
+                        else:
+                            print("❌ Failed to send email to MHWP. Please try again.")
+
                         return
             print("❌ Failed to cancel appointment. Please try again.")
         except ValueError:

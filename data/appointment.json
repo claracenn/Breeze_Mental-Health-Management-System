@@ -225,10 +225,10 @@
         "mhwp_id": 21,
         "date": "2024-10-21",
         "time_slot": "14:00 - 15:00",
-        "status": "CONFIRMED",
+        "status": "CANCELLED",
         "notes": "Addressed recent life changes.",
         "create_time": "2024-10-29T17:43:11",
-        "last_updated": "2024-10-29T17:43:11"
+        "last_updated": "2024-11-24T21:14:32"
     },
     {
         "appointment_id": 22,
@@ -471,5 +471,16 @@
         "notes": "",
         "create_time": "2024-11-20T13:27:19",
         "last_updated": "2024-11-20T13:27:42"
+    },
+    {
+        "appointment_id": 44,
+        "patient_id": 1,
+        "mhwp_id": 21,
+        "date": "2024-11-28",
+        "time_slot": "10:00 - 11:00",
+        "status": "CANCELLED",
+        "notes": "",
+        "create_time": "2024-11-24T21:14:10",
+        "last_updated": "2024-11-24T21:17:37"
     }
 ]

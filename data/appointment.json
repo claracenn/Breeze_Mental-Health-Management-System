@@ -1,16 +1,5 @@
 [
     {
-        "appointment_id": 1,
-        "patient_id": 1,
-        "mhwp_id": 21,
-        "date": "2024-03-20",
-        "time_slot": "10:00 - 11:00",
-        "status": "PENDING",
-        "notes": "Session focused on relaxation techniques.",
-        "create_time": "2024-10-29T17:43:11",
-        "last_updated": "2024-10-29T17:43:11"
-    },
-    {
         "appointment_id": 2,
         "patient_id": 2,
         "mhwp_id": 25,
@@ -216,17 +205,6 @@
         "time_slot": "09:00 - 10:00",
         "status": "CANCELED",
         "notes": "Focused on stress management techniques.",
-        "create_time": "2024-10-29T17:43:11",
-        "last_updated": "2024-10-29T17:43:11"
-    },
-    {
-        "appointment_id": 21,
-        "patient_id": 1,
-        "mhwp_id": 21,
-        "date": "2024-10-21",
-        "time_slot": "14:00 - 15:00",
-        "status": "CONFIRMED",
-        "notes": "Addressed recent life changes.",
         "create_time": "2024-10-29T17:43:11",
         "last_updated": "2024-10-29T17:43:11"
     },

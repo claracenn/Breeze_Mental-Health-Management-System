@@ -1,0 +1,191 @@
+[
+    {
+        "user_id": 2,
+        "username": "patient2",
+        "password": "",
+        "role": "patient",
+        "status": "ACTIVE"
+    },
+    {
+        "user_id": 3,
+        "username": "patient3",
+        "password": "",
+        "role": "patient",
+        "status": "DISABLED"
+    },
+    {
+        "user_id": 4,
+        "username": "patient4",
+        "password": "",
+        "role": "patient",
+        "status": "ACTIVE"
+    },
+    {
+        "user_id": 5,
+        "username": "patient5",
+        "password": "",
+        "role": "patient",
+        "status": "DISABLED"
+    },
+    {
+        "user_id": 6,
+        "username": "patient6",
+        "password": "",
+        "role": "patient",
+        "status": "ACTIVE"
+    },
+    {
+        "user_id": 7,
+        "username": "patient7",
+        "password": "",
+        "role": "patient",
+        "status": "DISABLED"
+    },
+    {
+        "user_id": 8,
+        "username": "patient8",
+        "password": "",
+        "role": "patient",
+        "status": "ACTIVE"
+    },
+    {
+        "user_id": 9,
+        "username": "patient9",
+        "password": "",
+        "role": "patient",
+        "status": "DISABLED"
+    },
+    {
+        "user_id": 10,
+        "username": "patient10",
+        "password": "",
+        "role": "patient",
+        "status": "ACTIVE"
+    },
+    {
+        "user_id": 11,
+        "username": "patient11",
+        "password": "",
+        "role": "patient",
+        "status": "DISABLED"
+    },
+    {
+        "user_id": 12,
+        "username": "patient12",
+        "password": "",
+        "role": "patient",
+        "status": "ACTIVE"
+    },
+    {
+        "user_id": 13,
+        "username": "patient13",
+        "password": "",
+        "role": "patient",
+        "status": "DISABLED"
+    },
+    {
+        "user_id": 14,
+        "username": "patient14",
+        "password": "",
+        "role": "patient",
+        "status": "ACTIVE"
+    },
+    {
+        "user_id": 15,
+        "username": "patient15",
+        "password": "",
+        "role": "patient",
+        "status": "DISABLED"
+    },
+    {
+        "user_id": 16,
+        "username": "patient16",
+        "password": "",
+        "role": "patient",
+        "status": "ACTIVE"
+    },
+    {
+        "user_id": 17,
+        "username": "patient17",
+        "password": "",
+        "role": "patient",
+        "status": "DISABLED"
+    },
+    {
+        "user_id": 18,
+        "username": "patient18",
+        "password": "",
+        "role": "patient",
+        "status": "ACTIVE"
+    },
+    {
+        "user_id": 19,
+        "username": "patient19",
+        "password": "",
+        "role": "patient",
+        "status": "DISABLED"
+    },
+    {
+        "user_id": 20,
+        "username": "patient20",
+        "password": "",
+        "role": "patient",
+        "status": "ACTIVE"
+    },
+    {
+        "user_id": 21,
+        "username": "mhwp1",
+        "password": "",
+        "role": "mhwp",
+        "status": "DISABLED"
+    },
+    {
+        "user_id": 22,
+        "username": "mhwp2",
+        "password": "",
+        "role": "mhwp",
+        "status": "ACTIVE"
+    },
+    {
+        "user_id": 23,
+        "username": "mhwp3",
+        "password": "",
+        "role": "mhwp",
+        "status": "DISABLED"
+    },
+    {
+        "user_id": 24,
+        "username": "mhwp4",
+        "password": "",
+        "role": "mhwp",
+        "status": "ACTIVE"
+    },
+    {
+        "user_id": 25,
+        "username": "mhwp5",
+        "password": "",
+        "role": "mhwp",
+        "status": "DISABLED"
+    },
+    {
+        "user_id": 26,
+        "username": "admin1",
+        "password": "",
+        "role": "admin",
+        "status": "ACTIVE"
+    },
+    {
+        "user_id": 27,
+        "username": "admin2",
+        "password": "",
+        "role": "admin",
+        "status": "ACTIVE"
+    },
+    {
+        "user_id": 28,
+        "username": "admin3",
+        "password": "",
+        "role": "admin",
+        "status": "ACTIVE"
+    }
+]

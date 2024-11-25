@@ -4,7 +4,7 @@
         "name": "Alice Johnson",
         "email": "alice.johnson@example.com",
         "emergency_contact_email": "emergency.contact2@example.com",
-        "mhwp_id": 25
+        "mhwp_id": "21"
     },
     {
         "patient_id": 3,

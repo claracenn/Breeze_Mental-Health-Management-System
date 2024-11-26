@@ -177,7 +177,6 @@ class MHWPController:
                 text="📅 Breeze Mental Health Management System - Appointment Calendar"
             )
             create_table(data, "Appointments", display_title=True)
-            # self.choose_appointment()
 
         else:
             self.display_manager.print_text(
@@ -209,7 +208,7 @@ class MHWPController:
         while True:
             prompt_range = "0-2" if isPending else "0-1"
             new_status = input(
-                f"{MAGENTA}Please enter an integer value from {prompt_range} to handle or 3 to add notes: {RESET}"
+                f"{MAGENTA}Please enter an integer value from {prompt_range} to handle appointment or 3 to add notes: {RESET}"
             ).strip()
 
             if not self.is_integer(new_status):
@@ -305,7 +304,8 @@ class MHWPController:
                     "Name": [self.get_patient_name(selected_appointment["patient_id"])],
                     "Time": [selected_appointment["time_slot"]],
                     "Date": [selected_appointment["date"]],
-                    "Status": [selected_appointment["status"]]
+                    "Status": [selected_appointment["status"]],
+                    "Notes": [selected_appointment["notes"]]
                 }
                 create_table(data, "Selected Appointment", display_title=True)
                 if selected_appointment["status"] == "PENDING":

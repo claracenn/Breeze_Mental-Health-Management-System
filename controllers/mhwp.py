@@ -1,5 +1,6 @@
 from models.user import MHWP
 import pandas as pd
+from datetime import datetime, timedelta
 from utils.display_manager import DisplayManager
 from utils.data_handler import *
 
@@ -12,6 +13,7 @@ BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
 RESET = "\033[0m"
 RED = "\033[91m"
+LIGHT_GREEN = "\033[92m"
 GREEN = "\033[92m"
 CYAN = "\033[96m"
 GREY = "\033[90m"
@@ -62,6 +64,15 @@ class MHWPController:
             options = [f"{option} (Disabled)" for option in options[:-1]] + ["Log Out"]
             action_map = {"4": lambda: None}
             
+        # Display upcoming appointments if any
+        upcoming_appointments = self.get_upcoming_appointments()
+        if upcoming_appointments:
+            print(f"{GREEN}Upcoming Appointments in the next 7 days:{RESET}")
+            for appt in upcoming_appointments:
+                print(f"{BOLD}{appt['date']} {appt['time_slot']} - {appt['status']} with {appt['patient_name']}{RESET}")
+        else:
+            print(f"{LIGHT_GREEN}No appointments in the next 7 days.{RESET}")
+
         self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
 
     def appointment_menu(self):
@@ -142,6 +153,28 @@ class MHWPController:
             return True
         except (ValueError, TypeError):
             return False
+
+    def get_upcoming_appointments(self):
+        """Get appointments within the next 7 days for the MHWP."""
+        current_date = datetime.now()
+        seven_days_later = current_date + timedelta(days=7)
+
+        # Read appointment data
+        appointments = self.get_appointments()
+        if not appointments:
+            return []
+
+        # Filter appointments within the next 7 days for the current mhwp
+        upcoming_appointments = []
+        for appointment in appointments:
+            appointment_date = datetime.strptime(appointment["date"], "%Y-%m-%d")
+            if current_date <= appointment_date <= seven_days_later:
+                # Find the Patient name based on patient_id
+                patient_name = self.get_patient_name(appointment["patient_id"])
+                appointment["patient_name"] = patient_name  # Add patient_name to the appointment
+                upcoming_appointments.append(appointment)
+
+        return upcoming_appointments
 
 
 # --------------------------------

@@ -7,7 +7,7 @@
     },
     {
         "patient_id": 4,
-        "condition": "PTSD",
+        "condition": "PTSD/BPD",
         "notes": "Suggested cognitive behavioral therapy sessions.",
         "name": "Jessica Lee"
     }

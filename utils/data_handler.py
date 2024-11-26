@@ -1,6 +1,20 @@
 import pandas as pd
 import json
 import re
+from utils.display_manager import DisplayManager
+
+BOLD = "\033[1m"
+UNDERLINE = "\033[4m"
+RESET = "\033[0m"
+RED = "\033[91m"
+GREEN = "\033[92m"
+CYAN = "\033[96m"
+GREY = "\033[90m"
+BLUE = "\033[94m"
+MAGENTA = "\033[95m"
+LIGHT_YELLOW = "\033[93m"
+ITALIC = "\033[3m"
+ORANGE = "\033[1;33m"  
 
 def read_json(filepath):
     """
@@ -116,7 +130,7 @@ def create_title(title, df, col_widths):
     print(dash_lines)
 
 
-def create_table(data, title="", display_title=False, display_index=False):
+def create_table(data, title="", no_data_message="No data found", display_title=False, display_index=False):
     """
     Creates and prints a standardized dataframe using pandas
     Input data must be of type dictionary with 
@@ -135,6 +149,17 @@ def create_table(data, title="", display_title=False, display_index=False):
     All lists within the dictionary must be of same length due 
     to how pandas operates internally. This should be fine for our usecases.
     """
+
+    #check if data is empty
+    for key in data:
+        if (len(data[key]) > 0): continue
+        display_manager = DisplayManager()
+        display_manager.print_divider(line="=", length=70, style=f"{BOLD}")
+        display_manager.print_centered_message(message=no_data_message, style=f"{GREEN}{BOLD}")
+        display_manager.print_divider(line="=", length=70, style=f"{BOLD}")
+        return
+
+
     # create pandas dataframe and convert its values to strings
     df = pd.DataFrame(data=data).astype(str)
 

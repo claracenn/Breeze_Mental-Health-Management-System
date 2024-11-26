@@ -130,6 +130,7 @@ class MHWPController:
                 text="📅 Breeze Mental Health Management System - Appointment Calendar"
             )
             create_table(data, "Appointments", display_title=True)
+            self.choose_appointment()
 
         else:
             self.display_manager.print_text(
@@ -143,7 +144,7 @@ class MHWPController:
             text="Use the menu options to handle appointments or return to the main menu."
         )
 
-        self.choose_appointment()
+
 
 
     def handle_appointment_status(self, appointment, isPending):
@@ -291,8 +292,8 @@ class MHWPController:
 
     
 
-        create_table(data, title="Patients Records", display_title=True)
-        self.update_patient_record()
+        create_table(data, title="Patients Records", no_data_message="MHWP has no Patient Records",display_title=True)
+        if (len(data["Name"]) > 0): self.update_patient_record()
 
 
 

@@ -193,8 +193,8 @@ def role_navigation(user_role, user_id):
                 status = user_info['status']
             )
             mhwp_controller = MHWPController(mhwp_user)
-            if hasattr(mhwp_controller, 'view_MHWP_homepage'):
-                mhwp_controller.view_MHWP_homepage()
+            if hasattr(mhwp_controller, 'view_homepage'):
+                mhwp_controller.view_homepage()
             else:
                 print(f"{Red}Error: MHWP controller does not have a display_menu method.{Reset}")
         else:

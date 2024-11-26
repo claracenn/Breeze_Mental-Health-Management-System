@@ -1,32 +1,14 @@
 [
     {
-        "patient_id": 1,
-        "condition": "ADHD",
-        "notes": "Patient shows improvement with weekly appointments",
-        "name": "John Doe"
+        "patient_id": 3,
+        "condition": "High blood pressure",
+        "notes": "Excercise 60 minutes a day",
+        "name": "Michael Brown"
     },
     {
-        "patient_id": 6,
-        "condition": "Bipolar Disorder",
-        "notes": "Mood swings observed; monitor weekly.",
-        "name": "Sarah Kim"
-    },
-    {
-        "patient_id": 12,
-        "condition": "ADHD",
-        "notes": "Recommended structured routine to manage symptoms.",
-        "name": "Sophia Robinson"
-    },
-    {
-        "patient_id": 13,
-        "condition": "Stress",
-        "notes": "Experiencing high academic stress; advised coping strategies.",
-        "name": "Christopher Clark"
-    },
-    {
-        "patient_id": 19,
-        "condition": "Panic Disorder",
-        "notes": "Triggered by crowded places; advised relaxation methods.",
-        "name": "Joshua King"
+        "patient_id": 4,
+        "condition": "PTSD",
+        "notes": "Suggested cognitive behavioral therapy sessions.",
+        "name": "Jessica Lee"
     }
 ]

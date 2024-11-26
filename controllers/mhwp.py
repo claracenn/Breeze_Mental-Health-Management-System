@@ -1,97 +1,54 @@
 
 from models.user import MHWP
 import pandas as pd
+from utils.display_manager import DisplayManager
 
 from utils.data_handler import create_table, read_json, save_json, sanitise_data
 
-
-"""
-==================================
-Initialise ANSI color codes
-==================================
-"""
 BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
-BLACK = "\033[30m"  
-BROWN_RED = "\033[91m"  
-DARK_GREY = "\033[90m"
 RESET = "\033[0m"
-RED = "\033[91m\033[1m"
-LIGHT_RED = "\033[91m"
-ORANGE = "\033[93m\033[1m"
-YELLOW = "\033[93m"
-LIGHT_GREEN = "\033[92m"
-GREEN = "\033[92m\033[1m"
+RED = "\033[91m"
+GREEN = "\033[92m"
+CYAN = "\033[96m"
+GREY = "\033[90m"
+BLUE = "\033[94m"
+MAGENTA = "\033[95m"
+LIGHT_YELLOW = "\033[93m"
+ITALIC = "\033[3m"
+ORANGE = "\033[1;33m"  
 
-"""
-==================================
-MHWP Controller Class
-==================================
-"""
 
 class MHWPController:
 
     def __init__(self, mhwp):
         self.mhwp = mhwp
-
-    def view_menu(self, title, options):
-        """Generic method to display a menu with subdued styling."""
-        print(f"\n{BOLD}{UNDERLINE}{title}{RESET}")
-        print("-" * 50)  # Divider line
-        for index, option in enumerate(options, start=1):
-            # [1] Frame it
-            print(f"{BLACK}[{index}]{RESET} {option}")
-        print("-" * 50)
-        return input(f"{BROWN_RED}Choose an option ⏳: {RESET}")  
-
-    # Main menu
-    def view_MHWP_homepage(self):
-        """Display the MHWP homepage."""
-        # Check if account is active
-        if self.mhwp.status == "ACTIVE":
-            while True:
-                choice = self.view_menu(
-                    "🏠 MHWP Homepage",
-                    [
-                        "View Appointments Calendar",
-                        "View Patient Dashboard",
-                        "View Patient Records",
-                        "Log Out",
-                    ],
-                )
-                if choice == "1":
-                    self.view_calendar()
-                elif choice == "2":
-                    self.view_dashboard()
-                elif choice == "3":
-                    self.view_patient_records()
-                elif choice == "4":
-                    print(f"{BOLD}Logging out...{RESET}")
-                    break
-                else:
-                    print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
-        else:
-            # Disabled account can only log out
-            print(f"{RED}Your account is disabled. You can only log out.{RESET}")
-            while True:
-                choice = self.view_menu(
-                    "🏠 MHWP Homepage",
-                    [
-                        "View Appointments Calendar (disabled)",
-                        "View Patient Dashboard (disabled)",
-                        "View Patient Records (disabled)",
-                        "Log Out",
-                    ],
-                )
-                if choice == "1" or choice == "2" or choice == "3":
-                    print("Your account has been disabled. You cannot access this option.")
-                elif choice == "4":
-                    print(f"{BOLD}Logging out...{RESET}")
-                    break
-                else:
-                    print(f"{DARK_GREY}Invalid choice. Please try again.{RESET}")
+        self.display_manager = DisplayManager()
+        self.icons = {
+            1: "\U0001F601",
+            2: "\U0001F642",
+            3: "\U0001F610",
+            4: "\U0001F615", 
+            5: "\U0001F61E",
+            6: "\U0001F621"
+        }
 
 
+    def view_homepage(self):
+        title = "🏠 MHWP HomePage"
+        options = ["Appointments Calendar", "Patient Dashboard", "Patient Records", "Exit"]
+        action_map = {
+        "1": self.view_calendar,
+        "2": self.view_dashboard,
+        "3": self.view_patient_records,
+        "4": lambda: None,  # Left it to be None to return to log out
+        }
+        main_menu_title = "🏠 Main Menu"
+        self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+
+        
+ 
+ 
     def get_patients_info(self):
         '''Returns a list of patient information for current MHWP'''
         patient_data_path_name = "./data/patient_info.json"
@@ -106,8 +63,9 @@ class MHWPController:
         patients_info = self.get_patients_info()
         patient_ids = set([patient["patient_id"] for patient in patients_info])
         patient_records = [record for record in patient_record_payload if record["patient_id"] in patient_ids] 
-        for record in patient_records:
-            record["name"] = self.get_patient_name(record["patient_id"])
+        # print(patient_records)
+        # for record in patient_records:
+        #     record["name"] = self.get_patient_name(record["patient_id"])
         return patient_records
 
 
@@ -134,6 +92,8 @@ class MHWPController:
             
         Returns: bool, True if the value is an integer, False otherwise.
         '''
+        if isinstance(value,int): return True
+
         try:
             value = value.strip()
             int(value)  # Try converting to an integer
@@ -143,92 +103,175 @@ class MHWPController:
 
 
     def view_calendar(self):
-        '''Display appointments for a MHWP'''
+        """Display appointments for a MHWP."""
         appointments = self.get_appointments()
 
+        # Initialize data structure for displaying appointments
         data = {
             "Appointment ID": [],
             "Name": [],
             "Time": [],
-            "Date": [], 
+            "Date": [],
             "Status": []
         }
 
+        # Populate the data dictionary with appointment details
         for appointment in appointments:
             data["Appointment ID"].append(appointment["appointment_id"])
             data["Name"].append(self.get_patient_name(appointment["patient_id"]))
             data["Time"].append(appointment["time_slot"])
             data["Date"].append(appointment["date"])
             data["Status"].append(appointment["status"])
-        create_table(data, "My Calendar", display_title=True)
+
+        # Display the appointments in a formatted table
+        if data["Appointment ID"]:
+            self.display_manager.print_text(
+                style=f"{CYAN}",
+                text="📅 Breeze Mental Health Management System - Appointment Calendar"
+            )
+            create_table(data, "Appointments", display_title=True)
+
+        else:
+            self.display_manager.print_text(
+                style=f"{RED}",
+                text="No appointments available to display."
+            )
+
+        # Additional prompt or action for the user
+        self.display_manager.print_text(
+            style=f"{GREY}",
+            text="Use the menu options to handle appointments or return to the main menu."
+        )
 
         self.choose_appointment()
 
+
     def handle_appointment_status(self, appointment, isPending):
         appointments = self.get_appointments()
-        print(f"You are now handling the status of {appointment['appointment_id']}.")
-        print("Press '0' to go back.")
-        print("Press '1' to cancel the appointment.")
-        if isPending: print("Press '2' to confirm the appointment.")
+        self.display_manager.print_text(
+            style=f"{CYAN}",
+            text=f"You are now handling the status of Appointment ID: {appointment['appointment_id']}."
+        )
+        self.display_manager.print_text(style=f"{GREY}", text="Press '0' to go back.")
+        self.display_manager.print_text(style=f"{RED}", text="Press '1' to cancel the appointment.")
+        if isPending:
+            self.display_manager.print_text(style=f"{GREEN}", text="Press '2' to confirm the appointment.")
 
-        new_status = input("Please enter your choice here: ")
-        while new_status != "0":
+        while True:
+            prompt_range = "0-2" if isPending else "0-1"
+            new_status = input(
+                f"{MAGENTA}Please enter an integer value from {prompt_range}: {RESET}"
+            ).strip()
+
             if not self.is_integer(new_status):
-                new_status = input(f"Please enter an integer value from {'0-2' if isPending else '0-1'}: ")
+                self.display_manager.print_text(style=f"{RED}", text="Please enter a valid integer value.")
                 continue
-            else:
-                new_status = int(new_status)
+
+            new_status = int(new_status)
 
             if new_status == 0:
-                print("Exiting Appointment Handling Screen....")
+                self.display_manager.print_text(
+                    style=f"{CYAN}",
+                    text="Exiting Appointment Handling Screen..."
+                )
                 break
 
-            if (isPending and not sanitise_data(new_status, {1, 2})) or (not isPending and not sanitise_data(new_status, {1})):
-                print(f"Please enter an integer value from {'0-2' if isPending else '0-1'}: ")
+            valid_choices = {1, 2} if isPending else {1}
+            if new_status not in valid_choices:
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text=f"Invalid choice. Please enter a value from {prompt_range}."
+                )
                 continue
 
+            # Update appointment status
             for app in appointments:
-                if app["appointment_id"] != appointment["appointment_id"]: continue
-                app["status"] = "CANCELED" if new_status == 1 else "CONFIRMED"
-                save_json('./data/appointment.json', appointments)
-                print(f"Appointment {appointment['appointment_id']} status has successfully been changed to {'CANCELED' if new_status == 1 else 'CONFIRMED'}")
-                break
+                if app["appointment_id"] == appointment["appointment_id"]:
+                    app["status"] = "CANCELED" if new_status == 1 else "CONFIRMED"
+                    save_json('./data/appointment.json', appointments)
+                    self.display_manager.print_text(
+                        style=f"{GREEN}",
+                        text=f"Appointment {appointment['appointment_id']} status has been successfully changed to {'CANCELED' if new_status == 1 else 'CONFIRMED'}."
+                    )
+                    break
             else:
-                print(f"Something went wrong. Was not able to change the status of appointment {appointment['appointment_id']}")
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text=f"Something went wrong. Unable to change the status of appointment {appointment['appointment_id']}."
+                )
+            break
 
-    def handle_appointment(self, appointment):
-        self.handle_appointment_status(appointment, appointment["status"] == "PENDING")
-        self.view_calendar()
+
+    # def handle_appointment(self, appointment):
+    #     self.handle_appointment_status(appointment, appointment["status"] == "PENDING")
+    #     # self.view_calendar()
 
     def choose_appointment(self):
-        '''MHWP can select Pending appointment to Confirm/Cancel'''
+        """MHWP can select a Pending or Confirmed appointment to Confirm/Cancel."""
         data_appointments = self.get_appointments()
 
-        id_input = ""
-        while id_input != "0":
-            id_input = input("Choose Pending or Confirmed appointment ID ('0' to exit): ")
-            if not self.is_integer(id_input):
-                print("Please enter an integer value.")
-                continue
-            else:
-                id_input = int(id_input)
-            if id_input == 0:
-                print("Thank you for using the appointment system.")
+        self.display_manager.print_text(
+            style=f"{CYAN}",
+            text="Welcome to the Appointment Selection System!"
+        )
+        self.display_manager.print_text(
+            style=f"{GREY}",
+            text="You can select a Pending or Confirmed appointment ID to handle."
+        )
+        self.display_manager.print_text(
+            style=f"{GREY}",
+            text="Enter '0' to exit the system."
+        )
 
+        while True:
+            id_input = input(f"{MAGENTA}Choose a Pending or Confirmed appointment ID ('0' to exit): {RESET}").strip()
+
+            if not self.is_integer(id_input):
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text="Invalid input. Please enter an integer value."
+                )
+                continue
+
+            id_input = int(id_input)
+
+            if id_input == 0:
+                self.display_manager.print_text(
+                    style=f"{CYAN}",
+                    text="Thank you for using the appointment system. Exiting..."
+                )
+                break
+
+            # Check for valid appointment and handle it
             for app in data_appointments:
-                if app["appointment_id"] == id_input and (app["status"] == "PENDING" or app['status'] == "CONFIRMED"):
+                if app["appointment_id"] == id_input and app["status"] in ["PENDING", "CONFIRMED"]:
+                    # Prepare and display appointment details
                     data = {
                         "Appointment ID": [app["appointment_id"]],
                         "Name": [self.get_patient_name(app["patient_id"])],
                         "Time": [app["time_slot"]],
-                        "Date": [app["date"]], 
+                        "Date": [app["date"]],
                         "Status": [app["status"]]
                     }
                     create_table(data, "Selected Appointment", display_title=True)
-                    self.handle_appointment(app)
+
+                    # Handle the selected appointment
+                    self.handle_appointment_status(app, app["status"] == "PENDING")
                     break
             else:
-                print("Please enter valid appointment_id, or enter '0' to exit.")
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text="No matching appointment found. Please enter a valid appointment ID."
+                )
+                continue
+            break;
+
+
+        # After exiting, return to the calendar view
+        # self.view_calendar()
+
+
+
 
     def view_patient_records(self):
         patient_info = self.get_patients_info()
@@ -246,15 +289,18 @@ class MHWPController:
             data["Conditions"].append(patient["condition"])
             data["Notes"].append(patient["notes"])
 
+    
+
         create_table(data, title="Patients Records", display_title=True)
         self.update_patient_record()
 
+
+
     def update_patient_record(self):
-        patient_records = self.get_patient_records()
-        patients = {patient["patient_id"]: patient["name"] for patient in patient_records}
-        
         id_input = ""
-        while id_input != "0":
+        while id_input != 0:
+            patient_records = self.get_patient_records()
+            patients = {patient["patient_id"]: patient["name"] for patient in patient_records}
             id_input = input("Choose patient ID to update record ('0' to exit): ")
             if not self.is_integer(id_input):
                 print("Please enter an integer value.")
@@ -271,11 +317,12 @@ class MHWPController:
                         "Condition": [record["condition"]],
                         "Notes": [record["notes"]], 
                     }
+                        mhwp_input = ''
                         create_table(data, "Selected Patient Record", display_title=True)
                         print("1. Update patient condition.")
                         print("2. Update patient notes.")
                         print("3. Exit")
-                        mhwp_input = ''
+
                         while mhwp_input not in ['1', '2', '3']:
                             mhwp_input = input("Choose option listed above (Enter 1, 2, or 3): ")
                             if mhwp_input == '1':
@@ -323,6 +370,7 @@ class MHWPController:
             data["Mood"].append(self.icons[patient["mood_code"]])
 
         create_table(data,title="Toms's Patient Dashboard", display_title=True, display_index=False)
+
 
 
 
@@ -377,4 +425,20 @@ class MHWPController:
 
 if __name__ == "__main__":
     mhwp_controller = MHWPController(MHWP(22, "mhwp", "password", "name", "email", 3, "ACTIVE"))
-    mhwp_controller.view_MHWP_homepage()
+    # mhwp_controller.view_MHWP_homepage()
+
+
+MHWP = {
+        "mhwp_id": 22,
+        "name": "Robert Lewandowski",
+        "email": "robert.lewandowski@example.com",
+        }
+
+
+mhwp1 = MHWPController(MHWP)
+# mhwp1.view_patient_summary()
+# mhwp1.view_dashboard()
+# mhwp1.view_patient_records()
+# mhwp1.view_calendar()
+mhwp1.view_homepage()
+

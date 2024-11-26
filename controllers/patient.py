@@ -57,8 +57,8 @@ class PatientController:
 
     def get_upcoming_appointments(self):
         """Get appointments within the next 7 days for the patient."""
-        current_date = datetime.datetime.now()
-        seven_days_later = current_date + datetime.timedelta(days=7)
+        current_date = datetime.now()
+        seven_days_later = current_date + timedelta(days=7)
 
         # Read appointment data
         appointments = read_json(self.appointment_file)
@@ -72,7 +72,7 @@ class PatientController:
         upcoming_appointments = []
         for appointment in appointments:
             if appointment["patient_id"] == self.patient.user_id:
-                appointment_date = datetime.datetime.strptime(appointment["date"], "%Y-%m-%d")
+                appointment_date = datetime.strptime(appointment["date"], "%Y-%m-%d")
                 if current_date <= appointment_date <= seven_days_later:
                     # Find the MHWP name based on mhwp_id
                     mhwp_id = appointment["mhwp_id"]

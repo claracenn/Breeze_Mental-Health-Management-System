@@ -15,7 +15,6 @@ import pandas as pd
 from datetime import datetime, timedelta
 import json
 from utils.email_helper import send_email
-import datetime
 
 
 """

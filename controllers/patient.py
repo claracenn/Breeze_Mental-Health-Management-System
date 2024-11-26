@@ -10,7 +10,6 @@ import ssl
 from html.parser import HTMLParser
 import pandas as pd
 from datetime import datetime, timedelta
-import json
 from utils.email_helper import send_email
 
 
@@ -40,6 +39,9 @@ CYAN = "\033[96m"
 Patient Controller Class
 ==================================
 """
+# ----------------------------
+# Homepage and Menus
+# ----------------------------
 class PatientController:
     def __init__(self, patient):
         self.patient = patient
@@ -54,8 +56,8 @@ class PatientController:
 
     def get_upcoming_appointments(self):
         """Get appointments within the next 7 days for the patient."""
-        current_date = datetime.datetime.now()
-        seven_days_later = current_date + datetime.timedelta(days=7)
+        current_date = datetime.now()
+        seven_days_later = current_date + timedelta(days=7)
 
         # Read appointment data
         appointments = read_json(self.appointment_file)
@@ -69,7 +71,7 @@ class PatientController:
         upcoming_appointments = []
         for appointment in appointments:
             if appointment["patient_id"] == self.patient.user_id:
-                appointment_date = datetime.datetime.strptime(appointment["date"], "%Y-%m-%d")
+                appointment_date = datetime.strptime(appointment["date"], "%Y-%m-%d")
                 if current_date <= appointment_date <= seven_days_later:
                     # Find the MHWP name based on mhwp_id
                     mhwp_id = appointment["mhwp_id"]
@@ -130,8 +132,6 @@ class PatientController:
                     action_map[choice]()  # Execute the selected action
             else:
                 print(f"{RED}Invalid choice. Please try again.{RESET}")  
-
-
 
     def profile_menu(self):
         """Display the profile menu."""
@@ -238,6 +238,7 @@ class PatientController:
                 print(f"🏥 Assigned MHWP ID: {patient['mhwp_id']}")
                 return patient
         print(f"{DARK_GREY}Patient not found.{RESET}")
+
 
     def edit_profile(self):
             """Edit the patient's profile information and save changes to JSON file."""
@@ -352,6 +353,7 @@ class PatientController:
         else:
             print("Invalid selection.")
 
+
     def create_mhwp_change_request(self, patient_id, current_mhwp_id, target_mhwp_id, reason):
         """Create a new MHWP change request and save it to request_log.json."""
         # Ensure request_log is initialized properly
@@ -429,6 +431,7 @@ class PatientController:
             display_index=True
         )
     
+
     def add_journal(self):
         """Add a new journal entry for the current patient."""
         journal_text = input(f"{CYAN}{BOLD}Type your journal, tap enter when you finish: {RESET}\n").strip()
@@ -472,6 +475,7 @@ class PatientController:
             print("Journal entry deleted successfully!")
         else:
             print("Failed to delete journal entry. Please try again.")
+
 
     def update_journal(self):
         # Display all journals for the current patient in a table format
@@ -583,6 +587,7 @@ class PatientController:
             display_index=True
         )
 
+
     def add_mood(self):
         """Add a new mood entry for the current patient."""
         self.display_mood_scale()
@@ -630,6 +635,7 @@ class PatientController:
             print("Mood logged successfully!")
         else:
             print("Failed to log mood. Please try again.")
+
 
     def delete_mood(self):
         self.view_moods()
@@ -752,6 +758,7 @@ class PatientController:
 
         except Exception as e:
             print(f"An error occurred while viewing appointments: {str(e)}")
+
 
     def make_appointment(self):
         """Make appointment with MHWP."""
@@ -911,6 +918,7 @@ class PatientController:
         except ValueError:
             print("Please enter a valid number.")
 
+
 # ----------------------------
 # Section 5: Resource methods
 # ----------------------------
@@ -978,8 +986,6 @@ class PatientController:
         url = f"https://www.freemindfulness.org/_/search?query={keyword}"
 
         try:
-            import ssl
-            import urllib.request
             context = ssl._create_unverified_context()
             with urllib.request.urlopen(url, context=context) as response:
                 html_content = response.read().decode("utf-8")
@@ -1040,6 +1046,7 @@ class PatientController:
             return
         else:
             print("❌ Failed to add feedback. Please try again.")
+
 
     def view_feedback(self):
         try:

@@ -1,10 +1,13 @@
-
 from models.user import MHWP
 import pandas as pd
 from utils.display_manager import DisplayManager
+from utils.data_handler import *
 
-from utils.data_handler import create_table, read_json, save_json, sanitise_data
-
+"""
+==================================
+Initialise ANSI color codes
+==================================
+"""
 BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
 RESET = "\033[0m"
@@ -19,6 +22,11 @@ ITALIC = "\033[3m"
 ORANGE = "\033[1;33m"  
 
 
+"""
+==================================
+MHWP Controller Class
+==================================
+"""
 class MHWPController:
 
     def __init__(self, mhwp):
@@ -34,14 +42,18 @@ class MHWPController:
         }
 
 
-    def view_homepage(self):
+# ----------------------------
+# Homepage and Menus
+# ----------------------------
+    def display_mhwp_homepage(self):
         title = "🏠 MHWP HomePage"
-        options = ["Appointments Calendar", "Patient Dashboard", "Patient Records", "Exit"]
+        main_menu_title = "🏠 MHWP HomePage"
+        options = ["Appointments Calendar", "Patient Records", "Patient Dashboard", "Log Out"]
         action_map = {
-        "1": self.view_calendar,
-        "2": self.view_dashboard,
-        "3": self.view_patient_records,
-        "4": lambda: None,  # Left it to be None to return to log out
+        "1": self.appointment_menu,
+        "2": self.patient_records_menu,
+        "3": self.view_dashboard,
+        "4": lambda: None  # Left it to be None to return to log out
         }
 
         # Modify options and actions for disabled mhwp
@@ -49,19 +61,44 @@ class MHWPController:
             print(f"{RED}Your account is disabled. You can only log out.{RESET}")
             options = [f"{option} (Disabled)" for option in options[:-1]] + ["Log Out"]
             action_map = {"4": lambda: None}
-
-        main_menu_title = "🏠 Main Menu"
+            
         self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
 
-        
- 
- 
+    def appointment_menu(self):
+        title = "📅 Appointments Calendar"
+        main_menu_title = "🏠 MHWP HomePage"
+        options = ["View Appointments", "Handle Appointments", "Back to Homepage"]
+        action_map = {
+            "1": self.view_calendar,
+            "2": self.choose_appointment,
+            "3": lambda: None
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == "main_menu":
+            self.display_mhwp_homepage()
+    
+    def patient_records_menu(self):
+        title = "📋 Patient Records"
+        main_menu_title = "🏠 MHWP HomePage"
+        options = ["View Patient Records", "Update Patient Records", "Back to Homepage"]
+        action_map = {
+            "1": self.view_patient_records,
+            "2": self.update_patient_record,
+            "3": lambda: None
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == "main_menu":
+            self.display_mhwp_homepage()
+
+
+# -----------------------------------
+# Common Functions for Data Retrieval
+# -----------------------------------
     def get_patients_info(self):
         '''Returns a list of patient information for current MHWP'''
         patient_data_path_name = "./data/patient_info.json"
         patient_info_payload = read_json(patient_data_path_name)
-        return [patient for patient in patient_info_payload if patient["mhwp_id"] == self.mhwp["mhwp_id"]]
- 
+        return [patient for patient in patient_info_payload if patient["mhwp_id"] == self.mhwp.user_id]
 
     def get_patient_records(self):
         '''Returns a list of patient records for current MHWP'''
@@ -75,13 +112,11 @@ class MHWPController:
         #     record["name"] = self.get_patient_name(record["patient_id"])
         return patient_records
 
-
     def get_appointments(self):
         '''Returns a list of appointments for current MWHP'''
         appointment_path_name = "./data/appointment.json"
         appointment_payload = read_json(appointment_path_name)
-        return [appointment for appointment in appointment_payload if appointment["mhwp_id"] == self.mhwp["mhwp_id"]]
-
+        return [appointment for appointment in appointment_payload if appointment["mhwp_id"] == self.mhwp.user_id]
 
     def get_patient_name(self, patient_id):
         '''Returns patient name from patients id'''
@@ -109,6 +144,9 @@ class MHWPController:
             return False
 
 
+# --------------------------------
+# Section 1: Appointments Calendar
+# --------------------------------
     def view_calendar(self):
         """Display appointments for a MHWP."""
         appointments = self.get_appointments()
@@ -139,7 +177,7 @@ class MHWPController:
                 text="📅 Breeze Mental Health Management System - Appointment Calendar"
             )
             create_table(data, "Appointments", display_title=True)
-            self.choose_appointment()
+            # self.choose_appointment()
 
         else:
             self.display_manager.print_text(
@@ -191,8 +229,7 @@ class MHWPController:
                 for app in appointments:
                     if app["appointment_id"] == appointment["appointment_id"]:
                         new_note = input("Please enter new note for the appointment: ")
-                        app["notes"] = new_note
-                        save_json('./data/appointment.json', appointments)
+                        update_entry('./data/appointment.json', appointment["appointment_id"], {"notes": new_note})
                         self.display_manager.print_text(
                         style=f"{GREEN}",
                         text=f"Appointment {appointment['appointment_id']} note has been successfully changed."
@@ -209,102 +246,93 @@ class MHWPController:
             if new_status not in valid_choices:
                 self.display_manager.print_text(
                     style=f"{RED}",
-                    text=f"Invalid choice. Please enter a value from {prompt_range}."
+                    text=f"❌ Invalid choice. Please enter a value from {prompt_range}."
                 )
                 continue
 
             # Update appointment status
-            for app in appointments:
-                if app["appointment_id"] == appointment["appointment_id"]:
-                    app["status"] = "CANCELED" if new_status == 1 else "CONFIRMED"
-                    save_json('./data/appointment.json', appointments)
-                    self.display_manager.print_text(
-                        style=f"{GREEN}",
-                        text=f"Appointment {appointment['appointment_id']} status has been successfully changed to {'CANCELED' if new_status == 1 else 'CONFIRMED'}."
-                    )
-                    break
-            else:
+            try:
+                update_status = "CANCELED" if new_status == 1 else "CONFIRMED"
+                update_entry('./data/appointment.json', appointment["appointment_id"], {"status": update_status})
+                self.display_manager.print_text(
+                    style=f"{RESET}{BOLD}",
+                    text=f"📅 Appointment {appointment['appointment_id']} status has been successfully changed to {'CANCELED' if new_status == 1 else 'CONFIRMED'}.\n"
+                )
+                break
+            except Exception as e:
                 self.display_manager.print_text(
                     style=f"{RED}",
-                    text=f"Something went wrong. Unable to change the status of appointment {appointment['appointment_id']}."
+                    text=f"Error: {e}. Please contact the system manager."
                 )
-            break
+                return False
 
-
-    # def handle_appointment(self, appointment):
-    #     self.handle_appointment_status(appointment, appointment["status"] == "PENDING")
-    #     # self.view_calendar()
 
     def choose_appointment(self):
         """MHWP can select a Pending or Confirmed appointment to Confirm/Cancel."""
+        self.view_calendar()
         data_appointments = self.get_appointments()
 
-        self.display_manager.print_text(
-            style=f"{CYAN}",
-            text="Welcome to the Appointment Selection System!"
-        )
-        self.display_manager.print_text(
-            style=f"{GREY}",
-            text="You can select a Pending or Confirmed appointment ID to handle."
-        )
-        self.display_manager.print_text(
-            style=f"{GREY}",
-            text="Enter '0' to exit the system."
-        )
-
         while True:
-            id_input = input(f"{MAGENTA}Choose a Pending or Confirmed appointment ID ('0' to exit): {RESET}").strip()
+            id_input = input(f"{CYAN}{BOLD}Enter appointment ID to handle a Pending or Confirmed appointment: {RESET}").strip()
 
+            if id_input == "back":
+                self.display_manager.back_operation()
+                self.appointment_menu()
+                return
+            
+            # Validate if input is an integer
             if not self.is_integer(id_input):
                 self.display_manager.print_text(
                     style=f"{RED}",
                     text="Invalid input. Please enter an integer value."
                 )
                 continue
-
             id_input = int(id_input)
-
-            if id_input == 0:
-                self.display_manager.print_text(
-                    style=f"{CYAN}",
-                    text="Thank you for using the appointment system. Exiting..."
-                )
-                break
-
+                
             # Check for valid appointment and handle it
-            for app in data_appointments:
-                if app["appointment_id"] == id_input and app["status"] in ["PENDING", "CONFIRMED"]:
-                    # Prepare and display appointment details
-                    data = {
-                        "Appointment ID": [app["appointment_id"]],
-                        "Name": [self.get_patient_name(app["patient_id"])],
-                        "Time": [app["time_slot"]],
-                        "Date": [app["date"]],
-                        "Status": [app["status"]],
-                        "Notes": [app["notes"]]
-                    }
-                    create_table(data, "Selected Appointment", display_title=True)
-
-                    # Handle the selected appointment
-                    self.handle_appointment_status(app, app["status"] == "PENDING")
-                    break
-            else:
+            selected_appointment = next((app for app in data_appointments if app["appointment_id"] == id_input), None)
+            if not selected_appointment:
                 self.display_manager.print_text(
                     style=f"{RED}",
                     text="No matching appointment found. Please enter a valid appointment ID."
                 )
                 continue
-            break
+
+            # Prepare and display appointment details if found
+            if selected_appointment["status"] in ["PENDING", "CONFIRMED"]:
+                data = {
+                    "Appointment ID": [selected_appointment["appointment_id"]],
+                    "Name": [self.get_patient_name(selected_appointment["patient_id"])],
+                    "Time": [selected_appointment["time_slot"]],
+                    "Date": [selected_appointment["date"]],
+                    "Status": [selected_appointment["status"]]
+                }
+                create_table(data, "Selected Appointment", display_title=True)
+                if selected_appointment["status"] == "PENDING":
+                    self.handle_appointment_status(selected_appointment, isPending=True)
+                else:
+                    self.handle_appointment_status(selected_appointment, isPending=False)
+                return True
+
+            elif selected_appointment["status"] == "CANCELED":
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text="This appointment has already been canceled. Please select another appointment."
+                )
+            
+            else:
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text="Unable to handle the appointment. Please contact the system manager."
+                )
+                return False
 
 
-        # After exiting, return to the calendar view
-        # self.view_calendar()
-
-
-
-
+# ----------------------------
+# Section 2: Patient Records
+# ----------------------------
     def view_patient_records(self):
-        patient_info = self.get_patients_info()
+        """Display patient records for a MHWP."""
         patient_records = self.get_patient_records()
 
         data = {
@@ -319,66 +347,96 @@ class MHWPController:
             data["Conditions"].append(patient["condition"])
             data["Notes"].append(patient["notes"])
 
-    
-
-        create_table(data, title="Patients Records", no_data_message="MHWP has no Patient Records",display_title=True)
-        if (len(data["Name"]) > 0): self.update_patient_record()
-
+        if not data["Patient ID"]:
+            self.display_manager.print_text(
+            style=f"{RED}",
+            text="No patient records yet."
+            )
+        else:
+            create_table(data, title="Patients Records", display_title=True)
 
 
     def update_patient_record(self):
-        id_input = ""
-        while id_input != 0:
+        self.view_patient_records()
+        while True:
             patient_records = self.get_patient_records()
+            if not patient_records:
+                break
             patients = {patient["patient_id"]: patient["name"] for patient in patient_records}
-            id_input = input("Choose patient ID to update record ('0' to exit): ")
+            
+            id_input = input(f"{CYAN}{BOLD}Choose patient ID to update record ⏳: {RESET}").strip()
+
+            if id_input == "back":
+                self.display_manager.back_operation()
+                self.patient_records_menu()
+                return
+            
             if not self.is_integer(id_input):
                 print("Please enter an integer value.")
                 continue
-            else:
-                id_input = int(id_input)
-            if id_input == 0:
+
+            id_input = int(id_input)
+
+            if id_input not in patients:
+                print(f"{RED}Patient ID not found. Please enter a valid patient ID.{RESET}")
                 continue
-            if id_input in patients.keys():
-                for record in patient_records:
-                    if record["patient_id"] == id_input:
-                        data = {
-                        "Name": [self.get_patient_name(id_input)],
-                        "Condition": [record["condition"]],
-                        "Notes": [record["notes"]], 
-                    }
-                        mhwp_input = ''
-                        create_table(data, "Selected Patient Record", display_title=True)
-                        print("1. Update patient condition.")
-                        print("2. Update patient notes.")
-                        print("3. Exit")
 
-                        while mhwp_input not in ['1', '2', '3']:
-                            mhwp_input = input("Choose option listed above (Enter 1, 2, or 3): ")
-                            if mhwp_input == '1':
-                                condition = input("Please enter patient condition: ")
-                                record["condition"] = condition
-                                save_json('./data/patient_record.json', patient_records)
-                            elif mhwp_input == '2':
-                                note = input("Please enter note for patient: ")
-                                record["notes"] = note
-                                save_json('./data/patient_record.json', patient_records)
-                            elif mhwp_input == '3':
-                                continue
-                            else:
-                                print("Please enter 1, 2, or 3")
-                        else:
-                            print("Thank you for using the Patient Record system.")
+            record = next((r for r in patient_records if r["patient_id"] == id_input), None)
+            if not record:
+                print(f"{RED}No patient record yet.{RESET}")
+            
+            # Display patient record and update options
+            data = {
+            "Name": [self.get_patient_name(id_input)],
+            "Condition": [record["condition"]],
+            "Notes": [record["notes"]], 
+            }
+            create_table(data, "Selected Patient Record", display_title=True)
 
-                        break
-                break
-            else:
-                print("Please enter valid patient id.")
-        else:
-            print("Thank you for using the Patient Record system.")
+            # Update patient record
+            while True:
+                print(f"{BOLD}{MAGENTA}Select the field you want to edit:{RESET}")
+                print("1. Update patient condition.")
+                print("2. Update patient notes.")
+                print("3. Update all fields")
+                print("4. Exit")
+                choice = input(f"{CYAN}{BOLD}Choose an option ⏳: {RESET}").strip()
+
+                if choice == "1":
+                    # Update condition
+                    new_condition = input(f"{CYAN}Please enter new patient condition: {RESET}")
+                    record["condition"] = new_condition
+                    save_json('./data/patient_record.json', patient_records)
+                    print(f"{GREEN}Patient condition updated successfully.{RESET}")
+                    break
+                elif choice == "2":
+                    # Update notes
+                    new_notes = input(f"{CYAN}Please enter new notes for the patient: {RESET}")
+                    record["notes"] = new_notes
+                    save_json('./data/patient_record.json', patient_records)
+                    print(f"{GREEN}Patient notes updated successfully.{RESET}")
+                    break
+                elif choice == "3":
+                    # Update all fields
+                    new_condition = input(f"{CYAN}Please enter new patient condition: {RESET}")
+                    new_notes = input(f"{CYAN}Please enter new notes for the patient: {RESET}")
+                    record["condition"] = new_condition
+                    record["notes"] = new_notes
+                    save_json('./data/patient_record.json', patient_records)
+                    print(f"{GREEN}Patient record updated successfully.\n{RESET}")
+                    break
+                elif choice == "4" or choice == "back":
+                    # Exit back to patient list
+                    print(f"{GREY}Exiting to patient selection menu...\n{RESET}")
+                    break
+                else:
+                    print(f"{RED}Invalid choice. Please enter 1, 2, or 3. \n{RESET}")
+            break
 
 
-
+# ----------------------------
+# Section 3: Patient Dashboard
+# ----------------------------
     def view_dashboard(self):
         patients = self.get_patients_info()
         cols = ["Patient ID", "Name", "Email", "Emergency Contact"]
@@ -399,11 +457,10 @@ class MHWPController:
             data["Emergency Contact"].append(patient["emergency_contact_email"])
             data["Mood"].append(self.icons[patient["mood_code"]])
 
-        create_table(data,title="Toms's Patient Dashboard", display_title=True, display_index=False)
+        create_table(data,title="Patient Dashboard", display_title=True, display_index=False)
 
 
-
-
+# ---------------------------- TODO: Check if view_patient_summary is needed
     def view_patient_summary(self, patient_id):
         patient_records = self.get_patient_records()
         patients_info = self.get_patients_info()
@@ -425,7 +482,9 @@ class MHWPController:
         }
         title = f"{target_info['name']}'s Summary"
         create_table(data, title=title, display_title=True)
+# ----------------------------
 
+# ---------------------------- TODO: Should be moved to admin controller 
     @staticmethod
     def calculate_patient_counts(patient_file, mhwp_file):
         """
@@ -452,23 +511,8 @@ class MHWPController:
         save_json(mhwp_file, mhwp_data)
         
         return mhwp_data
+# ----------------------------
 
 if __name__ == "__main__":
-    mhwp_controller = MHWPController(MHWP(22, "mhwp", "password", "name", "email", 3, "ACTIVE"))
-    # mhwp_controller.view_MHWP_homepage()
-
-
-    MHWP = {
-            "mhwp_id": 22,
-            "name": "Robert Lewandowski",
-            "email": "robert.lewandowski@example.com",
-            }
-
-
-    mhwp1 = MHWPController(MHWP)
-    # mhwp1.view_patient_summary()
-    # mhwp1.view_dashboard()
-    # mhwp1.view_patient_records()
-    # mhwp1.view_calendar()
-    mhwp1.view_homepage()
-
+    mhwp_controller = MHWPController(MHWP(21, "mhwp", "password", "Robert Lewandowski", "robert.lewandowski@example.com", 3, "ACTIVE"))
+    mhwp_controller.display_mhwp_homepage()

@@ -23,7 +23,7 @@ class DisplayManager:
     def show_breadcrumbs(self):
         """Displays the navigation breadcrumbs."""
         if self.breadcrumbs:
-            navigation = f"Navigation: {' > '.join(self.breadcrumbs)}"
+            navigation = f"\nNavigation: {' > '.join(self.breadcrumbs)}"
             print(f"\n{GREY}{navigation}{RESET}")
         else:
             print(f"\n{GREY}Navigation{RESET}")

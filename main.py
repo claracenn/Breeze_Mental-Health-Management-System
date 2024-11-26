@@ -35,7 +35,7 @@ def display_welcome_page():
     print_divider()
     print(f"{Green}{Bold}🍃 Welcome to Breeze Mental Health Management System 🍃{Reset}\n")
     print(f"{Magenta}✨ Your journey to better mental health starts here! ✨{Reset}\n")
-    print(f"{Cyan}Please log in to continue.{Reset}\n")
+    print(f"{Cyan}Please log in to continue.{Reset}")
     print_divider()
 
 def reset_inactivity_timer():
@@ -90,7 +90,7 @@ def login():
         check_inactivity()
         try:
             # Prompt user for credentials
-            username = input(f"{Cyan}Enter your username: {Reset}")
+            username = input("Enter your username: ")
             reset_inactivity_timer()
 
             # Check if username is valid
@@ -107,7 +107,7 @@ def login():
                 log_action(f"User '{username}' logged in despite being disabled", "system")
             
             # Prompt for password
-            password = input(f"{Cyan}Enter your password: {Reset}")
+            password = input(f"Enter your password:")
             reset_inactivity_timer()
 
             # Validate credentials directly from the user dictionary
@@ -130,10 +130,6 @@ def login():
     print(f"{Red}Exceeded the maximum number of login attempts. Exiting...{Reset}")
     log_action("Exceeded maximum login attempts", "system")
     sys.exit()
-
-
-
-
 
 
 def role_navigation(user_role, user_id):
@@ -168,7 +164,7 @@ def role_navigation(user_role, user_id):
                 email=patient_info['email'],
                 emergency_contact_email=patient_info['emergency_contact_email'],
                 mhwp_id=patient_info.get('mhwp_id', ""),
-                status=user_info['status']  # 从 user_info 获取 status
+                status=user_info['status']
             )
             patient_controller = PatientController(patient_user)  # 直接传递 patient_user
             if hasattr(patient_controller, 'display_patient_homepage'):
@@ -177,8 +173,6 @@ def role_navigation(user_role, user_id):
                 print(f"{Red}Error: Patient controller does not have a display_patient_homepage method.{Reset}")
         else:
             print("Patient-specific information not found.")
-
-            
 
     elif user_role == 'mhwp':
         mhwp_info = get_role_specific_info(user_id, 'mhwp', './data/mhwp_info.json')
@@ -189,11 +183,12 @@ def role_navigation(user_role, user_id):
                 password=user_info['password'],
                 name=mhwp_info['name'],
                 email=mhwp_info['email'],
-                patient_count=mhwp_info.get('patient_count', 0)
+                patient_count=mhwp_info.get('patient_count', 0),
+                status=user_info['status']
             )
             mhwp_controller = MHWPController(mhwp_user)
-            if hasattr(mhwp_controller, 'display_menu'):
-                mhwp_controller.display_menu() # TODO: Implement display_menu method in MHWPController
+            if hasattr(mhwp_controller, 'display_mhwp_homepage'):
+                mhwp_controller.display_mhwp_homepage()
             else:
                 print(f"{Red}Error: MHWP controller does not have a display_menu method.{Reset}")
         else:

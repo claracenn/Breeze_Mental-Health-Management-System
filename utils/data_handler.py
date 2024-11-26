@@ -90,9 +90,6 @@ def update_entry(filepath, index, new_entry):
         return False
     
 
-
-
-
 def create_title(title, df, col_widths):
     """
     Create a title for the table we print such that
@@ -100,7 +97,6 @@ def create_title(title, df, col_widths):
     centered
     """
 
-    print("\n")
     # calculate the width of the current table including separators
     total_width = sum(col_widths.values()) + 3 * (len(df.columns)-1)
 
@@ -188,10 +184,6 @@ def create_table(data, title="", display_title=False, display_index=False):
     # now print row data (the first parameter is index if needed)
     for _, row in df.iterrows():
         print(" | ".join(row))
-
-    print("\n")
-
-
 
 
 def sanitise_data(data, valid_values):

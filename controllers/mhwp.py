@@ -119,7 +119,8 @@ class MHWPController:
             "Name": [],
             "Time": [],
             "Date": [],
-            "Status": []
+            "Status": [],
+            "Notes": []
         }
 
         # Populate the data dictionary with appointment details
@@ -129,6 +130,7 @@ class MHWPController:
             data["Time"].append(appointment["time_slot"])
             data["Date"].append(appointment["date"])
             data["Status"].append(appointment["status"])
+            data["Notes"].append(appointment["notes"])
 
         # Display the appointments in a formatted table
         if data["Appointment ID"]:
@@ -164,11 +166,12 @@ class MHWPController:
         self.display_manager.print_text(style=f"{RED}", text="Press '1' to cancel the appointment.")
         if isPending:
             self.display_manager.print_text(style=f"{GREEN}", text="Press '2' to confirm the appointment.")
+        self.display_manager.print_text(style=f"{LIGHT_YELLOW}", text="Press '3' to update the appointment notes.")
 
         while True:
             prompt_range = "0-2" if isPending else "0-1"
             new_status = input(
-                f"{MAGENTA}Please enter an integer value from {prompt_range}: {RESET}"
+                f"{MAGENTA}Please enter an integer value from {prompt_range} to handle or 3 to add notes: {RESET}"
             ).strip()
 
             if not self.is_integer(new_status):
@@ -182,6 +185,24 @@ class MHWPController:
                     style=f"{CYAN}",
                     text="Exiting Appointment Handling Screen..."
                 )
+                break
+
+            if new_status == 3:
+                for app in appointments:
+                    if app["appointment_id"] == appointment["appointment_id"]:
+                        new_note = input("Please enter new note for the appointment: ")
+                        app["notes"] = new_note
+                        save_json('./data/appointment.json', appointments)
+                        self.display_manager.print_text(
+                        style=f"{GREEN}",
+                        text=f"Appointment {appointment['appointment_id']} note has been successfully changed."
+                    )
+                        break
+                else:
+                    self.display_manager.print_text(
+                        style=f"{RED}",
+                        text=f"Something went wrong. Unable to change the note of appointment {appointment['appointment_id']}."
+                    )
                 break
 
             valid_choices = {1, 2} if isPending else {1}
@@ -259,7 +280,8 @@ class MHWPController:
                         "Name": [self.get_patient_name(app["patient_id"])],
                         "Time": [app["time_slot"]],
                         "Date": [app["date"]],
-                        "Status": [app["status"]]
+                        "Status": [app["status"]],
+                        "Notes": [app["notes"]]
                     }
                     create_table(data, "Selected Appointment", display_title=True)
 
@@ -272,7 +294,7 @@ class MHWPController:
                     text="No matching appointment found. Please enter a valid appointment ID."
                 )
                 continue
-            break;
+            break
 
 
         # After exiting, return to the calendar view

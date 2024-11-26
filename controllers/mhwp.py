@@ -405,24 +405,22 @@ class MHWPController:
                 if choice == "1":
                     # Update condition
                     new_condition = input(f"{CYAN}Please enter new patient condition: {RESET}")
-                    record["condition"] = new_condition
-                    save_json('./data/patient_record.json', patient_records)
+                    update_entry('./data/patient_record.json', id_input, {"condition": new_condition})
                     print(f"{GREEN}Patient condition updated successfully.{RESET}")
                     break
                 elif choice == "2":
                     # Update notes
                     new_notes = input(f"{CYAN}Please enter new notes for the patient: {RESET}")
                     record["notes"] = new_notes
-                    save_json('./data/patient_record.json', patient_records)
+                    update_entry('./data/patient_record.json', id_input, {"notes": new_notes})
                     print(f"{GREEN}Patient notes updated successfully.{RESET}")
                     break
                 elif choice == "3":
                     # Update all fields
                     new_condition = input(f"{CYAN}Please enter new patient condition: {RESET}")
                     new_notes = input(f"{CYAN}Please enter new notes for the patient: {RESET}")
-                    record["condition"] = new_condition
-                    record["notes"] = new_notes
-                    save_json('./data/patient_record.json', patient_records)
+                    update_entry('./data/patient_record.json', id_input, {"condition": new_condition})
+                    update_entry('./data/patient_record.json', id_input, {"notes": new_notes})
                     print(f"{GREEN}Patient record updated successfully.\n{RESET}")
                     break
                 elif choice == "4" or choice == "back":

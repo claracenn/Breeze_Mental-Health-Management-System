@@ -4,12 +4,14 @@ from models.user import Patient
 from utils.data_handler import *
 from utils.display_manager import DisplayManager
 from controllers.mhwp import MHWPController
-import requests
-from bs4 import BeautifulSoup
+import urllib.request
+import urllib.parse
+import ssl
+from html.parser import HTMLParser
 import pandas as pd
 from datetime import datetime, timedelta
 import json
-import smtplib as smtplib
+from utils.email_helper import send_email
 
 
 """
@@ -50,6 +52,33 @@ class PatientController:
         self.mhwp_info_file = "data/mhwp_info.json"
         self.feedback_file = "data/feedback.json"
 
+    def get_upcoming_appointments(self):
+        """Get appointments within the next 7 days for the patient."""
+        current_date = datetime.datetime.now()
+        seven_days_later = current_date + datetime.timedelta(days=7)
+
+        # Read appointment data
+        appointments = read_json(self.appointment_file)
+        if not appointments:
+            return []
+
+        # Read MHWP info to get mhwp_name
+        mhwp_info = read_json(self.mhwp_info_file)
+
+        # Filter appointments within the next 7 days for the current patient
+        upcoming_appointments = []
+        for appointment in appointments:
+            if appointment["patient_id"] == self.patient.user_id:
+                appointment_date = datetime.datetime.strptime(appointment["date"], "%Y-%m-%d")
+                if current_date <= appointment_date <= seven_days_later:
+                    # Find the MHWP name based on mhwp_id
+                    mhwp_id = appointment["mhwp_id"]
+                    mhwp_name = next((mhwp["name"] for mhwp in mhwp_info if mhwp["mhwp_id"] == mhwp_id), "Unknown MHWP")
+                    appointment["mhwp_name"] = mhwp_name  # Add mhwp_name to the appointment
+                    upcoming_appointments.append(appointment)
+
+        return upcoming_appointments
+
     def display_patient_homepage(self):
         title = "🏠 Patient Homepage"
         main_menu_title = "🏠 Patient Homepage"
@@ -78,6 +107,15 @@ class PatientController:
             print(f"{RED}Your account is disabled. You can only log out.{RESET}")
             options = [f"{option} (Disabled)" for option in options[:-1]] + ["Log Out"]
             action_map = {"7": lambda: print(f"{BOLD}Logging out...{RESET}")}
+
+        # Display upcoming appointments if any
+        upcoming_appointments = self.get_upcoming_appointments()
+        if upcoming_appointments:
+            print(f"{GREEN}Upcoming Appointments in the next 7 days:{RESET}")
+            for appt in upcoming_appointments:
+                print(f"{BOLD}{appt['date']} {appt['time_slot']} - {appt['status']} with {appt['mhwp_name']}{RESET}")
+        else:
+            print(f"{LIGHT_GREEN}No appointments in the next 7 days.{RESET}")
 
         # Call the navigate_menu method from the DisplayManager to show the menu
         while True:
@@ -852,6 +890,22 @@ class PatientController:
                     appointment["last_updated"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
                     if save_json(self.appointment_file, appointments):
                         print("✅ Appointment cancelled successfully!")
+                        mhwp_info = read_json(self.mhwp_info_file)
+                        mhwp_email = next((m["email"] for m in mhwp_info if m["mhwp_id"] == appointment["mhwp_id"]), None)
+                        subject = "Your Patient Canceled an Appointment"
+                        message_body = f'''
+                            Your Patient Canceled an Appointment.\n
+                            Patient Name: {self.patient.name}\n
+                            Patient ID: {self.patient.user_id}\n
+                            Date: {appointment["date"]}\n
+                            Time Slot: {appointment["time_slot"]}\n
+                            Breeze Mental Health and Wellbeing App
+                        '''
+                        if mhwp_email:
+                            send_email(mhwp_email, subject, message_body)
+                        else:
+                            print("❌ Failed to send email to MHWP. Please try again.")
+
                         return
             print("❌ Failed to cancel appointment. Please try again.")
         except ValueError:
@@ -861,37 +915,85 @@ class PatientController:
 # Section 5: Resource methods
 # ----------------------------
     def search_by_keyword(self):
-        keyword = input(f"{CYAN}{BOLD}Enter a keyword to search for related resources: {RESET}\n").strip()
+        """Search for meditation and relaxation resources by keyword."""
+        def parse_results(response_content):
+            results = []
+            is_target_div = False
+            is_target_link = False
+            current_link = None
+            current_title = []
+
+            def handle_starttag(tag, attrs):
+                """ HTMLParser callback for handling start tags """
+                nonlocal is_target_div, is_target_link, current_link
+                attrs_dict = dict(attrs)
+
+                # Detect the target div with class "gtazFe"
+                if tag == "div" and attrs_dict.get("class", "").strip() == "gtazFe":
+                    is_target_div = True
+                # Detect the <a> tag and start accumulating the link and text
+                elif is_target_div and tag == "a":
+                    is_target_link = True
+                    current_link = attrs_dict.get("href")
+
+            def handle_endtag(tag):
+                """ HTMLParser callback for handling end tags """
+                nonlocal is_target_div, is_target_link, current_link, current_title
+                # End of the <a> tag
+                if tag == "a" and is_target_link:
+                    is_target_link = False
+                # End of the target div
+                if tag == "div" and is_target_div:
+                    is_target_div = False
+                    if current_link and current_title:
+                        # Join all accumulated title parts and append to results
+                        full_title = "".join(current_title).strip()
+                        results.append({"Title": full_title, "URL": current_link})
+                        current_link = None
+                        current_title = []
+
+            def handle_data(data):
+                """ HTMLParser callback for handling data """
+                nonlocal current_title
+                if is_target_link:
+                    current_title.append(data)
+
+            # Create the HTML parser
+            parser = HTMLParser()
+            parser.handle_starttag = handle_starttag
+            parser.handle_endtag = handle_endtag
+            parser.handle_data = handle_data
+
+            # Feed the parser with the HTML content
+            parser.feed(response_content)
+            return results
+
+        # Fetch the HTML content and parse results
+        keyword = input(f"{CYAN}{BOLD}Enter a keyword to search for related resources 🔍: {RESET}").strip()
         if keyword == "back":
             self.display_manager.back_operation()
             self.resource_menu()
             return
+
         url = f"https://www.freemindfulness.org/_/search?query={keyword}"
 
         try:
-            response = requests.get(url, timeout=10) 
-            html_content = response.text 
-            soup = BeautifulSoup(html_content, "html.parser")
+            import ssl
+            import urllib.request
+            context = ssl._create_unverified_context()
+            with urllib.request.urlopen(url, context=context) as response:
+                html_content = response.read().decode("utf-8")
 
-            results = []
-            for div in soup.find_all('div', class_='gtazFe'):
-                a_tag = div.find('a')
-                if a_tag:
-                    title = a_tag.text.strip()
-                    href = a_tag['href']
-                    results.append({'Title': title, 'URL': href})
-
-            if len(results) == 0:
-                # Print the constructed file path and current working directory
-                print("Journal file path:", self.journal_file)
-                print("Current working directory:", os.getcwd())
-                print("No related resources found.")
-            else:
+            results = parse_results(html_content)
+            if results:
+                print(f"{BOLD}{MAGENTA}Found {len(results)} resource ⬇️ : {RESET}")
                 data = {key: [result[key] for result in results] for key in results[0]}
                 create_table(data, title="Meditation and Relaxation Resources", display_title=True, display_index=False)
+            else:
+                print("No related resources found.")
 
-        except requests.exceptions.RequestException as e:
-            print(f"An error occurred while fetching the webpage: {e}")           
+        except Exception as e:
+            print(f"Error occurred: {e}")
 
 
 # ----------------------------

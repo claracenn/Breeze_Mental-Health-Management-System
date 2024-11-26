@@ -43,6 +43,13 @@ class MHWPController:
         "3": self.view_patient_records,
         "4": lambda: None,  # Left it to be None to return to log out
         }
+
+        # Modify options and actions for disabled mhwp
+        if self.mhwp.status == "DISABLED":
+            print(f"{RED}Your account is disabled. You can only log out.{RESET}")
+            options = [f"{option} (Disabled)" for option in options[:-1]] + ["Log Out"]
+            action_map = {"4": lambda: None}
+
         main_menu_title = "🏠 Main Menu"
         self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
 
@@ -429,17 +436,17 @@ if __name__ == "__main__":
     # mhwp_controller.view_MHWP_homepage()
 
 
-MHWP = {
-        "mhwp_id": 22,
-        "name": "Robert Lewandowski",
-        "email": "robert.lewandowski@example.com",
-        }
+    MHWP = {
+            "mhwp_id": 22,
+            "name": "Robert Lewandowski",
+            "email": "robert.lewandowski@example.com",
+            }
 
 
-mhwp1 = MHWPController(MHWP)
-# mhwp1.view_patient_summary()
-# mhwp1.view_dashboard()
-# mhwp1.view_patient_records()
-# mhwp1.view_calendar()
-mhwp1.view_homepage()
+    mhwp1 = MHWPController(MHWP)
+    # mhwp1.view_patient_summary()
+    # mhwp1.view_dashboard()
+    # mhwp1.view_patient_records()
+    # mhwp1.view_calendar()
+    mhwp1.view_homepage()
 

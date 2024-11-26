@@ -33,3 +33,16 @@
 2024-11-26 12:05:48,790 - Action: Successful login: Username 'mhwp2', Performed by: mhwp2
 2024-11-26 12:47:00,458 - Action: Successful login: Username 'mhwp2', Performed by: mhwp2
 2024-11-26 12:55:01,635 - Action: Successful login: Username 'mhwp2', Performed by: mhwp2
+2024-11-26 15:01:47,003 - Action: User 'mhwp1' logged in despite being disabled, Performed by: system
+2024-11-26 15:01:49,552 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
+2024-11-26 15:11:33,983 - Action: User 'mhwp1' logged in despite being disabled, Performed by: system
+2024-11-26 15:11:35,320 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
+2024-11-26 15:12:21,775 - Action: Successful login: Username 'mhwp2', Performed by: mhwp2
+2024-11-26 15:18:55,962 - Action: User 'mhwp1' logged in despite being disabled, Performed by: system
+2024-11-26 15:18:57,652 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
+2024-11-26 15:20:13,435 - Action: User 'mhwp1' logged in despite being disabled, Performed by: system
+2024-11-26 15:20:14,605 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
+2024-11-26 15:21:47,869 - Action: User 'mhwp1' logged in despite being disabled, Performed by: system
+2024-11-26 15:21:50,082 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
+2024-11-26 15:22:01,075 - Action: User 'patient3' logged in despite being disabled, Performed by: system
+2024-11-26 15:22:02,271 - Action: Successful login: Username 'patient3', Performed by: patient3

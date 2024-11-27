@@ -158,13 +158,5 @@
         "emergency_contact_email": "emergency.contact20@example.com",
         "mhwp_id": 22,
         "mood_code": 6
-    },
-    {
-        "patient_id": 21,
-        "name": "Michael Scott",
-        "email": "michael.scott@example.com",
-        "emergency_contact_email": "emergency.contact21@example.com",
-        "mhwp_id": 21,
-        "mood_code": 5
     }
 ]

@@ -105,7 +105,7 @@ class PatientController:
             "4": self.appointment_menu,
             "5": self.resource_menu,
             "6": self.feedback_menu,
-            "7": lambda,
+            "7": lambda: None,  # Back to Homepage handled in navigate_menu
         }
 
         # Modify options and actions for disabled patients

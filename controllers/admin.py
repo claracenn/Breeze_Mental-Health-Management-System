@@ -283,212 +283,227 @@ class AdminController:
 # ----------------------------
     def edit_mhwp(self):
         # Display MHWP info
-        data = self.display_mhwp_info()
-        input_mhwp_id = input(f"{CYAN}{BOLD}Enter MHWP ID to edit ⏳: {RESET}").strip()
+        self.display_mhwp_info()
+        data = read_json("./data/mhwp_info.json")
 
-        for mhwp in data:
+        while True:
+            input_mhwp_id = input(f"{CYAN}{BOLD}Enter MHWP ID to edit ⏳: {RESET}").strip()
+            if input_mhwp_id == "back":
+                self.display_manager.back_operation()
+                self.edit_user_info_menu()
+                return
+        
             # Validate if input is an integer
             if not self.is_integer(input_mhwp_id):
                 print(f"{RED}Invalid input. Please enter an interger.{RESET}")
                 continue
-                
-            # Check if the input MHWP ID exists and proceed to edit
-            if mhwp["MHWP ID"] == input_mhwp_id:
-                print(f"\n{BOLD}📃 Edit MHWP {input_mhwp_id} information:")
-                while True:
-                    # Display a simple menu for editing mhwp data
-                    print(f"{BOLD}{MAGENTA}\nSelect the field you want to edit:{RESET}")
-                    print(f"1. Name (current: {mhwp['name']})")
-                    print(f"2. Email (current: {mhwp['email']})")
-                    print(f"3. Edit All")
-                    print(f"4. Back to Edit User Info Menu")
+            
+            input_mhwp_id = int(input_mhwp_id)
+            for mhwp in data:
+                # Check if the input MHWP ID exists and proceed to edit
+                if mhwp["mhwp_id"] == input_mhwp_id:
+                    print(f"\n{BOLD}📃 Edit MHWP {input_mhwp_id} information:")
+                    while True:
+                        # Display a simple menu for editing mhwp data
+                        print(f"{BOLD}{MAGENTA}\nSelect the field you want to edit:{RESET}")
+                        print(f"1. Name (current: {mhwp['name']})")
+                        print(f"2. Email (current: {mhwp['email']})")
+                        print(f"3. Edit All")
+                        print(f"4. Back to Edit User Info Menu")
 
-                    # Get user input and handle it
-                    choice = input(f"{CYAN}{BOLD}Choose an option ⏳: {RESET}").strip()
-                    if choice == "back":
-                        self.display_manager.back_operation()
-                        self.edit_user_info_menu()
-                        return
-                    if choice == "1":
-                        new_name = input(f"{CYAN}{BOLD}Enter new name: {RESET}").strip()
-                        if new_name == "back":
+                        # Get user input and handle it
+                        choice = input(f"{CYAN}{BOLD}Choose an option ⏳: {RESET}").strip()
+                        if choice == "back":
+                            self.edit_mhwp()
+                            return
+                        if choice == "1":
+                            new_name = input(f"{CYAN}{BOLD}Enter new name: {RESET}").strip()
+                            if new_name == "back":
+                                self.display_manager.back_operation()
+                                self.edit_user_info_menu()
+                                return
+                            if new_name:
+                                mhwp["name"] = new_name
+                                print(f"{GREEN}Name updated successfully!{RESET}")
+                        elif choice == "2":
+                            new_email = input(f"{CYAN}{BOLD}Enter new email: {RESET}").strip()
+                            if new_email == "back":
+                                self.display_manager.back_operation()
+                                self.edit_user_info_menu()
+                                return
+                            if new_email:
+                                mhwp["email"] = new_email
+                                print(f"{GREEN}Email updated successfully!{RESET}")
+                        elif choice == "3":
+                            new_name = input(f"{CYAN}{BOLD}Enter new name: {RESET}").strip()
+                            if new_name == "back":
+                                self.display_manager.back_operation()
+                                self.edit_user_info_menu()
+                                return
+                            if new_name:
+                                mhwp["name"] = new_name
+                            new_email = input(f"{CYAN}{BOLD}Enter new email: {RESET}").strip()
+                            if new_email == "back":
+                                self.display_manager.back_operation()
+                                self.edit_user_info_menu()
+                                return
+                            if new_email:
+                                mhwp["email"] = new_email
+                            print(f"{GREEN}All fields updated successfully!{RESET}")
+                        elif choice == "4":
                             self.display_manager.back_operation()
                             self.edit_user_info_menu()
-                            return
-                        if new_name:
-                            mhwp["name"] = new_name
-                            print(f"{GREEN}Name updated successfully!{RESET}")
-                    elif choice == "2":
-                        new_email = input(f"{CYAN}{BOLD}Enter new email: {RESET}").strip()
-                        if new_email == "back":
-                            self.display_manager.back_operation()
-                            self.edit_user_info_menu()
-                            return
-                        if new_email:
-                            mhwp["email"] = new_email
-                            print(f"{GREEN}Email updated successfully!{RESET}")
-                    elif choice == "3":
-                        new_name = input(f"{CYAN}{BOLD}Enter new name: {RESET}").strip()
-                        if new_name == "back":
-                            self.display_manager.back_operation()
-                            self.edit_user_info_menu()
-                            return
-                        if new_name:
-                            mhwp["name"] = new_name
-                        new_email = input(f"{CYAN}{BOLD}Enter new email: {RESET}").strip()
-                        if new_email == "back":
-                            self.display_manager.back_operation()
-                            self.edit_user_info_menu()
-                            return
-                        if new_email:
-                            mhwp["email"] = new_email
-                        print(f"{GREEN}All fields updated successfully!{RESET}")
-                    elif choice == "4":
-                        print(f"{GREY}Returning to Profile Menu.")
-                        break
-                    else:
-                        print(f"{RED}Invalid choice. Please try again.")
+                            break
+                        else:
+                            print(f"{RED}Invalid choice. Please try again.")
 
-                # Save the updated data
-                save_json("./data/mhwp_info.json", data)
-                break
+                    # Save the updated data
+                    save_json("./data/mhwp_info.json", data)
 
             # If MHWP ID not found
             else:
                 print(f"{RED}MHWP ID '{input_mhwp_id}' not found. Please try again.{RESET}")
-                self.edit_user_info_menu()
 
 
     def edit_patient(self):
         # Display patient info
-        data = self.display_patient_info()
-        input_patient_id = input(f"{CYAN}{BOLD}Enter Patient ID to edit ⏳: {RESET}").strip()
-
-        for mhwp in data:
+        self.display_patient_info()
+        data = read_json("./data/patient_info.json")
+        
+        while True:
+            input_patient_id = input(f"{CYAN}{BOLD}Enter Patient ID to edit ⏳: {RESET}").strip()
+            if input_patient_id == "back":
+                self.display_manager.back_operation()
+                self.edit_user_info_menu()
+                return
+        
             # Validate if input is an integer
             if not self.is_integer(input_patient_id):
                 print(f"{RED}Invalid input. Please enter an interger.{RESET}")
                 continue
-                
-            # Check if the input MHWP ID exists and proceed to edit
-            if mhwp["Patient ID"] == input_patient_id:
-                print(f"\n{BOLD}📃 Edit Patient {input_patient_id} information:")
-                while True:
-                    # Display a simple menu for editing mhwp data
-                    print(f"{BOLD}{MAGENTA}\nSelect the field you want to edit:{RESET}")
-                    print(f"1. Name (current: {mhwp['name']})")
-                    print(f"2. Email (current: {mhwp['email']})")
-                    print(f"3. Emergency Contact Email (current: {mhwp['emergency_contact_email']})")
-                    print(f"4. Edit All")
-                    print(f"5. Back to Edit User Info Menu")
+                    
+            input_patient_id = int(input_patient_id)
+            for patient in data:
+                # Check if the input MHWP ID exists and proceed to edit
+                if patient["patient_id"] == input_patient_id:
+                    print(f"\n{BOLD}📃 Edit Patient {input_patient_id} information:")
+                    while True:
+                        # Display a simple menu for editing mhwp data
+                        print(f"{BOLD}{MAGENTA}\nSelect the field you want to edit:{RESET}")
+                        print(f"1. Name (current: {patient['name']})")
+                        print(f"2. Email (current: {patient['email']})")
+                        print(f"3. Emergency Contact Email (current: {patient['emergency_contact_email']})")
+                        print(f"4. Edit All")
+                        print(f"5. Back to Edit User Info Menu")
 
-                    # Get user input and handle it
-                    choice = input(f"{CYAN}{BOLD}Choose an option ⏳: {RESET}").strip()
-                    if choice == "back":
-                        self.display_manager.back_operation()
-                        self.edit_user_info_menu()
-                        return
-                    # Edit Name
-                    if choice == "1":
-                        new_name = input(f"{CYAN}{BOLD}Enter new name: {RESET}").strip()
-                        if new_name == "back":
+                        # Get user input and handle it
+                        choice = input(f"{CYAN}{BOLD}Choose an option ⏳: {RESET}").strip()
+                        if choice == "back":
+                            self.edit_patient()
+                            return
+                        # Edit Name
+                        if choice == "1":
+                            new_name = input(f"{CYAN}{BOLD}Enter new name: {RESET}").strip()
+                            if new_name == "back":
+                                self.display_manager.back_operation()
+                                self.edit_user_info_menu()
+                                return
+                            if new_name:
+                                patient["name"] = new_name
+                                print(f"{GREEN}Name updated successfully!{RESET}")
+                        # Edit Email
+                        elif choice == "2":
+                            new_email = input(f"{CYAN}{BOLD}Enter new email: {RESET}").strip()
+                            if new_email == "back":
+                                self.display_manager.back_operation()
+                                self.edit_user_info_menu()
+                                return
+                            if new_email:
+                                patient["email"] = new_email
+                                print(f"{GREEN}Email updated successfully!{RESET}")
+                        # Edit Emergency Contact Email
+                        elif choice == "3":
+                            new_emergency_contact_email = input(f"{CYAN}{BOLD}Enter new emergency contact email: {RESET}").strip()
+                            if new_emergency_contact_email == "back":
+                                self.display_manager.back_operation()
+                                self.edit_user_info_menu()
+                                return
+                            if new_emergency_contact_email:
+                                patient["emergency_contact_email"] = new_emergency_contact_email
+                                print(f"{GREEN}Emergency contact email updated successfully!{RESET}")
+                        # Edit All
+                        elif choice == "4":
+                            new_name = input(f"{CYAN}{BOLD}Enter new name: {RESET}").strip()
+                            if new_name == "back":
+                                self.display_manager.back_operation()
+                                self.edit_user_info_menu()
+                                return
+                            if new_name:
+                                patient["name"] = new_name
+                            new_email = input(f"{CYAN}{BOLD}Enter new email: {RESET}").strip()
+                            if new_email == "back":
+                                self.display_manager.back_operation()
+                                self.edit_user_info_menu()
+                                return
+                            if new_email:
+                                patient["email"] = new_email
+                            new_emergency_contact_email = input(f"{CYAN}{BOLD}Enter new emergency contact email: {RESET}").strip()
+                            if new_emergency_contact_email == "back":
+                                self.display_manager.back_operation()
+                                self.edit_user_info_menu()
+                                return
+                            if new_emergency_contact_email:
+                                patient["emergency_contact_email"] = new_emergency_contact_email
+                            print(f"{GREEN}All fields updated successfully!{RESET}")
+                        # Back to Edit User Info Menu
+                        elif choice == "5":
+                            print(f"{GREY}Returning to Profile Menu.")
                             self.display_manager.back_operation()
                             self.edit_user_info_menu()
-                            return
-                        if new_name:
-                            mhwp["name"] = new_name
-                            print(f"{GREEN}Name updated successfully!{RESET}")
-                    # Edit Email
-                    elif choice == "2":
-                        new_email = input(f"{CYAN}{BOLD}Enter new email: {RESET}").strip()
-                        if new_email == "back":
-                            self.display_manager.back_operation()
-                            self.edit_user_info_menu()
-                            return
-                        if new_email:
-                            mhwp["email"] = new_email
-                            print(f"{GREEN}Email updated successfully!{RESET}")
-                    # Edit Emergency Contact Email
-                    elif choice == "3":
-                        new_emergency_contact_email = input(f"{CYAN}{BOLD}Enter new emergency contact email: {RESET}").strip()
-                        if new_emergency_contact_email == "back":
-                            self.display_manager.back_operation()
-                            self.edit_user_info_menu()
-                            return
-                        if new_emergency_contact_email:
-                            mhwp["emergency_contact_email"] = new_emergency_contact_email
-                            print(f"{GREEN}Emergency contact email updated successfully!{RESET}")
-                    # Edit All
-                    elif choice == "4":
-                        new_name = input(f"{CYAN}{BOLD}Enter new name: {RESET}").strip()
-                        if new_name == "back":
-                            self.display_manager.back_operation()
-                            self.edit_user_info_menu()
-                            return
-                        if new_name:
-                            mhwp["name"] = new_name
-                        new_email = input(f"{CYAN}{BOLD}Enter new email: {RESET}").strip()
-                        if new_email == "back":
-                            self.display_manager.back_operation()
-                            self.edit_user_info_menu()
-                            return
-                        if new_email:
-                            mhwp["email"] = new_email
-                        new_emergency_contact_email = input(f"{CYAN}{BOLD}Enter new emergency contact email: {RESET}").strip()
-                        if new_emergency_contact_email == "back":
-                            self.display_manager.back_operation()
-                            self.edit_user_info_menu()
-                            return
-                        if new_emergency_contact_email:
-                            mhwp["emergency_contact_email"] = new_emergency_contact_email
-                        print(f"{GREEN}All fields updated successfully!{RESET}")
-                    # Back to Edit User Info Menu
-                    elif choice == "5":
-                        print(f"{GREY}Returning to Profile Menu.")
-                        break
-                    else:
-                        print(f"{RED}Invalid choice. Please try again.")
+                            break
+                        else:
+                            print(f"{RED}Invalid choice. Please try again.")
 
-                # Save the updated data
-                save_json("./data/patient_info.json", data)
-                break
+                    # Save the updated data
+                    save_json("./data/patient_info.json", data)
+                    update_entry("./data/patient_record.json", input_patient_id, {"name": new_name})
+                    break
 
             # If MHWP ID not found
             else:
-                print(f"{RED}MHWP ID '{input_mhwp_id}' not found. Please try again.{RESET}")
-                self.edit_user_info_menu()
+                print(f"{RED}Patient ID '{input_patient_id}' not found. Please try again.{RESET}")
 
 
 # ----------------------------
 # Section 3: Disable/Enable User
 # ----------------------------
     def disable_mhwp(self):
-        pass
+        print("Developing...")
 
     def disable_patient(self):
-        pass
+        print("Developing...")
 
     def enable_mhwp(self):
-        pass
+        print("Developing...")
 
     def enable_patient(self):
-        pass
+        print("Developing...")
 
 # ----------------------------
 # Section 4: Delete User
 # ----------------------------
     def delete_mhwp(self):
-        pass
+        print("Developing...")
 
     def delete_patient(self):
-        pass
+        print("Developing...")
 
 
 # ----------------------------
 # Section 5: Display Summary
 # ----------------------------
     def display_summary(self):
-        pass
+        print("Developing...")
     
     
 # give test of allocate patient to mhwp

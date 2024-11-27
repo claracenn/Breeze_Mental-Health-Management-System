@@ -246,14 +246,13 @@ class PatientController:
     def edit_profile(self):
             """Edit the patient's profile information and save changes to JSON file."""
             data = read_json(self.patient_info_file)
-            mhwp_data = read_json("data/mhwp_info.json")
 
             for patient in data:
                 if patient["patient_id"] == self.patient.user_id:
                     print(f"\n{BOLD}📃 Edit Profile:")
                     while True:
                         # Display a simple menu for editing profile
-                        print(f"{BOLD}{MAGENTA}Select the field you want to edit:{RESET}")
+                        print(f"{BOLD}{MAGENTA}\nSelect the field you want to edit:{RESET}")
                         print(f"1. Name (current: {patient['name']})")
                         print(f"2. Email (current: {patient['email']})")
                         print(f"3. Emergency Contact (current: {patient['emergency_contact_email']})")
@@ -279,7 +278,7 @@ class PatientController:
                                 return
                             if new_name:
                                 patient["name"] = new_name
-                                print("Name updated successfully.")
+                                print(f"{GREEN}Name updated successfully.")
                         elif choice == "2":
                             new_email = input("Enter new email: ").strip()
                             if new_email == "back":
@@ -288,7 +287,7 @@ class PatientController:
                                 return
                             if new_email:
                                 patient["email"] = new_email
-                                print("Email updated successfully.")
+                                print(f"{GREEN}Email updated successfully.")
                         elif choice == "3":
                             new_contact = input("Enter new emergency contact email: ").strip()
                             if new_contact == "back":
@@ -297,7 +296,7 @@ class PatientController:
                                 return
                             if new_contact:
                                 patient["emergency_contact_email"] = new_contact
-                                print("Emergency contact updated successfully.")
+                                print(f"{GREEN}Emergency contact updated successfully.")
                         elif choice == "5":
                             new_name = input("Enter new name: ").strip()
                             if new_name == "back":
@@ -319,18 +318,19 @@ class PatientController:
                                 patient["email"] = new_email
                             if new_contact:
                                 patient["emergency_contact_email"] = new_contact
-                            print("All fields updated successfully.")
+                            print(f"{GREEN}All fields updated successfully.")
                         elif choice == "6":
-                            print("Returning to Profile Menu.")
+                            print(f"{GREY}Returning to Profile Menu.")
                             break
                         else:
-                            print("Invalid choice. Please try again.")
+                            print(f"{RED}Invalid choice. Please try again.")
                             
                     # Save the updated data back to the file
                     save_json(self.patient_info_file, data)
                     break
             else:
-                print("Patient not found.")
+                print(f"{RED}Patient not found. Please try again.")
+                self.profile_menu()
 
 
     def display_eligible_mhwps(self, patient_id, current_mhwp_id):

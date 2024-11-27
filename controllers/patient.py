@@ -115,7 +115,7 @@ class PatientController:
             action_map = {"7": lambda: print(f"{BOLD}Logging out...{RESET}")}
 
         # Display upcoming appointments only on the first visit
-        if self.skip_upcoming_appointments:
+        if not self.skip_upcoming_appointments:
             upcoming_appointments = self.get_upcoming_appointments()
             if upcoming_appointments:
                 print(f"{GREEN}\nUpcoming Appointments in the next 7 days:{RESET}")

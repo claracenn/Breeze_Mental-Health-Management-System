@@ -265,14 +265,17 @@ class PatientController:
                         choice = input(f"{CYAN}{BOLD}Choose an option ⏳: {RESET}").strip()
                         if choice == "back":
                             self.display_manager.back_operation()
+                            self.profile_menu()
                             return
                         if choice == "4":
                             self.display_eligible_mhwps(patient["patient_id"], patient["mhwp_id"])
+                            self.profile_menu()
                             return  
                         elif choice == "1":
                             new_name = input("Enter new name: ").strip()
                             if new_name == "back":
                                 self.display_manager.back_operation()
+                                self.profile_menu()
                                 return
                             if new_name:
                                 patient["name"] = new_name
@@ -281,6 +284,7 @@ class PatientController:
                             new_email = input("Enter new email: ").strip()
                             if new_email == "back":
                                 self.display_manager.back_operation()
+                                self.profile_menu()
                                 return
                             if new_email:
                                 patient["email"] = new_email
@@ -289,6 +293,7 @@ class PatientController:
                             new_contact = input("Enter new emergency contact email: ").strip()
                             if new_contact == "back":
                                 self.display_manager.back_operation()
+                                self.profile_menu()
                                 return
                             if new_contact:
                                 patient["emergency_contact_email"] = new_contact
@@ -297,6 +302,7 @@ class PatientController:
                             new_name = input("Enter new name: ").strip()
                             if new_name == "back":
                                 self.display_manager.back_operation()
+                                self.profile_menu()
                                 return
                             new_email = input("Enter new email: ").strip()
                             if new_email == "back":
@@ -305,6 +311,7 @@ class PatientController:
                             new_contact = input("Enter new emergency contact email: ").strip()
                             if new_contact == "back":
                                 self.display_manager.back_operation()
+                                self.profile_menu()
                                 return
                             if new_name:
                                 patient["name"] = new_name

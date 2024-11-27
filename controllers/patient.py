@@ -57,6 +57,7 @@ class PatientController:
         self.mhwp_info_file = "data/mhwp_info.json"
         self.feedback_file = "data/feedback.json"
         self.skip_upcoming_appointments = False
+        self.patient_record_file = 'data/patient_record.json'
 
     def get_upcoming_appointments(self):
         """Get appointments within the next 7 days for the patient."""
@@ -246,13 +247,15 @@ class PatientController:
                 return patient
         print(f"{DARK_GREY}Patient not found.{RESET}")
 
-
     def edit_profile(self):
             """Edit the patient's profile information and save changes to JSON file."""
-            data = read_json(self.patient_info_file)
+            patient_info_data = read_json(self.patient_info_file)
+            patient_record_data = read_json(self.patient_record_file)
 
-            for patient in data:
+            patient_found = False
+            for patient in patient_info_data:
                 if patient["patient_id"] == self.patient.user_id:
+                    patient_found = True
                     print(f"\n{BOLD}📃 Edit Profile:")
                     while True:
                         # Display a simple menu for editing profile
@@ -279,10 +282,14 @@ class PatientController:
                             if new_name == "back":
                                 self.display_manager.back_operation()
                                 self.profile_menu()
-                                return
+                                continue
                             if new_name:
                                 patient["name"] = new_name
                                 print(f"{GREEN}Name updated successfully.")
+                                for record in patient_record_data:
+                                    if record["patient_id"] == self.patient.user_id:
+                                        record["name"] = new_name
+                                        break
                         elif choice == "2":
                             new_email = input("Enter new email: ").strip()
                             if new_email == "back":
@@ -329,12 +336,14 @@ class PatientController:
                         else:
                             print(f"{RED}Invalid choice. Please try again.")
                             
-                    # Save the updated data back to the file
-                    save_json(self.patient_info_file, data)
-                    break
-            else:
+                        # Save the updated data back to the file
+                        save_json(self.patient_info_file, patient_info_data)
+                        save_json(self.patient_record_file, patient_record_data)
+    
+            
+            if patient_found == False:
                 print(f"{RED}Patient not found. Please try again.")
-                self.profile_menu()
+                self.profile_menu()          
 
 
     def display_eligible_mhwps(self, patient_id, current_mhwp_id):

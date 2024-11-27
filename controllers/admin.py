@@ -582,6 +582,7 @@ class AdminController:
                 print(f"{RED}Row not found. Please try again.{RESET}")
                 continue
             
+            
             # Check if the input patient ID exists and proceed to allocate
             index = int(row) - 1
 

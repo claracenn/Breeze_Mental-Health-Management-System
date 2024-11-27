@@ -116,7 +116,7 @@ class PatientController:
         # Display upcoming appointments if any
         upcoming_appointments = self.get_upcoming_appointments()
         if upcoming_appointments:
-            print(f"{GREEN}Upcoming Appointments in the next 7 days:{RESET}")
+            print(f"{GREEN}\nUpcoming Appointments in the next 7 days:{RESET}")
             for appt in upcoming_appointments:
                 print(f"{BOLD}{appt['date']} {appt['time_slot']} - {appt['status']} with {appt['mhwp_name']}{RESET}")
         else:

@@ -56,6 +56,7 @@ class PatientController:
         self.request_log_file = "data/request_log.json"
         self.mhwp_info_file = "data/mhwp_info.json"
         self.feedback_file = "data/feedback.json"
+        self.skip_upcoming_appointments = False
 
     def get_upcoming_appointments(self):
         """Get appointments within the next 7 days for the patient."""
@@ -104,7 +105,7 @@ class PatientController:
             "4": self.appointment_menu,
             "5": self.resource_menu,
             "6": self.feedback_menu,
-            "7": lambda: print(f"{BOLD}Logging out...{RESET}") 
+            "7": lambda,
         }
 
         # Modify options and actions for disabled patients
@@ -112,6 +113,17 @@ class PatientController:
             print(f"{RED}Your account is disabled. You can only log out.{RESET}")
             options = [f"{option} (Disabled)" for option in options[:-1]] + ["Log Out"]
             action_map = {"7": lambda: print(f"{BOLD}Logging out...{RESET}")}
+
+        # Display upcoming appointments only on the first visit
+        if not self.skip_upcoming_appointments:
+            upcoming_appointments = self.get_upcoming_appointments()
+            if upcoming_appointments:
+                print(f"{GREEN}\nUpcoming Appointments in the next 7 days:{RESET}")
+                for appt in upcoming_appointments:
+                    print(f"{BOLD}{appt['date']} {appt['time_slot']} - {appt['status']} with {appt['mhwp_name']}{RESET}")
+            else:
+                print(f"{LIGHT_GREEN}No appointments in the next 7 days.{RESET}")
+            self.skip_upcoming_appointments = True
 
         # Display upcoming appointments if any
         upcoming_appointments = self.get_upcoming_appointments()

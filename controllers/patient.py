@@ -387,7 +387,7 @@ class PatientController:
             request_log = []
         
         new_request = {
-            "user_id": patient_id,
+            "patient_id": patient_id,
             "current_mhwp_id": current_mhwp_id,
             "target_mhwp_id": target_mhwp_id,
             "reason": reason,

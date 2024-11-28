@@ -96,7 +96,7 @@ class AdminController:
             self.display_admin_homepage()
     
     def delete_user_menu(self):
-        title = "🗑️ Delete User"
+        title = "🗑️  Delete User"
         main_menu_title = "🏠 Admin Homepage"
         options = ["Delete MHWP",
                    "Delete Patient",
@@ -317,7 +317,7 @@ class AdminController:
             return None
         else:
             data = {
-                "Patient ID": [r.get("user_id", None) for r in request_info],
+                "Patient ID": [r.get("patient_id", None) for r in request_info],
                 "Current MHWP ID": [r.get("current_mhwp_id") for r in request_info],
                 "Target MHWP ID": [r.get("target_mhwp_id") for r in request_info],
                 "Reason": [r.get("reason") for r in request_info],
@@ -377,7 +377,7 @@ class AdminController:
 
             while True:
                 # Display a simple menu for editing mhwp data
-                print(f"{BOLD}{MAGENTA}\nResolve Patient {specific_record_info['user_id']}'s request:{RESET}")
+                print(f"{BOLD}{MAGENTA}\nResolve Patient {specific_record_info['patient_id']}'s request:{RESET}")
                 print(f"1. Approve request")
                 print(f"2. Reject request")
                 print(f"3. Back to Homepage")
@@ -395,22 +395,21 @@ class AdminController:
                 if choice == "1":
                     request_data[input_index-1]['status'] = "approved"
                     save_json("./data/request_log.json", request_data)
-                    patient_id = request_data[input_index-1]['user_id']
+                    patient_id = request_data[input_index-1]['patient_id']
                     target_MHWP_id = request_data[input_index-1]['target_mhwp_id']
 
                     #update patient file to new MHWP           
                     update_entry("./data/patient_info.json", patient_id, {"mhwp_id": target_MHWP_id})
                     print(f"{GREEN}Request settled. Successfully assigned Patient {patient_id} to MHWP {target_MHWP_id}! {RESET}")
                     self.calculate_patient_counts("./data/patient_info.json", "./data/mhwp_info.json")
-                    self.display_admin_homepage()
                     return
 
                 # Reject request
                 elif choice == "2":
                     request_data[input_index-1]['status'] = "rejected"
+                    patient_id = request_data[input_index-1]['patient_id']
                     print(f"{RED}Request settled. Rejected Patient {patient_id}'s request. {RESET}")
                     save_json("./data/request_log.json", request_data)
-                    self.display_admin_homepage()
                     return
                 
                 else:
@@ -762,10 +761,174 @@ class AdminController:
 # Section 5: Delete User
 # ----------------------------
     def delete_mhwp(self):
-        print("Developing...")
+        """Delete an MHWP account"""
+        # Display MHWP info
+        mhwp_data = self.display_mhwp_info()
+        if not mhwp_data:
+            self.display_manager.back_operation()
+            self.delete_user_menu()
+            return
+
+        retry_attempts = 0
+        while retry_attempts < 3:
+            input_mhwp_id = input(f"{CYAN}{BOLD}Enter MHWP ID to delete ⏳: {RESET}").strip()
+            if input_mhwp_id == "back":
+                self.display_manager.back_operation()
+                self.delete_user_menu()
+                return
+            
+            # Validate if input is an integer
+            if not self.is_integer(input_mhwp_id):
+                retry_attempts += 1
+                print(f"{RED}Invalid input. Please enter an integer.{RESET}")
+                continue
+
+            input_mhwp_id = int(input_mhwp_id)
+            if input_mhwp_id in mhwp_data.get("MHWP ID", []):
+                # Check for existing relationships with patients
+                patient_data = read_json("./data/patient_info.json")
+                patients_assigned = [p for p in patient_data if p.get("mhwp_id") == input_mhwp_id]
+                if patients_assigned:
+                    print(f"{RED}Cannot delete MHWP with assigned patients. Please reassign patients first.{RESET}")
+                    self.display_manager.back_operation()
+                    self.delete_user_menu()
+                    return
+
+                # Check for future uncancelled appointments
+                appointment_data = read_json("./data/appointment.json")
+                current_datetime = datetime.now()
+                appointments_assigned = [
+                    appt for appt in appointment_data
+                    if appt.get("mhwp_id") == input_mhwp_id
+                    and datetime.strptime(f"{appt.get('date')} {appt.get('time_slot').split(' - ')[0]}", 
+                                        "%Y-%m-%d %H:%M") > current_datetime
+                    and appt.get("status") != "CANCELED"
+                ]
+                if appointments_assigned:
+                    print(f"{RED}MHWP has upcoming appointments. Please handle these appointments first.{RESET}")
+                    self.display_manager.back_operation()
+                    self.delete_user_menu()
+                    return
+
+                # Check for pending requests
+                request_data = read_json("./data/request_log.json")
+                requests_assigned = [
+                    req for req in request_data 
+                    if (req.get("current_mhwp_id") == input_mhwp_id or 
+                        req.get("target_mhwp_id") == input_mhwp_id) and 
+                    req.get("status") == "pending"
+                ]
+                if requests_assigned:
+                    print(f"{RED}MHWP has pending patient transfer requests. Please handle these requests first.{RESET}")
+                    self.display_manager.back_operation()
+                    self.delete_user_menu()
+                    return
+
+                # Confirm deletion
+                confirm = input(f"{ORANGE}Are you sure you want to delete MHWP {input_mhwp_id}? (yes/no): {RESET}").strip().lower()
+                if confirm == "yes":
+                    try:
+                        # Delete from all relevant files
+                        mhwp_file_paths = [
+                            "./data/mhwp_info.json",
+                            "./data/user.json"
+                        ]
+                        for file_path in mhwp_file_paths:
+                            data = read_json(file_path)
+                            data = [m for m in data if m.get("mhwp_id", m.get("user_id")) != input_mhwp_id]
+                            save_json(file_path, data)
+                        
+                        print(f"{GREEN}Successfully deleted MHWP {input_mhwp_id}!{RESET}")
+                        break
+                    except IOError as e:
+                        print(f"{RED}An error occurred while deleting MHWP data: {e}{RESET}")
+                else:
+                    print(f"{GREY}Deletion cancelled.{RESET}")
+                    break
+            else:
+                retry_attempts += 1
+                print(f"{RED}MHWP ID '{input_mhwp_id}' not found. Please try again.{RESET}")
+
+        if retry_attempts == 3:
+            print(f"{RED}You have exceeded the maximum number of attempts. Returning to the Delete User Menu...{RESET}")
+        
+        self.display_manager.back_operation()
+        self.delete_user_menu()
+
 
     def delete_patient(self):
-        print("Developing...")
+        """Delete a patient account"""
+        # Display patient info
+        patient_data = self.display_patient_info()
+        if not patient_data:
+            self.display_manager.back_operation()
+            self.delete_user_menu()
+            return
+
+        retry_attempts = 0
+        while retry_attempts < 3:
+            input_patient_id = input(f"{CYAN}{BOLD}Enter Patient ID to delete ⏳: {RESET}").strip()
+            if input_patient_id == "back":
+                self.display_manager.back_operation()
+                self.delete_user_menu()
+                return
+            
+            # Validate if input is an integer
+            if not self.is_integer(input_patient_id):
+                retry_attempts += 1
+                print(f"{RED}Invalid input. Please enter an integer.{RESET}")
+                continue
+
+            input_patient_id = int(input_patient_id)
+            if input_patient_id in patient_data.get("Patient ID", []):
+                # Confirm deletion
+                confirm = input(f"{ORANGE}Are you sure you want to delete Patient {input_patient_id}? (yes/no): {RESET}").strip().lower()
+                if confirm == "yes":
+                    try:
+                        # Get MHWP ID before deletion for patient count update
+                        patient_info = read_json("./data/patient_info.json")
+                        patient_entry = next((p for p in patient_info if p["patient_id"] == input_patient_id), None)
+                        mhwp_id = patient_entry.get("mhwp_id") if patient_entry else None
+
+                        # Delete from all relevant files
+                        patient_file_paths = [
+                            "./data/appointment.json",
+                            "./data/patient_info.json",
+                            "./data/patient_journal.json",
+                            "./data/patient_mood.json",
+                            "./data/patient_record.json",
+                            "./data/user.json"
+                        ]
+                        
+                        for file_path in patient_file_paths:
+                            data = read_json(file_path)
+                            data = [p for p in data if p.get("patient_id", p.get("user_id")) != input_patient_id]
+                            save_json(file_path, data)
+
+                        # Update MHWP patient count if patient was assigned
+                        if mhwp_id:
+                            mhwp_data = read_json("./data/mhwp_info.json")
+                            for mhwp in mhwp_data:
+                                if mhwp["mhwp_id"] == mhwp_id:
+                                    mhwp["patient_count"] = max(0, mhwp["patient_count"] - 1)
+                            save_json("./data/mhwp_info.json", mhwp_data)
+
+                        print(f"{GREEN}Successfully deleted Patient {input_patient_id}!{RESET}")
+                        break
+                    except IOError as e:
+                        print(f"{RED}An error occurred while deleting patient data: {e}{RESET}")
+                else:
+                    print(f"{GREY}Deletion cancelled.{RESET}")
+                    break
+            else:
+                retry_attempts += 1
+                print(f"{RED}Patient ID '{input_patient_id}' not found. Please try again.{RESET}")
+
+        if retry_attempts == 3:
+            print(f"{RED}You have exceeded the maximum number of attempts. Returning to the Delete User Menu...{RESET}")
+        
+        self.display_manager.back_operation()
+        self.delete_user_menu()
 
 
 # ----------------------------

@@ -1,14 +1,14 @@
 [
     {
-        "user_id": 1,
+        "patient_id": 1,
         "current_mhwp_id": 21,
         "target_mhwp_id": 22,
         "reason": "Relocation to a different area",
-        "status": "pending",
+        "status": "approved",
         "requested_at": "2024-11-13 20:18:52"
     },
     {
-        "user_id": 2,
+        "patient_id": 2,
         "current_mhwp_id": 25,
         "target_mhwp_id": 21,
         "reason": "not a good fit",
@@ -16,7 +16,7 @@
         "requested_at": "2024-11-13 20:28:21"
     },
     {
-        "user_id": 3,
+        "patient_id": 3,
         "current_mhwp_id": 23,
         "target_mhwp_id": 22,
         "reason": "Long wait times",
@@ -24,7 +24,7 @@
         "requested_at": "2024-11-13 20:30:22"
     },
     {
-        "user_id": 4,
+        "patient_id": 4,
         "current_mhwp_id": 23,
         "target_mhwp_id": 25,
         "reason": "Prefer a different approach",

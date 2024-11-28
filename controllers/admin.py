@@ -44,6 +44,7 @@ class AdminController:
         title = "🏠 Admin Homepage"
         main_menu_title = "🏠 Admin Homepage"
         options = ["Allocate Patient to MHWP",
+                   "Resolve Patient Requests",
                    "Edit User Info",
                    "Disable or Enable User",
                    "Delete User",
@@ -51,11 +52,12 @@ class AdminController:
                    "Logout"]
         action_map = {
             "1": self.allocate_patient,
-            "2": self.edit_user_info_menu,
-            "3": self.disable_enable_user_menu,
-            "4": self.delete_user_menu,
-            "5": self.display_summary,
-            "6": lambda: None
+            "2": self.resolve_request,
+            "3": self.edit_user_info_menu,
+            "4": self.disable_enable_user_menu,
+            "5": self.delete_user_menu,
+            "6": self.display_summary_menu,
+            "7": lambda: None
         }
         self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
     
@@ -75,7 +77,7 @@ class AdminController:
             self.display_admin_homepage()
 
     def disable_enable_user_menu(self):
-        title = "🙅 Diable User"
+        title = "🙋 Disable/Enable User"
         main_menu_title = "🏠 Admin Homepage"
         options = ["Disable MHWP",
                    "Disable Patient",
@@ -83,11 +85,11 @@ class AdminController:
                    "Enable Patient",
                    "Back to Homepage"]
         action_map = {
-            "1": self.disable_mhwp,
-            "2": self.disable_patient,
-            "3": self.enable_mhwp,
-            "4": self.enable_patient,
-            "5": lambda: None
+            "1": lambda: self.disable_user("mhwp"),
+            "2": lambda: self.disable_user("patient"),
+            "3": lambda: self.enable_user("mhwp"),
+            "4": lambda: self.enable_user("patient"),
+            "5": lambda: None  # Left it as None for going back
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
         if result == "main_menu":
@@ -107,6 +109,25 @@ class AdminController:
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
         if result == "main_menu":
             self.display_admin_homepage()
+    
+    def display_summary_menu(self):
+        title = "📊 Display Summary"
+        main_menu_title = "🏠 Admin Homepage"
+        options = [
+            "View Patients Summary",
+            "View MHWPs Summary",
+            "View Allocations",
+            "View Weekly Confirmed Bookings",
+            "Back to Homepage"
+        ]
+        action_map = {
+            "1": self.view_patients_summary,
+            "2": self.view_mhwps_summary,
+            "3": self.view_allocations_summary,
+            "4": self.view_weekly_bookings_summary,
+            "5": lambda: None  
+        }
+        self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
 
 
 # ----------------------------
@@ -148,7 +169,7 @@ class AdminController:
             "MHWP ID": [p.get("mhwp_id", None) for p in patient_info],
             }
             if data["Patient ID"]:
-                create_table(data, "Patient Information", display_title=True, display_index=True)
+                create_table(data, "Patient Information", display_title=True, display_index=False)
                 return data
     
     def display_mhwp_info(self):
@@ -170,9 +191,9 @@ class AdminController:
             "Patient Count": [m.get("patient_count", None) for m in mhwp_info],
             }
             if data["MHWP ID"]:
-                create_table(data, "MHWP Information", display_title=True, display_index=True)
+                create_table(data, "MHWP Information", display_title=True, display_index=False)
                 return data
-        
+     
     @staticmethod
     def calculate_patient_counts(patient_file, mhwp_file):
         """
@@ -198,6 +219,7 @@ class AdminController:
 
         save_json(mhwp_file, mhwp_data)
         return mhwp_data
+
 
 # ----------------------------
 # Section 1: Allocate Patient
@@ -258,10 +280,13 @@ class AdminController:
             input_mhwp_id = int(input_mhwp_id)
             if input_mhwp_id in mhwp_data.get("MHWP ID", []):
                 # Check if the MHWP is already assigned to the patient
-                patient_entry = next((p for p in patient_data if p["Patient ID"] == input_patient_id), None)
+                patient_index = next((i for i, id_ in enumerate(patient_data["Patient ID"]) if id_ == input_patient_id), None)
+                if patient_index is not None:
+                    patient_entry = {key: patient_data[key][patient_index] for key in patient_data}
                 if patient_entry.get("mhwp_id") == input_mhwp_id:
                     retry_attempts += 1
                     print(f"{RED}Patient ID {input_patient_id} is already assigned to MHWP ID {input_mhwp_id}.{RESET}")
+                    continue
                 # If not assigned to the same MHWP, proceed to update               
                 update_entry("./data/patient_info.json", input_patient_id, {"mhwp_id": input_mhwp_id})
                 print(f"{GREEN}MHWP ID {input_mhwp_id} found. Successfully assigned Patient {input_patient_id} to MHWP {input_mhwp_id}! {RESET}")
@@ -278,8 +303,135 @@ class AdminController:
             self.display_admin_homepage()
             return
 
+
+# ----------------------------------
+# Section 2: Resolve Patient Requests
+# ----------------------------------
+    def display_request_info(self):
+        """Retrieve and display request information"""
+        request_info = read_json("./data/request_log.json")
+        requests_sorted = sorted(request_info, key=lambda x: datetime.strptime(x["requested_at"], "%Y-%m-%d %H:%M:%S"), reverse=True)
+
+        if requests_sorted is None or not isinstance(requests_sorted, list):
+            print(f"{RED}Error: Failed to read valid data.")
+            return None
+        else:
+            data = {
+                "Patient ID": [r.get("user_id", None) for r in request_info],
+                "Current MHWP ID": [r.get("current_mhwp_id") for r in request_info],
+                "Target MHWP ID": [r.get("target_mhwp_id") for r in request_info],
+                "Reason": [r.get("reason") for r in request_info],
+                "Status": [r.get("status") for r in request_info],
+                "Requested At": [r.get("requested_at") for r in request_info]
+            }
+            if data["Patient ID"]:
+                create_table(data, "Request Log Information", display_title=True, display_index=True)
+                return data
+
+
+    def check_request_is_not_pending(self, index):
+        """ Check if the request is not pending"""
+        request_info = read_json("./data/request_log.json")
+
+        specific_request = request_info[index-1]
+        status = specific_request["status"]
+
+        if status != "pending":
+            return True
+        return False
+
+
+    def resolve_request(self):
+        """ Resolve patient requests of changing MHWP """
+        self.display_request_info()
+        request_data = read_json("./data/request_log.json")
+
+        # Ask for Patient ID to allocate
+        retry_attempts = 0
+        while retry_attempts < 3:
+            input_index = input(f"{CYAN}{BOLD}Enter the index of the request you would like to resolve ⏳: {RESET}").strip()
+            if input_index == "back":
+                self.display_manager.back_operation()
+                self.display_admin_homepage()
+                return
+            
+            # Validate if input is an integer
+            if not self.is_integer(input_index):
+                retry_attempts += 1
+                print(f"{RED}Invalid input. Please enter an integer.{RESET}")
+                continue
+            
+            input_index = int(input_index)
+            # Check if the input patient ID exists and proceed to allocate
+            if not (input_index <= len(request_data) and input_index > 0):
+                retry_attempts += 1
+                print(f"{RED}Index not found. Please try again.{RESET}")
+                continue
+
+            if self.check_request_is_not_pending(input_index):
+                retry_attempts += 1
+                print(f"{RED}Please select a request with a pending status.{RESET}")
+                continue
+
+            specific_record_info = request_data[input_index-1]
+
+            while True:
+                # Display a simple menu for editing mhwp data
+                print(f"{BOLD}{MAGENTA}\nResolve Patient {specific_record_info['user_id']}'s request:{RESET}")
+                print(f"1. Approve request")
+                print(f"2. Reject request")
+                print(f"3. Back to Homepage")
+        
+                # Get user input and handle it
+                choice = input(f"{CYAN}{BOLD}Choose an option ⏳: {RESET}").strip()
+
+                # Back to Homepage
+                if choice == "back" or choice == "3":
+                    self.back_operation()
+                    self.display_admin_homepage()
+                    return
+                
+                # Approve request
+                if choice == "1":
+                    request_data[input_index-1]['status'] = "approved"
+                    save_json("./data/request_log.json", request_data)
+                    patient_id = request_data[input_index-1]['user_id']
+                    target_MHWP_id = request_data[input_index-1]['target_mhwp_id']
+
+                    #update patient file to new MHWP           
+                    update_entry("./data/patient_info.json", patient_id, {"mhwp_id": target_MHWP_id})
+                    print(f"{GREEN}Request settled. Successfully assigned Patient {patient_id} to MHWP {target_MHWP_id}! {RESET}")
+                    self.calculate_patient_counts("./data/patient_info.json", "./data/mhwp_info.json")
+                    self.display_admin_homepage()
+                    return
+
+                # Reject request
+                elif choice == "2":
+                    request_data[input_index-1]['status'] = "rejected"
+                    print(f"{RED}Request settled. Rejected Patient {patient_id}'s request. {RESET}")
+                    save_json("./data/request_log.json", request_data)
+                    self.display_admin_homepage()
+                    return
+                
+                else:
+                    retry_attempts += 1
+                    print(f"{RED}That is an invalid input. Please follow the instructions...{RESET}")
+
+                    if retry_attempts == 3:
+                        print(f"{RED}You have exceeded the maximum number of attempts. Returning to the Admin Menu...{RESET}")
+                        self.display_manager.back_operation()
+                        self.display_admin_homepage()
+                        return
+                
+        if retry_attempts == 3:
+            print(f"{RED}You have exceeded the maximum number of attempts. Returning to the Admin Menu...{RESET}")
+            self.display_manager.back_operation()
+            self.display_admin_homepage()
+            return
+
+
 # ----------------------------
-# Section 2: Edit User Info
+# Section 3: Edit User Info
 # ----------------------------
     def edit_mhwp(self):
         # Display MHWP info
@@ -299,9 +451,11 @@ class AdminController:
                 continue
             
             input_mhwp_id = int(input_mhwp_id)
+            mhwp_found = False
             for mhwp in data:
                 # Check if the input MHWP ID exists and proceed to edit
                 if mhwp["mhwp_id"] == input_mhwp_id:
+                    mhwp_found = True
                     print(f"\n{BOLD}📃 Edit MHWP {input_mhwp_id} information:")
                     while True:
                         # Display a simple menu for editing mhwp data
@@ -361,7 +515,7 @@ class AdminController:
                     save_json("./data/mhwp_info.json", data)
 
             # If MHWP ID not found
-            else:
+            if mhwp_found == False:
                 print(f"{RED}MHWP ID '{input_mhwp_id}' not found. Please try again.{RESET}")
 
 
@@ -383,9 +537,11 @@ class AdminController:
                 continue
                     
             input_patient_id = int(input_patient_id)
+            patient_found = False
             for patient in data:
                 # Check if the input MHWP ID exists and proceed to edit
                 if patient["patient_id"] == input_patient_id:
+                    patient_found = True
                     print(f"\n{BOLD}📃 Edit Patient {input_patient_id} information:")
                     while True:
                         # Display a simple menu for editing mhwp data
@@ -470,27 +626,140 @@ class AdminController:
                     break
 
             # If MHWP ID not found
-            else:
+            if patient_found == False:
                 print(f"{RED}Patient ID '{input_patient_id}' not found. Please try again.{RESET}")
 
 
 # ----------------------------
-# Section 3: Disable/Enable User
+# Section 4: Disable/Enable User
 # ----------------------------
-    def disable_mhwp(self):
-        print("Developing...")
+    def disable_user(self, role):
+        # Read data 
+        data = read_json('./data/user.json')
+        if data is None or not isinstance(data, list):
+            print(f"{RED}Error: Failed to read valid data.")
+            return None
+        
+        else:
+            # Display active account
+            if role == "mhwp":
+                active_data = [
+                    {"user_id": d.get("user_id"), "username": d.get("username"), "status": d.get("status")}
+                    for d in data
+                    if d.get("status") == "ACTIVE" and d.get("role") == "mhwp"
+                ]
+                title = "Active MHWP Accounts"
+            elif role == "patient":
+                active_data = [
+                    {"user_id": d.get("user_id"), "username": d.get("username"), "status": d.get("status")}
+                    for d in data
+                    if d.get("status") == "ACTIVE" and d.get("role") == "patient"
+                ]
+                title = "Active Patient Accounts"
+            else:
+                print(f"{RED}Invalid role provided.{RESET}")
+                return None
+            
+            if active_data:
+                table_data = {
+                    "User ID": [d["user_id"] for d in active_data],
+                    "Username": [d["username"] for d in active_data],
+                    "Status": [d["status"] for d in active_data],
+                }
+                create_table(table_data, title, display_title=True, display_index=False)
+            else:
+                print(f"{RED}No active accounts found for the selected role.{RESET}")
+                return None
+            
+        # User input loop to disable account
+        while True:
+            selected_user_id = input(f"{CYAN}{BOLD}Enter the ID of the user to disable: {RESET}").strip()
+            if selected_user_id == "back":
+                self.display_manager.back_operation()
+                self.disable_enable_user_menu()
+                return
+            
+            # Validate if input user id is integer
+            if not self.is_integer(selected_user_id):
+                print(f"{RED}Invalid input. Please enter an interger.{RESET}")
+                continue
 
-    def disable_patient(self):
-        print("Developing...")
+            # Update status
+            selected_user_id = int(selected_user_id)
+            for user in active_data:
+                if user["user_id"] == selected_user_id:
+                    update_entry('./data/user.json', selected_user_id, {"status": "DISABLED"})
+                    print(f"{GREEN}User with ID {selected_user_id} has been successfully disabled.{RESET}")
+                    return
+            else:
+                print(f"{RED}Account with ID '{selected_user_id}' not found. Please try again.{RESET}")
 
-    def enable_mhwp(self):
-        print("Developing...")
 
-    def enable_patient(self):
-        print("Developing...")
+    def enable_user(self, role):
+        # Read data 
+        data = read_json('./data/user.json')
+        if data is None or not isinstance(data, list):
+            print(f"{RED}Error: Failed to read valid data.")
+            return None
+        
+        else:
+            # Display disabled account
+            if role == "mhwp":
+                disabled_data = [
+                    {"user_id": d.get("user_id"), "username": d.get("username"), "status": d.get("status")}
+                    for d in data
+                    if d.get("status") == "DISABLED" and d.get("role") == "mhwp"
+                ]
+                title = "Disabled MHWP Accounts"
+            elif role == "patient":
+                disabled_data = [
+                    {"user_id": d.get("user_id"), "username": d.get("username"), "status": d.get("status")}
+                    for d in data
+                    if d.get("status") == "DISABLED" and d.get("role") == "patient"
+                ]
+                title = "Disabled Patient Accounts"
+            else:
+                print(f"{RED}Invalid role provided.{RESET}")
+                return None
+            
+            if disabled_data:
+                table_data = {
+                    "User ID": [d["user_id"] for d in disabled_data],
+                    "Username": [d["username"] for d in disabled_data],
+                    "Status": [d["status"] for d in disabled_data],
+                }
+                create_table(table_data, title, display_title=True, display_index=False)
+            else:
+                print(f"{RED}No disabled accounts found for the selected role.{RESET}")
+                return None
+            
+        # User input loop to enable account
+        while True:
+            selected_user_id = input(f"{CYAN}{BOLD}Enter the ID of the user to enable: {RESET}").strip()
+            if selected_user_id == "back":
+                self.display_manager.back_operation()
+                self.disable_enable_user_menu()
+                return
+            
+            # Validate if input user id is integer
+            if not self.is_integer(selected_user_id):
+                print(f"{RED}Invalid input. Please enter an interger.{RESET}")
+                continue
+
+            # Update status
+            selected_user_id = int(selected_user_id)
+            for user in disabled_data:
+                if user["user_id"] == selected_user_id:
+                    user_found = True
+                    update_entry('./data/user.json', selected_user_id, {"status": "ACTIVE"})
+                    print(f"{GREEN}User with ID {selected_user_id} has been successfully enabled.{RESET}")
+                    return
+            else:
+                print(f"{RED}Account with ID '{selected_user_id}' not found. Please try again.{RESET}")
+
 
 # ----------------------------
-# Section 4: Delete User
+# Section 5: Delete User
 # ----------------------------
     def delete_mhwp(self):
         print("Developing...")
@@ -500,34 +769,14 @@ class AdminController:
 
 
 # ----------------------------
-# Section 5: Display Summary
+# Section 6: Display Summary
 # ----------------------------
-    def display_summary(self):
-        """Display Summary Submenu"""
-        title = "📊 Display Summary"
-        main_menu_title = "🏠 Admin Homepage"
-        options = [
-            "View Patients Summary",
-            "View MHWPs Summary",
-            "View Allocations",
-            "View Weekly Confirmed Bookings",
-            "Back to Homepage"
-        ]
-        action_map = {
-            "1": self.view_patients_summary,
-            "2": self.view_mhwps_summary,
-            "3": self.view_allocations_summary,
-            "4": self.view_weekly_bookings_summary,
-            "5": lambda: None  
-        }
-        self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
-
     def view_patients_summary(self):
         """Displays a summary of all patients"""
         patient_file = "./data/patient_info.json"
         patient_data = read_json(patient_file)
         if not patient_data:
-            create_table({}, title="Patients Summary", no_data_message="No Patient Data Found", display_title=True)
+            create_table({}, title="Patients Summary", no_data_message="No Patient Data Found", display_title=True, display_index=False)
         else:
             data = {
                 "Patient ID": [p.get("patient_id", "N/A") for p in patient_data],
@@ -535,14 +784,14 @@ class AdminController:
                 "Email": [p.get("email", "N/A") for p in patient_data],
                 "MHWP ID": [p.get("mhwp_id", "Unassigned") for p in patient_data],
             }
-            create_table(data, title="Patients Summary", display_title=True)
+            create_table(data, title="Patients Summary", display_title=True, display_index=False)
 
     def view_mhwps_summary(self):
         """Displays a summary of all MHWPs"""
         mhwp_file = "./data/mhwp_info.json"
         mhwp_data = read_json(mhwp_file)
         if not mhwp_data:
-            create_table({}, title="MHWPs Summary", no_data_message="No MHWP Data Found", display_title=True)
+            create_table({}, title="MHWPs Summary", no_data_message="No MHWP Data Found", display_title=True, display_index=False)
         else:
             data = {
                 "MHWP ID": [m.get("mhwp_id", "N/A") for m in mhwp_data],
@@ -550,24 +799,21 @@ class AdminController:
                 "Email": [m.get("email", "N/A") for m in mhwp_data],
                 "Patient Count": [m.get("patient_count", 0) for m in mhwp_data],
             }
-            create_table(data, title="MHWPs Summary", display_title=True)
+            create_table(data, title="MHWPs Summary", display_title=True, display_index=False)
 
     def view_allocations_summary(self):
         """Displays patient-to-MHWP allocations"""
         patient_file = "./data/patient_info.json"
         patient_data = read_json(patient_file)
         if not patient_data:
-            create_table({}, title="Patient Allocations", no_data_message="No Allocations Found", display_title=True)
+            create_table({}, title="Patient Allocations", no_data_message="No Allocations Found", display_title=True, display_index=False)
         else:
             data = {
                 "Patient ID": [p.get("patient_id", "N/A") for p in patient_data],
                 "Patient Name": [p.get("name", "N/A") for p in patient_data],
                 "MHWP ID": [p.get("mhwp_id", "Unassigned") for p in patient_data],
             }
-            create_table(data, title="Patient Allocations", display_title=True)
-
-
-    
+            create_table(data, title="Patient Allocations", display_title=True, display_index=False)
 
     def view_weekly_bookings_summary(self):
         """Displays the count of weekly confirmed bookings per MHWP"""
@@ -575,7 +821,7 @@ class AdminController:
         appointments = read_json(appointment_file)
 
         if not appointments:
-            create_table({}, title="Weekly Confirmed Bookings", no_data_message="No Appointments Found", display_title=True)
+            create_table({}, title="Weekly Confirmed Bookings", no_data_message="No Appointments Found", display_title=True, display_index=False)
             return
 
         today = datetime.now()
@@ -594,26 +840,24 @@ class AdminController:
                     continue
 
         if not confirmed_appointments:
-            create_table({}, title="Weekly Confirmed Bookings", no_data_message="No Confirmed Appointments for the Current Week", display_title=True)
+            create_table({}, title="Weekly Confirmed Bookings", no_data_message="No Confirmed Appointments for the Current Week", display_title=True, display_index=False)
             return
 
-       
         mhwp_bookings = {}
         for appointment in confirmed_appointments:
             mhwp_id = appointment.get("mhwp_id", "N/A")
             mhwp_bookings[mhwp_id] = mhwp_bookings.get(mhwp_id, 0) + 1
 
-        
         data = {
             "MHWP ID": list(mhwp_bookings.keys()),
             "Confirmed Bookings": list(mhwp_bookings.values()),
         }
-        create_table(data, title="Weekly Confirmed Bookings", display_title=True)
+        create_table(data, title="Weekly Confirmed Bookings", display_title=True, display_index=False)
         total_confirmed = len(confirmed_appointments)
         print(f"\n{GREEN}{BOLD}Total Confirmed Appointments for This Week: {total_confirmed}{RESET}\n")
     
     
-# give test of allocate patient to mhwp
+# Give test of allocate patient to mhwp
 if __name__ == "__main__":
     admin = Admin(1, "admin", "", "ACTIVE")
     admin_controller = AdminController(admin)

@@ -145,11 +145,12 @@ def role_navigation(user_role, user_id):
         admin_user = Admin(
             user_id=user_info['user_id'],
             username=user_info['username'],
-            password=user_info['password']
+            password=user_info['password'],
+            status=user_info['status']
         )
         admin_controller = AdminController(admin_user)
-        if hasattr(admin_controller, 'display_menu'):
-            admin_controller.display_menu() # TODO: Implement display_menu method in AdminController
+        if hasattr(admin_controller, 'display_admin_homepage'):
+            admin_controller.display_admin_homepage()
         else:
             print(f"{Red}Error: Admin controller does not have a display_menu method.{Reset}")
 

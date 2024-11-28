@@ -155,7 +155,9 @@ def create_table(data, title="", no_data_message="No data found", display_title=
         display_manager.print_divider(line="=", length=70, style=f"{BOLD}")
         return
 
-
+    if display_index:
+        data = {"Index": list(range(1, len(next(iter(data.values()))) + 1)), **data}
+        
     # create pandas dataframe and convert its values to strings
     df = pd.DataFrame(data=data).astype(str)
 

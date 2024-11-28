@@ -503,7 +503,114 @@ class AdminController:
 # Section 5: Display Summary
 # ----------------------------
     def display_summary(self):
-        print("Developing...")
+        """Display Summary Submenu"""
+        title = "📊 Display Summary"
+        main_menu_title = "🏠 Admin Homepage"
+        options = [
+            "View Patients Summary",
+            "View MHWPs Summary",
+            "View Allocations",
+            "View Weekly Confirmed Bookings",
+            "Back to Homepage"
+        ]
+        action_map = {
+            "1": self.view_patients_summary,
+            "2": self.view_mhwps_summary,
+            "3": self.view_allocations_summary,
+            "4": self.view_weekly_bookings_summary,
+            "5": lambda: None  
+        }
+        self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+
+    def view_patients_summary(self):
+        """Displays a summary of all patients"""
+        patient_file = "./data/patient_info.json"
+        patient_data = read_json(patient_file)
+        if not patient_data:
+            create_table({}, title="Patients Summary", no_data_message="No Patient Data Found", display_title=True)
+        else:
+            data = {
+                "Patient ID": [p.get("patient_id", "N/A") for p in patient_data],
+                "Name": [p.get("name", "N/A") for p in patient_data],
+                "Email": [p.get("email", "N/A") for p in patient_data],
+                "MHWP ID": [p.get("mhwp_id", "Unassigned") for p in patient_data],
+            }
+            create_table(data, title="Patients Summary", display_title=True)
+
+    def view_mhwps_summary(self):
+        """Displays a summary of all MHWPs"""
+        mhwp_file = "./data/mhwp_info.json"
+        mhwp_data = read_json(mhwp_file)
+        if not mhwp_data:
+            create_table({}, title="MHWPs Summary", no_data_message="No MHWP Data Found", display_title=True)
+        else:
+            data = {
+                "MHWP ID": [m.get("mhwp_id", "N/A") for m in mhwp_data],
+                "Name": [m.get("name", "N/A") for m in mhwp_data],
+                "Email": [m.get("email", "N/A") for m in mhwp_data],
+                "Patient Count": [m.get("patient_count", 0) for m in mhwp_data],
+            }
+            create_table(data, title="MHWPs Summary", display_title=True)
+
+    def view_allocations_summary(self):
+        """Displays patient-to-MHWP allocations"""
+        patient_file = "./data/patient_info.json"
+        patient_data = read_json(patient_file)
+        if not patient_data:
+            create_table({}, title="Patient Allocations", no_data_message="No Allocations Found", display_title=True)
+        else:
+            data = {
+                "Patient ID": [p.get("patient_id", "N/A") for p in patient_data],
+                "Patient Name": [p.get("name", "N/A") for p in patient_data],
+                "MHWP ID": [p.get("mhwp_id", "Unassigned") for p in patient_data],
+            }
+            create_table(data, title="Patient Allocations", display_title=True)
+
+
+    
+
+    def view_weekly_bookings_summary(self):
+        """Displays the count of weekly confirmed bookings per MHWP"""
+        appointment_file = "./data/appointment.json"
+        appointments = read_json(appointment_file)
+
+        if not appointments:
+            create_table({}, title="Weekly Confirmed Bookings", no_data_message="No Appointments Found", display_title=True)
+            return
+
+        today = datetime.now()
+        start_of_week = today - timedelta(days=today.weekday()) 
+        end_of_week = start_of_week + timedelta(days=6)  
+       
+        confirmed_appointments = []
+        for appointment in appointments:
+            if appointment.get("status") == "CONFIRMED":
+                try:
+                    appointment_date = datetime.strptime(appointment["date"], "%Y-%m-%d")
+                    if start_of_week <= appointment_date <= end_of_week:
+                        confirmed_appointments.append(appointment)
+                except ValueError:
+                    print(f"{RED}Invalid date format in appointment ID: {appointment.get('appointment_id')}{RESET}")
+                    continue
+
+        if not confirmed_appointments:
+            create_table({}, title="Weekly Confirmed Bookings", no_data_message="No Confirmed Appointments for the Current Week", display_title=True)
+            return
+
+       
+        mhwp_bookings = {}
+        for appointment in confirmed_appointments:
+            mhwp_id = appointment.get("mhwp_id", "N/A")
+            mhwp_bookings[mhwp_id] = mhwp_bookings.get(mhwp_id, 0) + 1
+
+        
+        data = {
+            "MHWP ID": list(mhwp_bookings.keys()),
+            "Confirmed Bookings": list(mhwp_bookings.values()),
+        }
+        create_table(data, title="Weekly Confirmed Bookings", display_title=True)
+        total_confirmed = len(confirmed_appointments)
+        print(f"\n{GREEN}{BOLD}Total Confirmed Appointments for This Week: {total_confirmed}{RESET}\n")
     
     
 # give test of allocate patient to mhwp

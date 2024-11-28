@@ -4,7 +4,7 @@
         "username": "patient1",
         "password": "",
         "role": "patient",
-        "status": "DELETED"
+        "status": "ACTIVE"
     },
     {
         "user_id": 2,
@@ -18,7 +18,7 @@
         "username": "patient3",
         "password": "",
         "role": "patient",
-        "status": "DISABLED"
+        "status": "ACTIVE"
     },
     {
         "user_id": 4,
@@ -144,7 +144,7 @@
         "username": "mhwp1",
         "password": "",
         "role": "mhwp",
-        "status": "DISABLED"
+        "status": "ACTIVE"
     },
     {
         "user_id": 22,
@@ -172,7 +172,7 @@
         "username": "mhwp5",
         "password": "",
         "role": "mhwp",
-        "status": "DISABLED"
+        "status": "ACTIVE"
     },
     {
         "user_id": 26,

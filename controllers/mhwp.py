@@ -500,36 +500,7 @@ class MHWPController:
             data["Mood"].append(self.icons[patient["mood_code"]])
 
         create_table(data,title="Patient Dashboard", display_title=True, display_index=False)
-        
 
-# ---------------------------- TODO: Should be moved to admin controller 
-    @staticmethod
-    def calculate_patient_counts(patient_file, mhwp_file):
-        """
-        Calculate the number of patients assigned to each MHWP and update the patient_count field in mhwp_file.
-        :param patient_file: The file path to the JSON file containing patient information.
-        :param mhwp_file: The file path to the JSON file containing MHWP information.
-        """
-        patients = read_json(patient_file)
-        mhwp_data = read_json(mhwp_file)
-
-        mhwp_patient_counts = {}
-
-        # Count the number of patients assigned to each MHWP
-        for patient in patients:
-            mhwp_id = patient.get("mhwp_id")
-            if mhwp_id is not None:
-                mhwp_patient_counts[mhwp_id] = mhwp_patient_counts.get(mhwp_id, 0) + 1
-
-        # Update mhwp_data with patient counts
-        for mhwp in mhwp_data:
-            mhwp_id = mhwp.get("mhwp_id")
-            mhwp["patient_count"] = mhwp_patient_counts.get(mhwp_id, 0)
-
-        save_json(mhwp_file, mhwp_data)
-        
-        return mhwp_data
-# ----------------------------
 
 if __name__ == "__main__":
     mhwp_controller = MHWPController(MHWP(21, "mhwp", "password", "Robert Lewandowski", "robert.lewandowski@example.com", 3, "ACTIVE"))

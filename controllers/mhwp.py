@@ -78,11 +78,12 @@ class MHWPController:
     def appointment_menu(self):
         title = "📅 Appointments Calendar"
         main_menu_title = "🏠 MHWP HomePage"
-        options = ["View Appointments", "Handle Appointments", "Back to Homepage"]
+        options = ["View Appointments", "Handle Appointments", "Suggest Resources", "Back to Homepage"]
         action_map = {
             "1": self.view_calendar,
             "2": self.choose_appointment,
-            "3": lambda: None
+            "3": self.suggest_resources,
+            "4": lambda: None
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
         if result == "main_menu":
@@ -376,6 +377,78 @@ class MHWPController:
                     text="Unable to handle the appointment. Please contact the system manager."
                 )
                 return False
+            
+    def suggest_resources(self):
+        self.view_calendar()
+        apps = self.get_appointments()
+
+        while True:
+            id_input = input(f"{CYAN}{BOLD}Choose Appointment ID to suggest resources ⏳: {RESET}").strip()
+
+            if id_input == "back":
+                self.display_manager.back_operation()
+                self.appointment_menu()
+                return
+            
+            if not self.is_integer(id_input):
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text="Invalid input. Please enter an integer value."
+                )
+                continue
+
+            id_input = int(id_input)
+            for app in apps:
+                if id_input == app["appointment_id"]:
+                    data = {
+                    "Appointment ID": [app["appointment_id"]],
+                    "Name": [self.get_patient_name(app["patient_id"])],
+                    "Time": [app["time_slot"]],
+                    "Date": [app["date"]],
+                    "Status": [app["status"]],
+                    "Notes": [app["notes"]]
+                }
+                    create_table(data, "Selected Appointment", display_title=True)
+
+                    resources = {
+                        "Number": ["1", "2", "3", "4"],
+                        "Resource Name": ["NHS Mental Wellbeing", "Mind Mental Wellbeing", "UK Gov Mental Health", "WHO Mental Health"],
+                        "Resource Link": ["https://www.nhs.uk/mental-health/self-help/guides-tools-and-activities/five-steps-to-mental-wellbeing/", "https://www.mind.org.uk/information-support/tips-for-everyday-living/wellbeing/", "https://www.gov.uk/government/publications/wellbeing-in-mental-health-applying-all-our-health/wellbeing-in-mental-health-applying-all-our-health", "https://www.who.int/news-room/fact-sheets/detail/mental-health-strengthening-our-response"]
+                    }
+                    create_table(resources, "Available Resources", display_title=True)
+
+                    while True:
+                        resource_input = input(f"{CYAN}{BOLD}Enter number to choose resource for recommendation ⏳: {RESET}").strip()
+                        if resource_input == "back":
+                            self.display_manager.back_operation()
+                            self.appointment_menu()
+                            return
+                        
+                        if not self.is_integer(resource_input):
+                            self.display_manager.print_text(
+                                style=f"{RED}",
+                                text="Invalid input. Please enter an integer value."
+                            )
+                            continue
+
+                        resource_input = int(resource_input)
+                        if resource_input not in [1, 2, 3, 4]:
+                            self.display_manager.print_text(
+                                style=f"{RED}",
+                                text="Invalid input. Please choose a resource from the list."
+                            )
+                            continue
+
+                        update_entry('./data/mhwp_resources.json', app["appointment_id"], {"resource_name": resources["Resource Name"][resource_input - 1]})
+                        update_entry('./data/mhwp_resources.json', app["appointment_id"], {"resource_link": resources["Resource Link"][resource_input - 1]})
+                        return
+
+            else:
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text="Invalid input. Please enter a valid appointment ID."
+                )
+                continue
 
 
 # ----------------------------

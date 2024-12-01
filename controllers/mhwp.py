@@ -54,7 +54,7 @@ class MHWPController:
         action_map = {
         "1": self.appointment_menu,
         "2": self.patient_records_menu,
-        "3": self.view_dashboard,
+        "3": self.patient_dashboard_menu,
         "4": lambda: None  # Left it to be None to return to log out
         }
 
@@ -100,6 +100,20 @@ class MHWPController:
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
         if result == "main_menu":
             self.display_mhwp_homepage()
+
+    def patient_dashboard_menu(self):
+        title = "📋 Patient Dashboard"
+        main_menu_title = "🏠 MHWP HomePage"
+        options = ["View Patient Dashboard", "Email Emergency Contact", "Back to Homepage"]
+        action_map = {
+            "1": self.view_dashboard,
+            "2": self.contact_emergency,
+            "3": lambda: None
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == "main_menu":
+            self.display_mhwp_homepage()
+
 
 
 # -----------------------------------
@@ -512,6 +526,46 @@ class MHWPController:
             data["Mood"].append(self.icons[patient["mood_code"]])
 
         create_table(data,title="Patient Dashboard", display_title=True, display_index=False)
+
+    def contact_emergency(self):
+        self.view_dashboard()
+        patients = self.get_patients_info()
+
+
+        while True:
+            id_input = input(f"{CYAN}{BOLD}Choose patient ID to email emergency contact ⏳: {RESET}").strip()
+
+            if id_input == "back":
+                self.display_manager.back_operation()
+                self.patient_dashboard_menu()
+                return
+            
+            if not self.is_integer(id_input):
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text="Invalid input. Please enter an integer value."
+                )
+                continue
+
+            id_input = int(id_input)
+            for patient in patients:
+                if id_input == patient["patient_id"]:
+                    email = patient["emergency_contact_email"]
+                    email_input = input(f"{CYAN}{BOLD}Enter message for the email ⏳: {RESET}").strip()
+                    if email_input == "back":
+                        self.display_manager.back_operation()
+                        self.patient_dashboard_menu()
+                        return
+
+                    # TODO: Send email to emergency contact
+
+                    return
+            else:
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text="Invalid input. Please enter a valid patient ID."
+                )
+                continue
 
 
 if __name__ == "__main__":

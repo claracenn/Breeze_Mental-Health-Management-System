@@ -7,8 +7,8 @@ class User:
         self.status = status
 
 class Admin(User):
-    def __init__(self, user_id, username, password):
-        super().__init__(user_id, username, password, "admin")
+    def __init__(self, user_id, username, password, status):
+        super().__init__(user_id, username, password, "admin", status)
 
 class Patient(User):
     def __init__(self, user_id, username, password, name, email, emergency_contact_email, mhwp_id, status):

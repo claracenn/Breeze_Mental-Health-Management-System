@@ -53,6 +53,8 @@ class PatientController:
         self.request_log_file = "data/request_log.json"
         self.mhwp_info_file = "data/mhwp_info.json"
         self.feedback_file = "data/feedback.json"
+        self.skip_upcoming_appointments = False
+        self.patient_record_file = 'data/patient_record.json'
 
     def get_upcoming_appointments(self):
         """Get appointments within the next 7 days for the patient."""
@@ -101,7 +103,7 @@ class PatientController:
             "4": self.appointment_menu,
             "5": self.resource_menu,
             "6": self.feedback_menu,
-            "7": lambda: print(f"{BOLD}Logging out...{RESET}") 
+            "7": lambda: None,  # Back to Homepage handled in navigate_menu
         }
 
         # Modify options and actions for disabled patients
@@ -110,14 +112,17 @@ class PatientController:
             options = [f"{option} (Disabled)" for option in options[:-1]] + ["Log Out"]
             action_map = {"7": lambda: print(f"{BOLD}Logging out...{RESET}")}
 
-        # Display upcoming appointments if any
-        upcoming_appointments = self.get_upcoming_appointments()
-        if upcoming_appointments:
-            print(f"{GREEN}Upcoming Appointments in the next 7 days:{RESET}")
-            for appt in upcoming_appointments:
-                print(f"{BOLD}{appt['date']} {appt['time_slot']} - {appt['status']} with {appt['mhwp_name']}{RESET}")
-        else:
-            print(f"{LIGHT_GREEN}No appointments in the next 7 days.{RESET}")
+        # Display upcoming appointments only on the first visit
+        if not self.skip_upcoming_appointments:
+            upcoming_appointments = self.get_upcoming_appointments()
+            if upcoming_appointments:
+                print(f"{GREEN}\nUpcoming Appointments in the next 7 days:{RESET}")
+                for appt in upcoming_appointments:
+                    print(f"{BOLD}{appt['date']} {appt['time_slot']} - {appt['status']} with {appt['mhwp_name']}{RESET}")
+            else:
+                print(f"{LIGHT_GREEN}No appointments in the next 7 days.{RESET}")
+            self.skip_upcoming_appointments = True
+
 
         # Call the navigate_menu method from the DisplayManager to show the menu
         while True:
@@ -239,18 +244,19 @@ class PatientController:
                 return patient
         print(f"{DARK_GREY}Patient not found.{RESET}")
 
-
     def edit_profile(self):
             """Edit the patient's profile information and save changes to JSON file."""
-            data = read_json(self.patient_info_file)
-            mhwp_data = read_json("data/mhwp_info.json")
+            patient_info_data = read_json(self.patient_info_file)
+            patient_record_data = read_json(self.patient_record_file)
 
-            for patient in data:
+            patient_found = False
+            for patient in patient_info_data:
                 if patient["patient_id"] == self.patient.user_id:
+                    patient_found = True
                     print(f"\n{BOLD}📃 Edit Profile:")
                     while True:
                         # Display a simple menu for editing profile
-                        print(f"{BOLD}{MAGENTA}Select the field you want to edit:{RESET}")
+                        print(f"{BOLD}{MAGENTA}\nSelect the field you want to edit:{RESET}")
                         print(f"1. Name (current: {patient['name']})")
                         print(f"2. Email (current: {patient['email']})")
                         print(f"3. Emergency Contact (current: {patient['emergency_contact_email']})")
@@ -262,38 +268,48 @@ class PatientController:
                         choice = input(f"{CYAN}{BOLD}Choose an option ⏳: {RESET}").strip()
                         if choice == "back":
                             self.display_manager.back_operation()
+                            self.profile_menu()
                             return
                         if choice == "4":
                             self.display_eligible_mhwps(patient["patient_id"], patient["mhwp_id"])
+                            self.profile_menu()
                             return  
                         elif choice == "1":
                             new_name = input("Enter new name: ").strip()
                             if new_name == "back":
                                 self.display_manager.back_operation()
-                                return
+                                self.profile_menu()
+                                continue
                             if new_name:
                                 patient["name"] = new_name
-                                print("Name updated successfully.")
+                                print(f"{GREEN}Name updated successfully.")
+                                for record in patient_record_data:
+                                    if record["patient_id"] == self.patient.user_id:
+                                        record["name"] = new_name
+                                        break
                         elif choice == "2":
                             new_email = input("Enter new email: ").strip()
                             if new_email == "back":
                                 self.display_manager.back_operation()
+                                self.profile_menu()
                                 return
                             if new_email:
                                 patient["email"] = new_email
-                                print("Email updated successfully.")
+                                print(f"{GREEN}Email updated successfully.")
                         elif choice == "3":
                             new_contact = input("Enter new emergency contact email: ").strip()
                             if new_contact == "back":
                                 self.display_manager.back_operation()
+                                self.profile_menu()
                                 return
                             if new_contact:
                                 patient["emergency_contact_email"] = new_contact
-                                print("Emergency contact updated successfully.")
+                                print(f"{GREEN}Emergency contact updated successfully.")
                         elif choice == "5":
                             new_name = input("Enter new name: ").strip()
                             if new_name == "back":
                                 self.display_manager.back_operation()
+                                self.profile_menu()
                                 return
                             new_email = input("Enter new email: ").strip()
                             if new_email == "back":
@@ -302,6 +318,7 @@ class PatientController:
                             new_contact = input("Enter new emergency contact email: ").strip()
                             if new_contact == "back":
                                 self.display_manager.back_operation()
+                                self.profile_menu()
                                 return
                             if new_name:
                                 patient["name"] = new_name
@@ -309,18 +326,21 @@ class PatientController:
                                 patient["email"] = new_email
                             if new_contact:
                                 patient["emergency_contact_email"] = new_contact
-                            print("All fields updated successfully.")
+                            print(f"{GREEN}All fields updated successfully.")
                         elif choice == "6":
-                            print("Returning to Profile Menu.")
+                            print(f"{GREY}Returning to Profile Menu.")
                             break
                         else:
-                            print("Invalid choice. Please try again.")
+                            print(f"{RED}Invalid choice. Please try again.")
                             
-                    # Save the updated data back to the file
-                    save_json(self.patient_info_file, data)
-                    break
-            else:
-                print("Patient not found.")
+                        # Save the updated data back to the file
+                        save_json(self.patient_info_file, patient_info_data)
+                        save_json(self.patient_record_file, patient_record_data)
+    
+            
+            if patient_found == False:
+                print(f"{RED}Patient not found. Please try again.")
+                self.profile_menu()          
 
 
     def display_eligible_mhwps(self, patient_id, current_mhwp_id):
@@ -364,7 +384,7 @@ class PatientController:
             request_log = []
         
         new_request = {
-            "user_id": patient_id,
+            "patient_id": patient_id,
             "current_mhwp_id": current_mhwp_id,
             "target_mhwp_id": target_mhwp_id,
             "reason": reason,

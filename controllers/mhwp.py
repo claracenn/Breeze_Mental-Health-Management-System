@@ -67,7 +67,7 @@ class MHWPController:
         # Display upcoming appointments if any
         upcoming_appointments = self.get_upcoming_appointments()
         if upcoming_appointments:
-            print(f"{GREEN}Upcoming Appointments in the next 7 days:{RESET}")
+            print(f"{GREEN}{BOLD}\nUpcoming Appointments in the next 7 days:{RESET}")
             for appt in upcoming_appointments:
                 print(f"{BOLD}{appt['date']} {appt['time_slot']} - {appt['status']} with {appt['patient_name']}{RESET}")
         else:
@@ -229,7 +229,7 @@ class MHWPController:
     def handle_appointment_status(self, appointment, isPending):
         appointments = self.get_appointments()
         self.display_manager.print_text(
-            style=f"{CYAN}",
+            style=f"{MAGENTA}{BOLD}",
             text=f"You are now handling the status of Appointment ID: {appointment['appointment_id']}."
         )
         self.display_manager.print_text(style=f"{GREY}", text="Press '0' to go back.")
@@ -241,29 +241,32 @@ class MHWPController:
         while True:
             prompt_range = "0-2" if isPending else "0-1"
             new_status = input(
-                f"{MAGENTA}Please enter an integer value from {prompt_range} to handle appointment or 3 to add notes: {RESET}"
+                f"{CYAN}{BOLD}Please enter an integer value from {prompt_range} to handle appointment or 3 to add notes ⏳: {RESET}"
             ).strip()
 
+            if new_status in ["back", "0"]:
+                self.display_manager.print_text(
+                    style=f"{GREY}",
+                    text="Exiting Appointment Handling Screen..."
+                )
+                self.display_manager.back_operation()
+                self.appointment_menu()
+                break
+                
             if not self.is_integer(new_status):
                 self.display_manager.print_text(style=f"{RED}", text="Please enter a valid integer value.")
                 continue
 
             new_status = int(new_status)
 
-            if new_status == 0:
-                self.display_manager.print_text(
-                    style=f"{CYAN}",
-                    text="Exiting Appointment Handling Screen..."
-                )
-                break
-
+            # Add appointment notes
             if new_status == 3:
                 for app in appointments:
                     if app["appointment_id"] == appointment["appointment_id"]:
                         new_note = input("Please enter new note for the appointment: ")
                         update_entry('./data/appointment.json', appointment["appointment_id"], {"notes": new_note})
                         self.display_manager.print_text(
-                        style=f"{GREEN}",
+                        style=f"{BOLD}",
                         text=f"Appointment {appointment['appointment_id']} note has been successfully changed."
                     )
                         break
@@ -273,7 +276,8 @@ class MHWPController:
                         text=f"Something went wrong. Unable to change the note of appointment {appointment['appointment_id']}."
                     )
                 break
-
+            
+            # Update appointment status
             valid_choices = {1, 2} if isPending else {1}
             if new_status not in valid_choices:
                 self.display_manager.print_text(
@@ -282,13 +286,12 @@ class MHWPController:
                 )
                 continue
 
-            # Update appointment status
             try:
-                update_status = "CANCELED" if new_status == 1 else "CONFIRMED"
+                update_status = "CANCELLED" if new_status == 1 else "CONFIRMED"
                 update_entry('./data/appointment.json', appointment["appointment_id"], {"status": update_status})
                 self.display_manager.print_text(
                     style=f"{RESET}{BOLD}",
-                    text=f"📅 Appointment {appointment['appointment_id']} status has been successfully changed to {'CANCELED' if new_status == 1 else 'CONFIRMED'}.\n"
+                    text=f"📅 Appointment {appointment['appointment_id']} status has been successfully changed to {'CANCELLED' if new_status == 1 else 'CONFIRMED'}.\n"
                 )
                 break
             except Exception as e:
@@ -305,7 +308,7 @@ class MHWPController:
         data_appointments = self.get_appointments()
 
         while True:
-            id_input = input(f"{CYAN}{BOLD}Enter appointment ID to handle a Pending or Confirmed appointment: {RESET}").strip()
+            id_input = input(f"{CYAN}{BOLD}Enter appointment ID to handle a Pending or Confirmed appointment ⏳: {RESET}").strip()
 
             if id_input == "back":
                 self.display_manager.back_operation()
@@ -347,10 +350,10 @@ class MHWPController:
                     self.handle_appointment_status(selected_appointment, isPending=False)
                 return True
 
-            elif selected_appointment["status"] == "CANCELED":
+            elif selected_appointment["status"] == "CANCELLED":
                 self.display_manager.print_text(
                     style=f"{RED}",
-                    text="This appointment has already been canceled. Please select another appointment."
+                    text="This appointment has already been cancelled. Please select another appointment."
                 )
             
             else:
@@ -386,6 +389,7 @@ class MHWPController:
             text="No patient records yet."
             )
         else:
+            print(" ")
             create_table(data, title="Patients Records", display_title=True)
 
 
@@ -405,7 +409,10 @@ class MHWPController:
                 return
             
             if not self.is_integer(id_input):
-                print("Please enter an integer value.")
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text="Invalid input. Please enter an integer value."
+                )
                 continue
 
             id_input = int(id_input)
@@ -424,6 +431,7 @@ class MHWPController:
             "Condition": [record["condition"]],
             "Notes": [record["notes"]], 
             }
+            print(" ")
             create_table(data, "Selected Patient Record", display_title=True)
 
             # Update patient record
@@ -438,6 +446,9 @@ class MHWPController:
                 if choice == "1":
                     # Update condition
                     new_condition = input(f"{CYAN}Please enter new patient condition: {RESET}")
+                    if new_condition == "back":
+                        self.update_patient_record()
+                        return
                     update_entry('./data/patient_record.json', id_input, {"condition": new_condition})
                     print(f"{GREEN}Patient condition updated successfully.{RESET}")
                     break
@@ -445,21 +456,33 @@ class MHWPController:
                     # Update notes
                     new_notes = input(f"{CYAN}Please enter new notes for the patient: {RESET}")
                     record["notes"] = new_notes
+                    if new_notes == "back":
+                        self.update_patient_record()
+                        return
                     update_entry('./data/patient_record.json', id_input, {"notes": new_notes})
                     print(f"{GREEN}Patient notes updated successfully.{RESET}")
                     break
                 elif choice == "3":
                     # Update all fields
                     new_condition = input(f"{CYAN}Please enter new patient condition: {RESET}")
+                    if new_condition == "back":
+                        self.update_patient_record()
+                        return
                     new_notes = input(f"{CYAN}Please enter new notes for the patient: {RESET}")
+                    if new_notes == "back":
+                        self.update_patient_record()
+                        return
                     update_entry('./data/patient_record.json', id_input, {"condition": new_condition})
                     update_entry('./data/patient_record.json', id_input, {"notes": new_notes})
                     print(f"{GREEN}Patient record updated successfully.\n{RESET}")
                     break
-                elif choice == "4" or choice == "back":
+                elif choice == "4":
                     # Exit back to patient list
                     print(f"{GREY}Exiting to patient selection menu...\n{RESET}")
                     break
+                elif choice == "back":
+                    self.update_patient_record()
+                    return
                 else:
                     print(f"{RED}Invalid choice. Please enter 1, 2, or 3. \n{RESET}")
             break
@@ -490,59 +513,6 @@ class MHWPController:
 
         create_table(data,title="Patient Dashboard", display_title=True, display_index=False)
 
-
-# ---------------------------- TODO: Check if view_patient_summary is needed
-    def view_patient_summary(self, patient_id):
-        patient_records = self.get_patient_records()
-        patients_info = self.get_patients_info()
-
-        target_record = next((x for x in patient_records if x["patient_id"] == patient_id), None)
-        target_info = next((x for x in patients_info if x["patient_id"] == patient_id), None)
-
-        data = {
-            "Key": ["Patient ID", "Name", "Email", "Emergency Contact Email", "Condition", "Notes", "Mood"],
-            "Information": [
-                target_info["patient_id"],
-                target_info["name"], 
-                target_info["email"],
-                target_info["emergency_contact_email"],
-                target_record["condition"],
-                target_record["notes"],
-                self.icons[target_info["mood_code"]]
-            ]
-        }
-        title = f"{target_info['name']}'s Summary"
-        create_table(data, title=title, display_title=True)
-# ----------------------------
-
-# ---------------------------- TODO: Should be moved to admin controller 
-    @staticmethod
-    def calculate_patient_counts(patient_file, mhwp_file):
-        """
-        Calculate the number of patients assigned to each MHWP and update the patient_count field in mhwp_file.
-        :param patient_file: The file path to the JSON file containing patient information.
-        :param mhwp_file: The file path to the JSON file containing MHWP information.
-        """
-        patients = read_json(patient_file)
-        mhwp_data = read_json(mhwp_file)
-
-        mhwp_patient_counts = {}
-
-        # Count the number of patients assigned to each MHWP
-        for patient in patients:
-            mhwp_id = patient.get("mhwp_id")
-            if mhwp_id is not None:
-                mhwp_patient_counts[mhwp_id] = mhwp_patient_counts.get(mhwp_id, 0) + 1
-
-        # Update mhwp_data with patient counts
-        for mhwp in mhwp_data:
-            mhwp_id = mhwp.get("mhwp_id")
-            mhwp["patient_count"] = mhwp_patient_counts.get(mhwp_id, 0)
-
-        save_json(mhwp_file, mhwp_data)
-        
-        return mhwp_data
-# ----------------------------
 
 if __name__ == "__main__":
     mhwp_controller = MHWPController(MHWP(21, "mhwp", "password", "Robert Lewandowski", "robert.lewandowski@example.com", 3, "ACTIVE"))

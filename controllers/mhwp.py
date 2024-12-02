@@ -78,12 +78,13 @@ class MHWPController:
     def appointment_menu(self):
         title = "📅 Appointments Calendar"
         main_menu_title = "🏠 MHWP HomePage"
-        options = ["View Appointments", "Handle Appointments", "Suggest Resources", "Back to Homepage"]
+        options = ["View Appointments", "Handle Appointments", "Suggest Resources", "View Feedback", "Back to Homepage"]
         action_map = {
             "1": self.view_calendar,
             "2": self.choose_appointment,
             "3": self.suggest_resources,
-            "4": lambda: None
+            "4": self.view_feedback,
+            "5": lambda: None
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
         if result == "main_menu":
@@ -143,6 +144,12 @@ class MHWPController:
         appointment_path_name = "./data/appointment.json"
         appointment_payload = read_json(appointment_path_name)
         return [appointment for appointment in appointment_payload if appointment["mhwp_id"] == self.mhwp.user_id]
+    
+    def get_feedback(self):
+        '''Returns a list of feedback for all appointments'''
+        appointment_path_name = "./data/feedback.json"
+        appointment_payload = read_json(appointment_path_name)
+        return [appointment for appointment in appointment_payload]
 
     def get_patient_name(self, patient_id):
         '''Returns patient name from patients id'''
@@ -379,6 +386,8 @@ class MHWPController:
                 return False
             
     def suggest_resources(self):
+        """Allow MHWP to suggest resources to patients from a predefined list."""
+
         self.view_calendar()
         apps = self.get_appointments()
 
@@ -398,8 +407,12 @@ class MHWPController:
                 continue
 
             id_input = int(id_input)
+
+            # Find the appointment corresponding to user input
             for app in apps:
                 if id_input == app["appointment_id"]:
+
+                    # Display selected patient
                     data = {
                     "Appointment ID": [app["appointment_id"]],
                     "Name": [self.get_patient_name(app["patient_id"])],
@@ -410,6 +423,7 @@ class MHWPController:
                 }
                     create_table(data, "Selected Appointment", display_title=True)
 
+                    # List of resources to choose from
                     resources = {
                         "Number": ["1", "2", "3", "4"],
                         "Resource Name": ["NHS Mental Wellbeing", "Mind Mental Wellbeing", "UK Gov Mental Health", "WHO Mental Health"],
@@ -438,7 +452,8 @@ class MHWPController:
                                 text="Invalid input. Please choose a resource from the list."
                             )
                             continue
-
+                        
+                        # Update resources file to display in patients' accounts
                         update_entry('./data/mhwp_resources.json', app["appointment_id"], {"resource_name": resources["Resource Name"][resource_input - 1]})
                         update_entry('./data/mhwp_resources.json', app["appointment_id"], {"resource_link": resources["Resource Link"][resource_input - 1]})
                         return
@@ -450,6 +465,31 @@ class MHWPController:
                 )
                 continue
 
+    def view_feedback(self):
+        """Display feedback given by patients for MHWP's appointments."""
+
+        apps = self.get_appointments()
+        feedbacks = self.get_feedback()
+
+        # Create a mapping for the MHWP's apppointments and corresponding Patient names
+        app_set = {}
+        for app in apps:
+            app_set[app["appointment_id"]] = self.get_patient_name(app["patient_id"])
+
+        data = {
+            "Appointment ID": [],
+            "Patient Name": [],
+            "Feedback": []
+        }
+
+        # Populate the data structure with feedback from patients
+        for feedback in feedbacks:
+            if feedback["appointment_id"] in app_set:
+                data["Appointment ID"].append(feedback["appointment_id"])
+                data["Patient Name"].append(app_set[feedback["appointment_id"]])
+                data["Feedback"].append(feedback["feedback"])
+
+        create_table(data, title="Patient Feedback", display_title=True)
 
 # ----------------------------
 # Section 2: Patient Records

@@ -1,3 +1,6 @@
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from models.user import MHWP
 import pandas as pd
 from datetime import datetime, timedelta
@@ -54,7 +57,7 @@ class MHWPController:
         action_map = {
         "1": self.appointment_menu,
         "2": self.patient_records_menu,
-        "3": self.view_dashboard,
+        "3": self.patient_dashboard_menu,
         "4": lambda: None  # Left it to be None to return to log out
         }
 
@@ -78,11 +81,12 @@ class MHWPController:
     def appointment_menu(self):
         title = "📅 Appointments Calendar"
         main_menu_title = "🏠 MHWP HomePage"
-        options = ["View Appointments", "Handle Appointments", "Back to Homepage"]
+        options = ["View Appointments", "Handle Appointments", "Suggest Resources", "Back to Homepage"]
         action_map = {
             "1": self.view_calendar,
             "2": self.choose_appointment,
-            "3": lambda: None
+            "3": self.suggest_resources,
+            "4": lambda: None
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
         if result == "main_menu":
@@ -100,6 +104,20 @@ class MHWPController:
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
         if result == "main_menu":
             self.display_mhwp_homepage()
+
+    def patient_dashboard_menu(self):
+        title = "📋 Patient Dashboard"
+        main_menu_title = "🏠 MHWP HomePage"
+        options = ["View Patient Dashboard", "Email Emergency Contact", "Back to Homepage"]
+        action_map = {
+            "1": self.view_dashboard,
+            "2": self.contact_emergency,
+            "3": lambda: None
+        }
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == "main_menu":
+            self.display_mhwp_homepage()
+
 
 
 # -----------------------------------
@@ -205,6 +223,10 @@ class MHWPController:
 
         # Display the appointments in a formatted table
         if data["Appointment ID"]:
+            self.display_manager.print_text(
+                style=f"{CYAN}",
+                text="📅 Breeze Mental Health Management System - Appointment Calendar"
+            )
             create_table(data, "Appointments", display_title=True)
 
         else:
@@ -212,6 +234,14 @@ class MHWPController:
                 style=f"{RED}",
                 text="No appointments available to display."
             )
+
+        # Additional prompt or action for the user
+        self.display_manager.print_text(
+            style=f"{GREY}",
+            text="Use the menu options to handle appointments or return to the main menu."
+        )
+
+
 
 
     def handle_appointment_status(self, appointment, isPending):
@@ -350,6 +380,98 @@ class MHWPController:
                     text="Unable to handle the appointment. Please contact the system manager."
                 )
                 return False
+            
+    def suggest_resources(self):
+        self.view_calendar()
+        apps = self.get_appointments()
+
+        while True:
+            id_input = input(f"{CYAN}{BOLD}Choose Appointment ID to suggest resources ⏳: {RESET}").strip()
+
+            if id_input == "back":
+                self.display_manager.back_operation()
+                self.appointment_menu()
+                return
+            
+            if not self.is_integer(id_input):
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text="Invalid input. Please enter an integer value."
+                )
+                continue
+
+            id_input = int(id_input)
+            for app in apps:
+                if id_input == app["appointment_id"]:
+                    data = {
+                        "Appointment ID": [app["appointment_id"]],
+                        "Name": [self.get_patient_name(app["patient_id"])],
+                        "Time": [app["time_slot"]],
+                        "Date": [app["date"]],
+                        "Status": [app["status"]],
+                        "Notes": [app["notes"]]
+                    }
+                    create_table(data, "Selected Appointment", display_title=True)
+
+                    resources = {
+                        "Number": ["1", "2", "3", "4", "5"],
+                        "Resource Name": ["Improve Sleeping Quality", "Stress Management", "Healing Trauma", "Positive Psychology", "Manual Input"],
+                        "Resource Link": ["https://www.nhs.uk/live-well/sleep-and-tiredness/", "https://www.who.int/publications/i/item/9789240003927", "https://www.apa.org/topics/trauma/healing-guide", "https://positivepsychology.com/childhood-trauma/", "N/A"]
+                    }
+                    create_table(resources, "Available Resources", display_title=True)
+
+                    while True:
+                        resource_input = input(f"{CYAN}{BOLD}Enter number to choose resource for recommendation ⏳: {RESET}").strip()
+                        if resource_input == "back":
+                            self.display_manager.back_operation()
+                            self.appointment_menu()
+                            return
+                        
+                        if not self.is_integer(resource_input):
+                            self.display_manager.print_text(
+                                style=f"{RED}",
+                                text="Invalid input. Please enter an integer value."
+                            )
+                            continue
+
+                        resource_input = int(resource_input)
+                        if resource_input not in [1, 2, 3, 4, 5]:
+                            self.display_manager.print_text(
+                                style=f"{RED}",
+                                text="Invalid input. Please choose a resource from the list."
+                            )
+                            continue
+
+                        if resource_input == 5:
+                            # 手动输入新资源
+                            manual_name = input(f"{CYAN}{BOLD}Enter the name of the new resource: {RESET}").strip()
+                            manual_link = input(f"{CYAN}{BOLD}Enter the link of the new resource: {RESET}").strip()
+                            
+                            update_entry('./data/mhwp_resources.json', app["appointment_id"], {"resource_name": manual_name})
+                            update_entry('./data/mhwp_resources.json', app["appointment_id"], {"resource_link": manual_link})
+                            self.display_manager.print_text(
+                                style=f"{GREEN}",
+                                text=f"Resource '{manual_name}' with link '{manual_link}' has been successfully added and assigned."
+                            )
+                            return
+                        else:
+                            # 分配预定义资源
+                            update_entry('./data/mhwp_resources.json', app["appointment_id"], {"resource_name": resources["Resource Name"][resource_input - 1]})
+                            update_entry('./data/mhwp_resources.json', app["appointment_id"], {"resource_link": resources["Resource Link"][resource_input - 1]})
+                            self.display_manager.print_text(
+                                style=f"{GREEN}",
+                                text=f"Resource '{resources['Resource Name'][resource_input - 1]}' has been successfully assigned."
+                            )
+                            return
+
+            else:
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text="Invalid input. Please enter a valid appointment ID."
+                )
+                continue
+
+
 
 
 # ----------------------------
@@ -500,6 +622,46 @@ class MHWPController:
             data["Mood"].append(self.icons[patient["mood_code"]])
 
         create_table(data,title="Patient Dashboard", display_title=True, display_index=False)
+
+    def contact_emergency(self):
+        self.view_dashboard()
+        patients = self.get_patients_info()
+
+
+        while True:
+            id_input = input(f"{CYAN}{BOLD}Choose patient ID to email emergency contact ⏳: {RESET}").strip()
+
+            if id_input == "back":
+                self.display_manager.back_operation()
+                self.patient_dashboard_menu()
+                return
+            
+            if not self.is_integer(id_input):
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text="Invalid input. Please enter an integer value."
+                )
+                continue
+
+            id_input = int(id_input)
+            for patient in patients:
+                if id_input == patient["patient_id"]:
+                    email = patient["emergency_contact_email"]
+                    email_input = input(f"{CYAN}{BOLD}Enter message for the email ⏳: {RESET}").strip()
+                    if email_input == "back":
+                        self.display_manager.back_operation()
+                        self.patient_dashboard_menu()
+                        return
+
+                    # TODO: Send email to emergency contact
+
+                    return
+            else:
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text="Invalid input. Please enter a valid patient ID."
+                )
+                continue
 
 
 if __name__ == "__main__":

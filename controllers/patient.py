@@ -742,7 +742,7 @@ class PatientController:
             
             # Filter appointments for the current patient
             if status:
-                patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id and a["status"] == status]
+                patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id and a["status"] != status]
             else:
                 patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id]
             if not patient_appointments:
@@ -901,7 +901,7 @@ class PatientController:
 
     def cancel_appointment(self):
         """Cancel an appointment for the current patient."""
-        self.view_appointment()
+        self.view_appointment("CANCELLED")
 
         while True:
             display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to cancel: {RESET}").strip()

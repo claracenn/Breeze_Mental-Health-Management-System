@@ -572,12 +572,19 @@ class MHWPController:
 
                 if choice == "1":
                     # Update condition
-                    new_condition = input(f"{CYAN}Please enter new patient condition: {RESET}")
-                    if new_condition == "back":
-                        self.update_patient_record()
-                        return
-                    update_entry('./data/patient_record.json', id_input, {"condition": new_condition})
-                    print(f"{GREEN}Patient condition updated successfully.{RESET}")
+                    while True:
+                        # MHWP can choose condition from predefined list
+                        new_condition = input(f"{CYAN}List of Conditions: 'Anxiety', 'ADHD', 'Depression', 'Stress', 'PTSD', 'Bipolar Disorder', 'OCD', 'Panic Disorder', 'Social Anxiety', and 'GAD (Generalized Anxiety Disorder)'. \nPlease enter new patient condition: {RESET}")
+                        if new_condition == "back":
+                            self.update_patient_record()
+                            return
+                        if new_condition not in ['Anxiety', 'ADHD', 'Depression', 'Stress', 'PTSD', 'Bipolar Disorder', 'OCD', 'Panic Disorder', 'Social Anxiety', 'GAD (Generalized Anxiety Disorder)']:
+                            print(f"{RED}Invalid choice. Please choose condition from the list. \n{RESET}")
+                            continue
+
+                        update_entry('./data/patient_record.json', id_input, {"condition": new_condition})
+                        print(f"{GREEN}Patient condition updated successfully.{RESET}")
+                        break
                     break
                 elif choice == "2":
                     # Update notes
@@ -591,15 +598,23 @@ class MHWPController:
                     break
                 elif choice == "3":
                     # Update all fields
-                    new_condition = input(f"{CYAN}Please enter new patient condition: {RESET}")
-                    if new_condition == "back":
-                        self.update_patient_record()
-                        return
+                    while True:
+                        new_condition = input(f"{CYAN}List of Conditions: 'Anxiety', 'ADHD', 'Depression', 'Stress', 'PTSD', 'Bipolar Disorder', 'OCD', 'Panic Disorder', 'Social Anxiety', and 'GAD (Generalized Anxiety Disorder)'. \nPlease enter new patient condition: {RESET}")
+                        if new_condition == "back":
+                            self.update_patient_record()
+                            return
+                        if new_condition not in ['Anxiety', 'ADHD', 'Depression', 'Stress', 'PTSD', 'Bipolar Disorder', 'OCD', 'Panic Disorder', 'Social Anxiety', 'GAD (Generalized Anxiety Disorder)']:
+                            print(f"{RED}Invalid choice. Please choose condition from the list. \n{RESET}")
+                            continue
+
+                        update_entry('./data/patient_record.json', id_input, {"condition": new_condition})
+                        print(f"{GREEN}Patient condition updated successfully.{RESET}")
+                        break                    
+
                     new_notes = input(f"{CYAN}Please enter new notes for the patient: {RESET}")
                     if new_notes == "back":
                         self.update_patient_record()
                         return
-                    update_entry('./data/patient_record.json', id_input, {"condition": new_condition})
                     update_entry('./data/patient_record.json', id_input, {"notes": new_notes})
                     print(f"{GREEN}Patient record updated successfully.\n{RESET}")
                     break

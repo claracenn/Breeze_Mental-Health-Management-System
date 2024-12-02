@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from utils.display_manager import DisplayManager
 from utils.data_handler import *
+from utils.email_helper import send_email
 
 """
 ==================================
@@ -679,15 +680,32 @@ class MHWPController:
             for patient in patients:
                 if id_input == patient["patient_id"]:
                     email = patient["emergency_contact_email"]
-                    email_input = input(f"{CYAN}{BOLD}Enter message for the email ⏳: {RESET}").strip()
+                    email_input = input(f"{CYAN}{BOLD}Enter subject for the email ⏳: {RESET}").strip()
                     if email_input == "back":
                         self.display_manager.back_operation()
                         self.patient_dashboard_menu()
                         return
 
-                    # TODO: Send email to emergency contact
+                    subject_input = input(f"{CYAN}{BOLD}Enter message for the email ⏳: {RESET}").strip()
+                    if email_input == "back":
+                        self.display_manager.back_operation()
+                        self.patient_dashboard_menu()
+                        return
 
-                    return
+
+                    # TODO: Send email to emergency contact
+                    first_line = "Dear Sir/Madam,\n"
+                    final_line = f"\nSincerely Your Mental Health and Wellbeing Practioner,\n{self.mhwp.name}"
+                    email_body = first_line + "\n" + email_input + "\n" + final_line
+                    email_success = send_email(email, subject_input, email_body)
+                    if (email_success):
+                        print(f"{GREEN}Email has been sent succesfully.{RESET}")
+                    else:
+                        print(f"{RED}Something went wrong. Please try again later...{RESET}")
+
+                    break
+
+
             else:
                 self.display_manager.print_text(
                     style=f"{RED}",

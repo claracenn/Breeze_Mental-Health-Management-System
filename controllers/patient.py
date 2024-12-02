@@ -121,12 +121,12 @@ class PatientController:
             print(f"{RED}Your account is disabled. You can only log out.{RESET}")
             options = [f"{option} (Disabled)" for option in options[:-1]] + ["Log Out"]
             action_map = {
-            "1": lambda: print(f"{RED}Your account is disabled. You can only log out.{RESET}"),
-            "2": lambda: print(f"{RED}Your account is disabled. You can only log out.{RESET}"),
-            "3": lambda: print(f"{RED}Your account is disabled. You can only log out.{RESET}"),
-            "4": lambda: print(f"{RED}Your account is disabled. You can only log out.{RESET}"),
-            "5": lambda: print(f"{RED}Your account is disabled. You can only log out.{RESET}"),
-            "6": lambda: print(f"{RED}Your account is disabled. You can only log out.{RESET}"),
+            "1": lambda: print(f"{LIGHT_RED}Your account is disabled. You can only log out.{RESET}"),
+            "2": lambda: print(f"{LIGHT_RED}Your account is disabled. You can only log out.{RESET}"),
+            "3": lambda: print(f"{LIGHT_RED}Your account is disabled. You can only log out.{RESET}"),
+            "4": lambda: print(f"{LIGHT_RED}Your account is disabled. You can only log out.{RESET}"),
+            "5": lambda: print(f"{LIGHT_RED}Your account is disabled. You can only log out.{RESET}"),
+            "6": lambda: print(f"{LIGHT_RED}Your account is disabled. You can only log out.{RESET}"),
             "7": lambda: print(f"{BOLD}Logging out...{RESET}"),  # Log Out
             }
             self.skip_upcoming_appointments = True
@@ -148,11 +148,11 @@ class PatientController:
                 break  # Log out
             elif choice in action_map:
                 if self.patient.status == "DISABLED" and choice != "7":
-                    print(f"{RED}Your account is disabled. You can only log out.{RESET}")
+                    print(f"{LIGHT_RED}Your account is disabled. You can only log out.{RESET}")
                 else:
                     action_map[choice]()  # Execute the selected action
             else:
-                print(f"{RED}Invalid choice. Please try again.{RESET}")  
+                print(f"{LIGHT_RED}Invalid choice. Please try again.{RESET}")  
 
     def profile_menu(self):
         """Display the profile menu."""
@@ -348,7 +348,7 @@ class PatientController:
                             print(f"{GREY}Returning to Profile Menu.")
                             break
                         else:
-                            print(f"{RED}Invalid choice. Please try again.")
+                            print(f"{LIGHT_RED}Invalid choice. Please try again.")
                             
                         # Save the updated data back to the file
                         save_json(self.patient_info_file, patient_info_data)
@@ -356,7 +356,7 @@ class PatientController:
     
             
             if patient_found == False:
-                print(f"{RED}Patient not found. Please try again.")
+                print(f"{LIGHT_RED}Patient not found. Please try again.")
                 self.profile_menu()          
 
 
@@ -386,9 +386,9 @@ class PatientController:
             new_mhwp_id = eligible_mhwps[selected_idx]["mhwp_id"]
             reason = input("Enter the reason for changing MHWP: ").strip()
             self.create_mhwp_change_request(patient_id, current_mhwp_id, new_mhwp_id, reason)
-            print("Your request to change MHWP has been submitted and is pending approval.")
+            print(f"{GREEN}Your request to change MHWP has been submitted and is pending approval.{RESET}")
         else:
-            print("Invalid selection.")
+            print(f"{LIGHT_RED}Invalid selection.{RESET}")
 
 
     def create_mhwp_change_request(self, patient_id, current_mhwp_id, target_mhwp_id, reason):
@@ -495,7 +495,7 @@ class PatientController:
         self.view_journals()
 
         """Delete a journal entry for the current patient."""
-        journal_index = input(f"{CYAN}{BOLD}Enter the index of the journal entry you want to delete: {RESET}\n").strip()
+        journal_index = input(f"{CYAN}{BOLD}Enter the index of the journal entry you want to delete: {RESET}").strip()
         if journal_index == "back":
             self.display_manager.back_operation() 
             self.journal_menu()
@@ -505,13 +505,13 @@ class PatientController:
         actual_index = self.current_patient_journal_map.get(journal_index)
         
         if actual_index is None:
-            print("Invalid index for the current patient.")
+            print(f"{LIGHT_RED}Invalid index for the current patient.{RESET}")
             return
         
         if delete_entry(self.journal_file, actual_index + 1):
-            print("Journal entry deleted successfully!")
+            print(f"{GREEN}Journal entry deleted successfully!{RESET}")
         else:
-            print("Failed to delete journal entry. Please try again.")
+            print(f"{LIGHT_RED}Failed to delete journal entry. Please try again.{RESET}")
 
 
     def update_journal(self):
@@ -519,7 +519,7 @@ class PatientController:
         self.view_journals()
 
         """Update a journal entry for the current patient."""
-        journal_index = input(f"{CYAN}{BOLD}Enter the index of the journal entry you want to update: {RESET}\n").strip()
+        journal_index = input(f"{CYAN}{BOLD}Enter the index of the journal entry you want to update: {RESET}").strip()
         if journal_index == "back":
             self.display_manager.back_operation() 
             self.journal_menu()
@@ -529,7 +529,7 @@ class PatientController:
         actual_index = self.current_patient_journal_map.get(journal_index)
         
         if actual_index is None:
-            print("Invalid index for the current patient.")
+            print(f"{LIGHT_RED}Invalid index for the current patient.{RESET}")
             return
         
         # Get the new journal text
@@ -677,7 +677,7 @@ class PatientController:
     def delete_mood(self):
         """Delete a mood entry for the current patient."""
         self.view_moods()
-        mood_index = input(f"{CYAN}{BOLD}Enter the index of the mood entry you want to delete: {RESET}\n").strip()
+        mood_index = input(f"{CYAN}{BOLD}Enter the index of the mood entry you want to delete: {RESET}").strip()
         if mood_index == "back":
             self.display_manager.back_operation()
             self.mood_menu()
@@ -688,7 +688,7 @@ class PatientController:
         actual_index = self.current_patient_mood_map.get(mood_index)
         
         if actual_index is None:
-            print("Invalid index for the current patient.")
+            print(f"{LIGHT_RED}Invalid index for the current patient.{RESET}")
             return
                 
         if delete_entry(self.mood_file, actual_index + 1):  
@@ -700,7 +700,7 @@ class PatientController:
     def update_mood(self):
         self.view_moods()
         """Update a mood entry for the current patient."""
-        mood_index = input(f"{CYAN}{BOLD}Enter the index of the mood entry you want to update: {RESET}\n").strip()
+        mood_index = input(f"{CYAN}{BOLD}Enter the index of the mood entry you want to update: {RESET}").strip()
         if mood_index == "back":
             self.display_manager.back_operation()
             self.mood_menu()
@@ -711,7 +711,7 @@ class PatientController:
         actual_index = self.current_patient_mood_map.get(mood_index)
         
         if actual_index is None:
-            print("Invalid index for the current patient.")
+            print(f"{LIGHT_RED}Invalid index for the current patient.{RESET}")
             return
         
         new_mood_comments = input(f"{CYAN}{BOLD}Enter the new mood comments: {RESET}\n").strip()
@@ -836,18 +836,18 @@ class PatientController:
                         return
                     selected_date_idx = int(selected_date_idx) - 1
                     if selected_date_idx < 0 or selected_date_idx >= len(available_dates):
-                        print("❌ Invalid selection.")
+                        print(f"❌ {LIGHT_RED}Invalid selection.{RESET}")
                         continue
                     selected_date = available_dates[selected_date_idx]
 
                     # Check if the patient already has an appointment on the selected date
                     patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id]
                     if any(a["date"] == selected_date for a in patient_appointments):
-                        print("❗️ You already have an appointment on this date. Please choose another date.")
+                        print(f"❗️ {LIGHT_RED}You already have an appointment on this date. Please choose another date.{RESET}")
                         continue #return to date selection
                     break
                 except ValueError:
-                    print("❌ Invalid selection.")
+                    print(f"❌ {LIGHT_RED}Invalid selection.{RESET}")
             
             # Display available time slots
             while True:
@@ -870,12 +870,12 @@ class PatientController:
                         return
                     selected_slot_index = int(selected_slot_index) - 1
                     if selected_slot_index not in range(len(available_time_slots)):
-                        print("❌ Invalid selection.") 
+                        print(f"❌ {LIGHT_RED}Invalid selection.{RESET}") 
                         continue #return to time slot selection
                     selected_time_slot = available_time_slots[selected_slot_index]
                     break
                 except ValueError:
-                    print("❌ Invalid selection.")
+                    print(f"❌ {LIGHT_RED}Invalid selection.{RESET}")
 
             # Confirm appointment
             new_appointment = {
@@ -902,8 +902,9 @@ class PatientController:
     def cancel_appointment(self):
         """Cancel an appointment for the current patient."""
         self.view_appointment()
-        try:
-            display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to cancel: {RESET}\n").strip()
+
+        while True:
+            display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to cancel: {RESET}").strip()
             if display_index == "back":
                 self.display_manager.back_operation()
                 self.appointment_menu()
@@ -911,12 +912,12 @@ class PatientController:
             try:
                 display_index = int(display_index)
                 if display_index not in self.appointment_id_map:
-                    print("Invalid number. Please choose a number from the list above.")
-                    return
+                    print(f"{LIGHT_RED}Invalid number. Please choose a number from the list above.{RESET}")
+                    continue
             except ValueError:
-                print("Invalid input. Please enter a valid number.")
-                return
-                
+                print(f"{LIGHT_RED}Invalid input. Please enter a valid number.{RESET}")
+                continue
+
             actual_appointment_id = self.appointment_id_map[display_index]
 
             appointments = read_json(self.appointment_file)
@@ -925,7 +926,7 @@ class PatientController:
                     appointment["status"] = "CANCELLED"
                     appointment["last_updated"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
                     if save_json(self.appointment_file, appointments):
-                        print("✅ Appointment cancelled successfully!")
+                        print(f"{GREEN}✅ Appointment cancelled successfully!{RESET}")
                         mhwp_info = read_json(self.mhwp_info_file)
                         mhwp_email = next((m["email"] for m in mhwp_info if m["mhwp_id"] == appointment["mhwp_id"]), None)
                         subject = "Your Patient Canceled an Appointment"
@@ -941,11 +942,8 @@ class PatientController:
                             send_email(mhwp_email, subject, message_body)
                         else:
                             print("❌ Failed to send email to MHWP. Please try again.")
-
                         return
-            print("❌ Failed to cancel appointment. Please try again.")
-        except ValueError:
-            print("Please enter a valid number.")
+            print(f"❌ {LIGHT_RED}Failed to cancel appointment. Please try again.")
 
 
 # ----------------------------
@@ -1025,7 +1023,7 @@ class PatientController:
                 data = {key: [result[key] for result in results] for key in results[0]}
                 create_table(data, title="📚 Meditation and Relaxation Resources", display_title=True, display_index=False)
             else:
-                print("No related resources found.")
+                print(f"{LIGHT_RED}No related resources found.{RESET}")
 
         except Exception as e:
             print(f"Error occurred: {e}")
@@ -1037,7 +1035,7 @@ class PatientController:
         patients_data = read_json(self.patient_info_file)
 
         if resources_data is None or patients_data is None:
-            print(f"{RED}Error loading data files. Please check the file paths and formats.{RESET}")
+            print(f"{LIGHT_RED}Error loading data files. Please check the file paths and formats.{RESET}")
             return
 
         current_patient = next(
@@ -1082,18 +1080,18 @@ class PatientController:
         # Let patient choose which appointment to provide feedback for
         while True:
             try:
-                display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to provide feedback for: {RESET}\n").strip()
+                display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to provide feedback for: {RESET}").strip()
                 if display_index == "back":
                     self.display_manager.back_operation()
                     self.feedback_menu()
                     return
                 display_index = int(display_index)
                 if display_index not in self.appointment_id_map:
-                    print("Invalid number. Please choose a number from the list above.")
+                    print(f"{LIGHT_RED}Invalid number. Please choose a number from the list above.{RESET}")
                     continue
                 break
             except ValueError:
-                print("Invalid input. Please enter a valid number.")
+                print(f"{LIGHT_RED}Invalid input. Please enter a valid number.{RESET}")
 
         # Get the feedback
         feedback_content = input(f"{CYAN}{BOLD}Please enter your feedback: {RESET}\n").strip()

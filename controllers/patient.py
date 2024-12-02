@@ -7,6 +7,7 @@ from models.user import Patient
 from utils.data_handler import *
 from utils.display_manager import DisplayManager
 from controllers.mhwp import MHWPController
+from controllers.admin import AdminController
 import urllib.request
 import urllib.parse
 import ssl
@@ -363,7 +364,7 @@ class PatientController:
     def display_eligible_mhwps(self, patient_id, current_mhwp_id):
         """Display a list of eligible MHWPs (patient_count < 4) for the patient to select from."""
         
-        MHWPController.calculate_patient_counts(self.patient_info_file, self.mhwp_info_file)
+        AdminController.calculate_patient_counts(self.patient_info_file, self.mhwp_info_file)
         mhwp_data = read_json(self.mhwp_info_file)
 
         # Show eligible mhwp

@@ -58,6 +58,7 @@ class PatientController:
         self.feedback_file = "data/feedback.json"
         self.skip_upcoming_appointments = False
         self.patient_record_file = 'data/patient_record.json'
+        self.resources_file = "data/mhwp_resources.json"
 
     def get_upcoming_appointments(self):
         """Get appointments within the next 7 days for the patient."""
@@ -207,10 +208,11 @@ class PatientController:
     def resource_menu(self):
         title = "📚 Resource Menu"
         main_menu_title = "🏠 Patient Homepage"
-        options = ["Search by Keyword", "Back to Homepage"]
+        options = ["Search by Keyword", "Display Rescources from MHWP", "Back to Homepage"]
         action_map = {
             "1": self.search_by_keyword,
-            "2": lambda: None,  # Back to Homepage handled in navigate_menu
+            "2": self.display_resources_from_MHWP,
+            "3": lambda: None,  # Back to Homepage handled in navigate_menu
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
         if result == "main_menu":
@@ -1023,6 +1025,49 @@ class PatientController:
 
         except Exception as e:
             print(f"Error occurred: {e}")
+
+
+
+    def display_resources_from_MHWP(self):
+        
+        resources_data = read_json("./data/mhwp_resources.json")
+        patients_data = read_json(self.patient_info_file)
+
+       
+        if resources_data is None or patients_data is None:
+            print(f"{RED}Error loading data files. Please check the file paths and formats.{RESET}")
+            return
+
+       
+        current_patient = next(
+            (patient for patient in patients_data if patient["patient_id"] == self.patient.user_id),
+            None
+        )
+
+        if not current_patient:
+            print(f"{DARK_GREY}No patient information found for the current user.{RESET}")
+            return
+
+        patient_resources = [
+            res for res in resources_data if res.get("appointment_id") == current_patient["patient_id"]
+        ]
+
+        if not patient_resources:
+            print(f"{CYAN}{BOLD}No resources have been assigned to you by your MHWP.{RESET}")
+            return
+
+        data = {
+            "Resource Name": [res.get("resource_name", "N/A") for res in patient_resources],
+            "Resource Link": [res.get("resource_link", "N/A") for res in patient_resources],
+            "Created Time": [res.get("create_time", "N/A") for res in patient_resources]
+        }
+
+        create_table(
+            data=data,
+            title=f"Resources Recommended by Your MHWP ({current_patient['name']})",
+            no_data_message="No resources found.",
+            display_title=True
+        )
 
 
 # ----------------------------

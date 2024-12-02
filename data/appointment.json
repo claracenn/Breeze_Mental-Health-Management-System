@@ -482,5 +482,27 @@
         "notes": "",
         "create_time": "2024-11-24T21:14:10",
         "last_updated": "2024-11-24T21:17:37"
+    },
+    {
+        "appointment_id": 45,
+        "patient_id": 1,
+        "mhwp_id": 21,
+        "date": "2024-12-09",
+        "time_slot": "09:00 - 10:00",
+        "status": "PENDING",
+        "notes": "",
+        "create_time": "2024-12-02T11:25:59",
+        "last_updated": "2024-12-02T11:25:59"
+    },
+    {
+        "appointment_id": 46,
+        "patient_id": 1,
+        "mhwp_id": 21,
+        "date": "2024-12-07",
+        "time_slot": "14:00 - 15:00",
+        "status": "CONFIRMED",
+        "notes": "",
+        "create_time": "2024-12-02T11:26:06",
+        "last_updated": "2024-12-02T11:26:06"
     }
 ]

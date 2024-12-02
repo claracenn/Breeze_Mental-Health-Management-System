@@ -151,14 +151,14 @@
         "username": "mhwp2",
         "password": "",
         "role": "mhwp",
-        "status": "ACTIVE"
+        "status": "DISABLED"
     },
     {
         "user_id": 23,
         "username": "mhwp3",
         "password": "",
         "role": "mhwp",
-        "status": "DISABLED"
+        "status": "ACTIVE"
     },
     {
         "user_id": 24,

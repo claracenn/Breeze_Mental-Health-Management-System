@@ -45,6 +45,7 @@ class MHWPController:
             5: "\U0001F61E",
             6: "\U0001F621"
         }
+        self.skip_upcoming_appointments = False
 
 
 # ----------------------------
@@ -63,20 +64,35 @@ class MHWPController:
 
         # Modify options and actions for disabled mhwp
         if self.mhwp.status == "DISABLED":
-            print(f"{RED}Your account is disabled. You can only log out.{RESET}")
+            print(f"{RED}{BOLD}Your account is disabled. You can only log out.{RESET}")
             options = [f"{option} (Disabled)" for option in options[:-1]] + ["Log Out"]
             action_map = {"4": lambda: None}
             
         # Display upcoming appointments if any
-        upcoming_appointments = self.get_upcoming_appointments()
-        if upcoming_appointments:
-            print(f"{GREEN}{BOLD}\nUpcoming Appointments in the next 7 days:{RESET}")
-            for appt in upcoming_appointments:
-                print(f"{BOLD}{appt['date']} {appt['time_slot']} - {appt['status']} with {appt['patient_name']}{RESET}")
-        else:
-            print(f"{LIGHT_GREEN}No appointments in the next 7 days.{RESET}")
+        if not self.skip_upcoming_appointments:
+            upcoming_appointments = self.get_upcoming_appointments()
+            # Sort upcoming appointments by date and time
+            upcoming_appointments.sort(key=lambda x: (x['date'], x['time_slot']))
+            if upcoming_appointments:
+                print(f"{MAGENTA}{BOLD}Upcoming Appointments in the next 7 days:{RESET}")
+                for appt in upcoming_appointments:
+                    print(f"{BOLD}{appt['date']} {appt['time_slot']} - {appt['status']} with {appt['patient_name']}{RESET}")
+            else:
+                print(f"{MAGENTA}{BOLD}No appointments in the next 7 days.{RESET}")
+            self.skip_upcoming_appointments = True
 
-        self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        # Call the navigate_menu method from the DisplayManager to show the menu
+        while True:
+            choice = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+            if choice == "4":
+                break  # Log out
+            elif choice in action_map:
+                if self.mhwp.status == "DISABLED" and choice != "4":
+                    print(f"{RED}Your account is disabled. You can not use this function.{RESET}")
+                else:
+                    action_map[choice]()  # Execute the selected action
+            else:
+                print(f"{RED}Invalid choice. Please try again.{RESET}")  
 
     def appointment_menu(self):
         title = "📅 Appointments Calendar"
@@ -223,25 +239,13 @@ class MHWPController:
 
         # Display the appointments in a formatted table
         if data["Appointment ID"]:
-            self.display_manager.print_text(
-                style=f"{CYAN}",
-                text="📅 Breeze Mental Health Management System - Appointment Calendar"
-            )
-            create_table(data, "Appointments", display_title=True)
+            create_table(data, "📅 Appointments", display_title=True)
 
         else:
             self.display_manager.print_text(
                 style=f"{RED}",
                 text="No appointments available to display."
             )
-
-        # Additional prompt or action for the user
-        self.display_manager.print_text(
-            style=f"{GREY}",
-            text="Use the menu options to handle appointments or return to the main menu."
-        )
-
-
 
 
     def handle_appointment_status(self, appointment, isPending):
@@ -361,7 +365,7 @@ class MHWPController:
                     "Status": [selected_appointment["status"]],
                     "Notes": [selected_appointment["notes"]]
                 }
-                create_table(data, "Selected Appointment", display_title=True)
+                create_table(data, "✅ Selected Appointment", display_title=True)
                 if selected_appointment["status"] == "PENDING":
                     self.handle_appointment_status(selected_appointment, isPending=True)
                 else:
@@ -411,14 +415,14 @@ class MHWPController:
                         "Status": [app["status"]],
                         "Notes": [app["notes"]]
                     }
-                    create_table(data, "Selected Appointment", display_title=True)
+                    create_table(data, "✅ Selected Appointment", display_title=True)
 
                     resources = {
                         "Number": ["1", "2", "3", "4", "5"],
                         "Resource Name": ["Improve Sleeping Quality", "Stress Management", "Healing Trauma", "Positive Psychology", "Manual Input"],
                         "Resource Link": ["https://www.nhs.uk/live-well/sleep-and-tiredness/", "https://www.who.int/publications/i/item/9789240003927", "https://www.apa.org/topics/trauma/healing-guide", "https://positivepsychology.com/childhood-trauma/", "N/A"]
                     }
-                    create_table(resources, "Available Resources", display_title=True)
+                    create_table(resources, "📖 Available Resources", display_title=True)
 
                     while True:
                         resource_input = input(f"{CYAN}{BOLD}Enter number to choose resource for recommendation ⏳: {RESET}").strip()
@@ -443,7 +447,7 @@ class MHWPController:
                             continue
 
                         if resource_input == 5:
-                            # 手动输入新资源
+                            # Manual input resources
                             manual_name = input(f"{CYAN}{BOLD}Enter the name of the new resource: {RESET}").strip()
                             manual_link = input(f"{CYAN}{BOLD}Enter the link of the new resource: {RESET}").strip()
                             
@@ -455,7 +459,7 @@ class MHWPController:
                             )
                             return
                         else:
-                            # 分配预定义资源
+                            # Allocate pre-defined resources
                             update_entry('./data/mhwp_resources.json', app["appointment_id"], {"resource_name": resources["Resource Name"][resource_input - 1]})
                             update_entry('./data/mhwp_resources.json', app["appointment_id"], {"resource_link": resources["Resource Link"][resource_input - 1]})
                             self.display_manager.print_text(
@@ -500,7 +504,7 @@ class MHWPController:
             )
         else:
             print(" ")
-            create_table(data, title="Patients Records", display_title=True)
+            create_table(data, title="📝 Patients Records", display_title=True)
 
 
     def update_patient_record(self):
@@ -542,7 +546,7 @@ class MHWPController:
             "Notes": [record["notes"]], 
             }
             print(" ")
-            create_table(data, "Selected Patient Record", display_title=True)
+            create_table(data, "📓 Selected Patient Record", display_title=True)
 
             # Update patient record
             while True:
@@ -621,7 +625,7 @@ class MHWPController:
             data["Emergency Contact"].append(patient["emergency_contact_email"])
             data["Mood"].append(self.icons[patient["mood_code"]])
 
-        create_table(data,title="Patient Dashboard", display_title=True, display_index=False)
+        create_table(data,title="📊 Patient Dashboard", display_title=True, display_index=False)
 
     def contact_emergency(self):
         self.view_dashboard()

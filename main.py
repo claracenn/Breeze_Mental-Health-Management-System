@@ -6,19 +6,30 @@ from controllers.mhwp import MHWPController
 from controllers.patient import PatientController
 from models.user import Admin, MHWP, Patient
 from utils.data_handler import *
+from utils.display_manager import *
 
 
-# Font and color codes (for reference)
-Red = "\033[91m"  # use for errors (bright red for visibility)
-Green = "\033[92m"  # use for success messages (bright green)
-Yellow = "\033[93m"  # use for warnings or prompts (bright yellow)
-Cyan = "\033[96m"  # use for general information (bright cyan)
-Blue = "\033[94m"  # use for headings or important text (bright blue)
-Magenta = "\033[95m"  # use for secondary emphasis (bright magenta)
-Reset = "\033[0m"  # to reset text to normal
-Bold = "\033[1m"  # to make text bold
+"""
+==================================
+Initialise ANSI color codes
+==================================
+"""
+BOLD = "\033[1m"
+UNDERLINE = "\033[4m"
+RESET = "\033[0m"
+RED = "\033[91m"
+LIGHT_GREEN = "\033[92m"
+GREEN = "\033[92m"
+CYAN = "\033[96m"
+GREY = "\033[90m"
+BLUE = "\033[94m"
+MAGENTA = "\033[95m"
+YELLOW = "\033[93m"
+ITALIC = "\033[3m"
+ORANGE = "\033[1;33m"  
+display_manager = DisplayManager()
 
-# Setup logging for auditing purposes
+# Set logging for auditing purposes
 logging.basicConfig(filename='audit.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 # Set timeout duration (in seconds) for inactivity
@@ -28,15 +39,12 @@ last_activity_time = time.time()
 def log_action(action, user):
     logging.info(f"Action: {action}, Performed by: {user}")
 
-def print_divider():
-    print(f"{Blue}{Bold}=" * 55 + f"{Reset}")
-
 def display_welcome_page():
-    print_divider()
-    print(f"{Green}{Bold}🍃 Welcome to Breeze Mental Health Management System 🍃{Reset}\n")
-    print(f"{Magenta}✨ Your journey to better mental health starts here! ✨{Reset}\n")
-    print(f"{Cyan}Please log in to continue.{Reset}")
-    print_divider()
+    display_manager.print_divider(line="=", length=70, style=f"{BOLD}")
+    display_manager.print_centered_message(message="🍃 Breeze Mental Health Management System 🍃", style=f"{GREEN}{BOLD}")
+    display_manager.print_centered_message(message="✨ Your journey to better mental health starts here! ✨", style=f"{MAGENTA}")
+    display_manager.print_divider(line="=", length=70, style=f"{BOLD}")
+    print(f"{CYAN}Please log in to continue.{CYAN}{RESET}")
 
 def reset_inactivity_timer():
     global last_activity_time
@@ -45,7 +53,7 @@ def reset_inactivity_timer():
 def check_inactivity():
     """Check for inactivity and log out if timeout duration is exceeded."""
     if time.time() - last_activity_time > timeout_duration:
-        print(f"{Red}Session timed out due to inactivity. Logging out...{Reset}")
+        print(f"{RED}Session timed out due to inactivity. Logging out...{RESET}")
         log_action("Session timed out due to inactivity", "system")
         sys.exit()
 
@@ -95,7 +103,7 @@ def login():
 
             # Check if username is valid
             if username not in users_dict:
-                print(f"{Red}Username not found. Please try again. Attempts left: {retry_attempts - attempt - 1}{Reset}")
+                print(f"{RED}Username not found. Please try again. Attempts left: {retry_attempts - attempt - 1}{RESET}")
                 log_action(f"Failed login attempt: Username '{username}' not found", "system")
                 continue
 
@@ -103,7 +111,7 @@ def login():
             
             # Even if account is disabled, allow login
             if user_data.get('status') == 'DISABLED':
-                print(f"{Yellow}Your account has been disabled, but you can still log in.{Reset}")
+                print(f"{YELLOW}Your account has been disabled, but you can still log in.{RESET}")
                 log_action(f"User '{username}' logged in despite being disabled", "system")
             
             # Prompt for password
@@ -115,19 +123,21 @@ def login():
                 user_role = user_data['role']
                 log_action(f"Successful login: Username '{username}'", username)
 
-                print(f"{Green}{Bold}Welcome, {username}!{Reset}")
+                print("\n")
+                display_manager.print_centered_message(message=f"🙋 Welcome, {username}!", style=f"{BOLD}")
+                display_manager.print_divider(line="~", length=70, style=f"{BOLD}")
                 return user_role, user_data['user_id']
             else:
-                print(f"{Red}Invalid password or account not active. Please try again. Attempts left: {retry_attempts - attempt - 1}{Reset}")
+                print(f"{RED}Invalid password or account not active. Please try again. Attempts left: {retry_attempts - attempt - 1}{RESET}")
                 log_action(f"Failed login attempt: Incorrect password for Username '{username}'", "system")
 
         except ValueError as ve:
-            print(f"{Red}Login Error: {ve}{Reset}")
+            print(f"{RED}Login Error: {ve}{RESET}")
         except Exception as e:
-            print(f"{Red}An unexpected error occurred during login: {e}{Reset}")
+            print(f"{RED}An unexpected error occurred during login: {e}{RESET}")
 
     # After reaching retry attempts limit
-    print(f"{Red}Exceeded the maximum number of login attempts. Exiting...{Reset}")
+    print(f"{RED}Exceeded the maximum number of login attempts. Exiting...{RESET}")
     log_action("Exceeded maximum login attempts", "system")
     sys.exit()
 
@@ -152,7 +162,7 @@ def role_navigation(user_role, user_id):
         if hasattr(admin_controller, 'display_admin_homepage'):
             admin_controller.display_admin_homepage()
         else:
-            print(f"{Red}Error: Admin controller does not have a display_menu method.{Reset}")
+            print(f"{RED}Error: Admin controller does not have a display_menu method.{RESET}")
 
     elif user_role == 'patient':
         patient_info = get_role_specific_info(user_id, 'patient', './data/patient_info.json')
@@ -171,7 +181,7 @@ def role_navigation(user_role, user_id):
             if hasattr(patient_controller, 'display_patient_homepage'):
                 patient_controller.display_patient_homepage()
             else:
-                print(f"{Red}Error: Patient controller does not have a display_patient_homepage method.{Reset}")
+                print(f"{RED}Error: Patient controller does not have a display_patient_homepage method.{RESET}")
         else:
             print("Patient-specific information not found.")
 
@@ -191,12 +201,12 @@ def role_navigation(user_role, user_id):
             if hasattr(mhwp_controller, 'display_mhwp_homepage'):
                 mhwp_controller.display_mhwp_homepage()
             else:
-                print(f"{Red}Error: MHWP controller does not have a display_menu method.{Reset}")
+                print(f"{RED}Error: MHWP controller does not have a display_menu method.{RESET}")
         else:
             print("MHWP-specific information not found.")
 
     else:
-        print(f"{Red}User role is not recognized. Please contact the administrator.{Reset}")
+        print(f"{RED}User role is not recognized. Please contact the administrator.{RESET}")
         log_action(f"User role '{user_role}' not recognized for user '{user_id}'", "system")
 
 
@@ -207,10 +217,10 @@ def main():
         if user_role and user_id:
             role_navigation(user_role, user_id)
         else:
-            retry = input(f"{Yellow}Would you like to try again? (y/n): {Reset}").lower()
+            retry = input(f"{YELLOW}Would you like to try again? (y/n): {RESET}").lower()
             reset_inactivity_timer()
             if retry != 'y':
-                print(f"{Cyan}Exiting... Goodbye!{Reset}")
+                print(f"{CYAN}Exiting... Goodbye!{RESET}")
                 log_action("User chose to exit the system", "system")
                 sys.exit()
 

@@ -84,7 +84,8 @@ class PatientController:
                     mhwp_name = next((mhwp["name"] for mhwp in mhwp_info if mhwp["mhwp_id"] == mhwp_id), "Unknown MHWP")
                     appointment["mhwp_name"] = mhwp_name  # Add mhwp_name to the appointment
                     upcoming_appointments.append(appointment)
-
+        # Sort upcoming appointments by date and time
+        upcoming_appointments.sort(key=lambda x: (x['date'], x['time_slot']))
         return upcoming_appointments
 
     def display_patient_homepage(self):
@@ -120,18 +121,16 @@ class PatientController:
         if not self.skip_upcoming_appointments:
             upcoming_appointments = self.get_upcoming_appointments()
             if upcoming_appointments:
-                print(f"{GREEN}\nUpcoming Appointments in the next 7 days:{RESET}")
+                print(f"{MAGENTA}{BOLD}Upcoming Appointments in the next 7 days:{RESET}")
                 for appt in upcoming_appointments:
                     print(f"{BOLD}{appt['date']} {appt['time_slot']} - {appt['status']} with {appt['mhwp_name']}{RESET}")
             else:
-                print(f"{LIGHT_GREEN}No appointments in the next 7 days.{RESET}")
+                print(f"{MAGENTA}No appointments in the next 7 days.{RESET}")
             self.skip_upcoming_appointments = True
-
 
         # Call the navigate_menu method from the DisplayManager to show the menu
         while True:
             choice = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
-
             if choice == "7":
                 break  # Log out
             elif choice in action_map:
@@ -367,7 +366,7 @@ class PatientController:
             "Email": [mhwp["email"] for mhwp in eligible_mhwps],
             "Patient Count": [mhwp["patient_count"] for mhwp in eligible_mhwps]
         }
-        create_table(display_data, title="Eligible MHWPs", display_title=True, display_index=True)
+        create_table(display_data, title="🧑‍⚕️ Eligible MHWPs", display_title=True, display_index=True)
 
         selected_idx = int(input("Select a new MHWP by index: ").strip()) - 1
         if 0 <= selected_idx < len(eligible_mhwps):
@@ -451,7 +450,7 @@ class PatientController:
         # Create and display table
         create_table(
             data=table_data,
-            title="Your Journal Entries",
+            title="📓 Your Journal Entries",
             display_title=True,
             display_index=True
         )
@@ -607,7 +606,7 @@ class PatientController:
         # Display the table
         create_table(
             data=table_data,
-            title="Your Mood History",
+            title="😊 Your Mood History",
             display_title=True,
             display_index=True
         )
@@ -776,7 +775,7 @@ class PatientController:
             # Display the table
             create_table(
                 data=table_data,
-                title="Your Appointments",
+                title="📅 Your Appointments",
                 display_title=True,
                 display_index=True  # Show display index
             )
@@ -890,7 +889,7 @@ class PatientController:
             # Add and save the new appointment
             add_entry(self.appointment_file, new_appointment)
             print("😊 Appointment booked successfully!")
-            print(f"📅 Date: {selected_date}, ⏰Time Slot: {selected_time_slot}")
+            print(f"📅 Date: {selected_date}, ⏰ Time Slot: {selected_time_slot}")
 
         except Exception as e:
             print(f"An error occurred: {e}")
@@ -1019,7 +1018,7 @@ class PatientController:
             if results:
                 print(f"{BOLD}{MAGENTA}Found {len(results)} resource ⬇️ : {RESET}")
                 data = {key: [result[key] for result in results] for key in results[0]}
-                create_table(data, title="Meditation and Relaxation Resources", display_title=True, display_index=False)
+                create_table(data, title="📚 Meditation and Relaxation Resources", display_title=True, display_index=False)
             else:
                 print("No related resources found.")
 
@@ -1027,18 +1026,15 @@ class PatientController:
             print(f"Error occurred: {e}")
 
 
-
     def display_resources_from_MHWP(self):
-        
+        """Display resources recommended by the MHWP for the current patient."""
         resources_data = read_json("./data/mhwp_resources.json")
         patients_data = read_json(self.patient_info_file)
 
-       
         if resources_data is None or patients_data is None:
             print(f"{RED}Error loading data files. Please check the file paths and formats.{RESET}")
             return
 
-       
         current_patient = next(
             (patient for patient in patients_data if patient["patient_id"] == self.patient.user_id),
             None
@@ -1064,7 +1060,7 @@ class PatientController:
 
         create_table(
             data=data,
-            title=f"Resources Recommended by Your MHWP ({current_patient['name']})",
+            title=f"📖 Resources Recommended by Your MHWP ({current_patient['name']})",
             no_data_message="No resources found.",
             display_title=True
         )
@@ -1168,7 +1164,7 @@ class PatientController:
             # Display the table
             create_table(
                 data=table_data,
-                title="Your Feedbacks",
+                title="📒 Your Feedbacks",
                 display_title=True,
                 display_index=True  # Show display index
             )

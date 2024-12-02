@@ -177,7 +177,7 @@ def role_navigation(user_role, user_id):
                 mhwp_id=patient_info.get('mhwp_id', ""),
                 status=user_info['status']
             )
-            patient_controller = PatientController(patient_user)  # 直接传递 patient_user
+            patient_controller = PatientController(patient_user)
             if hasattr(patient_controller, 'display_patient_homepage'):
                 patient_controller.display_patient_homepage()
             else:

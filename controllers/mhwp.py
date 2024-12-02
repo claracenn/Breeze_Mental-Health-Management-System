@@ -51,12 +51,11 @@ class MHWPController:
     def display_mhwp_homepage(self):
         title = "🏠 MHWP HomePage"
         main_menu_title = "🏠 MHWP HomePage"
-        options = ["Appointments Calendar", "Patient Records", "Patient Dashboard", "Log Out"]
+        options = ["Appointments Calendar", "Patient Records","Log Out"]
         action_map = {
         "1": self.appointment_menu,
         "2": self.patient_records_menu,
-        "3": self.patient_dashboard_menu,
-        "4": lambda: None  # Left it to be None to return to log out
+        "3": lambda: None  # Left it to be None to return to log out
         }
 
         # Modify options and actions for disabled mhwp
@@ -498,18 +497,34 @@ class MHWPController:
     def view_patient_records(self):
         """Display patient records for a MHWP."""
         patient_records = self.get_patient_records()
+        patients_info = self.get_patients_info()
+
+        payload = [
+            {**val_1, **val_2} 
+            for val_1 in patient_records
+            for val_2 in patients_info
+            if val_1["patient_id"] == val_2["patient_id"]
+        ]
+
+
 
         data = {
             "Patient ID": [],
             "Name": [],
+            "Email": [],
+            "Emergency Contact": [],
             "Conditions": [], 
             "Notes": [],
+            "Mood": []
         }
-        for patient in patient_records:
+        for patient in payload:
             data["Patient ID"].append(patient["patient_id"])
             data["Name"].append(patient["name"])
+            data["Email"].append(patient["name"])
             data["Conditions"].append(patient["condition"])
             data["Notes"].append(patient["notes"])
+            data["Emergency Contact"].append(patient["emergency_contact_email"])
+            data["Mood"].append(self.icons[patient["mood_code"]])
 
         if not data["Patient ID"]:
             self.display_manager.print_text(
@@ -631,30 +646,6 @@ class MHWPController:
             break
 
 
-# ----------------------------
-# Section 3: Patient Dashboard
-# ----------------------------
-    def view_dashboard(self):
-        patients = self.get_patients_info()
-        cols = ["Patient ID", "Name", "Email", "Emergency Contact"]
-        rows = [list(patient.values()) for patient in patients]
-
-        data = {
-                "Patient ID": [],
-                "Name": [],
-                "Email": [], 
-                "Emergency Contact": [], 
-                "Mood": []
-            }
-        
-        for patient in patients:
-            data["Patient ID"].append(patient["patient_id"])
-            data["Name"].append(patient["name"])
-            data["Email"].append(patient["email"])
-            data["Emergency Contact"].append(patient["emergency_contact_email"])
-            data["Mood"].append(self.icons[patient["mood_code"]])
-
-        create_table(data,title="Patient Dashboard", display_title=True, display_index=False)
 
     def contact_emergency(self):
         self.view_dashboard()
@@ -717,3 +708,4 @@ class MHWPController:
 if __name__ == "__main__":
     mhwp_controller = MHWPController(MHWP(21, "mhwp", "password", "Robert Lewandowski", "robert.lewandowski@example.com", 3, "ACTIVE"))
     mhwp_controller.display_mhwp_homepage()
+

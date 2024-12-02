@@ -37,14 +37,12 @@ GREY = "\033[90m"
 MAGENTA = "\033[95m"
 CYAN = "\033[96m"
 
+
 """
 ==================================
 Patient Controller Class
 ==================================
 """
-# ----------------------------
-# Homepage and Menus
-# ----------------------------
 class PatientController:
     def __init__(self, patient):
         self.patient = patient
@@ -56,10 +54,13 @@ class PatientController:
         self.request_log_file = "data/request_log.json"
         self.mhwp_info_file = "data/mhwp_info.json"
         self.feedback_file = "data/feedback.json"
-        self.skip_upcoming_appointments = False
         self.patient_record_file = 'data/patient_record.json'
-        self.resources_file = "data/mhwp_resources.json"
+        self.mhwp_resources_file = "data/mhwp_resources.json"
+        self.skip_upcoming_appointments = False
 
+# ------------------------------------
+# Upcoming Appointment Notice Function
+# ------------------------------------
     def get_upcoming_appointments(self):
         """Get appointments within the next 7 days for the patient."""
         current_date = datetime.now()
@@ -88,6 +89,10 @@ class PatientController:
         upcoming_appointments.sort(key=lambda x: (x['date'], x['time_slot']))
         return upcoming_appointments
 
+
+# ----------------------------
+# Homepage and Menus
+# ----------------------------
     def display_patient_homepage(self):
         title = "🏠 Patient Homepage"
         main_menu_title = "🏠 Patient Homepage"
@@ -124,8 +129,9 @@ class PatientController:
             "6": lambda: print(f"{RED}Your account is disabled. You can only log out.{RESET}"),
             "7": lambda: print(f"{BOLD}Logging out...{RESET}"),  # Log Out
             }
+            self.skip_upcoming_appointments = True
 
-        # Display upcoming appointments only on the first visit
+        # Display upcoming appointments if not disabled
         if not self.skip_upcoming_appointments:
             upcoming_appointments = self.get_upcoming_appointments()
             if upcoming_appointments:
@@ -134,7 +140,6 @@ class PatientController:
                     print(f"{BOLD}{appt['date']} {appt['time_slot']} - {appt['status']} with {appt['mhwp_name']}{RESET}")
             else:
                 print(f"{MAGENTA}No appointments in the next 7 days.{RESET}")
-            self.skip_upcoming_appointments = True
 
         # Call the navigate_menu method from the DisplayManager to show the menu
         while True:
@@ -358,8 +363,8 @@ class PatientController:
     def display_eligible_mhwps(self, patient_id, current_mhwp_id):
         """Display a list of eligible MHWPs (patient_count < 4) for the patient to select from."""
         
-        MHWPController.calculate_patient_counts(self.patient_info_file, "data/mhwp_info.json")
-        mhwp_data = read_json("data/mhwp_info.json")
+        MHWPController.calculate_patient_counts(self.patient_info_file, self.mhwp_info_file)
+        mhwp_data = read_json(self.mhwp_info_file)
 
         # Show eligible mhwp
         eligible_mhwps = [mhwp for mhwp in mhwp_data if mhwp.get("patient_count", 0) < 4]
@@ -670,8 +675,8 @@ class PatientController:
 
 
     def delete_mood(self):
-        self.view_moods()
         """Delete a mood entry for the current patient."""
+        self.view_moods()
         mood_index = input(f"{CYAN}{BOLD}Enter the index of the mood entry you want to delete: {RESET}\n").strip()
         if mood_index == "back":
             self.display_manager.back_operation()
@@ -690,6 +695,7 @@ class PatientController:
             print("Mood entry deleted successfully!")
         else:
             print("Failed to delete mood entry. Please try again.")
+
 
     def update_mood(self):
         self.view_moods()
@@ -724,6 +730,7 @@ class PatientController:
 # Section 4: Appointment methods
 # ----------------------------
     def view_appointment(self, status=None):
+        """View appointments for the current patient."""
         try:
             patient_info = read_json(self.patient_info_file)
             appointment = read_json(self.appointment_file)
@@ -741,17 +748,6 @@ class PatientController:
             if not patient_appointments:
                 print("No appointments found for this patient.")
                 return
-            
-            # # Sort appointments by date and time slot
-            # try:
-            #     patient_appointments.sort(
-            #         key=lambda x: (
-            #             datetime.strptime(x["date"], "%Y-%m-%d"),
-            #             x["time_slot"]
-            #         )
-            #     )
-            # except ValueError as e:
-            #     print(f"Warning: Some appointments have invalid date formats. Showing unsorted results.")
             
             # Prepare table data
             mhwp_info = read_json(self.mhwp_info_file)
@@ -904,6 +900,7 @@ class PatientController:
             
 
     def cancel_appointment(self):
+        """Cancel an appointment for the current patient."""
         self.view_appointment()
         try:
             display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to cancel: {RESET}\n").strip()
@@ -1036,7 +1033,7 @@ class PatientController:
 
     def display_resources_from_MHWP(self):
         """Display resources recommended by the MHWP for the current patient."""
-        resources_data = read_json("./data/mhwp_resources.json")
+        resources_data = read_json(self.mwhp_resources_file)
         patients_data = read_json(self.patient_info_file)
 
         if resources_data is None or patients_data is None:
@@ -1078,6 +1075,7 @@ class PatientController:
 # Section 6: Feedback methods
 # ----------------------------
     def add_feedback(self):
+        """Add feedback for an appointment."""
         # show all appointments
         self.view_feedback()
 
@@ -1121,6 +1119,7 @@ class PatientController:
 
 
     def view_feedback(self):
+        """Vide feedbacks for the appointments."""
         try:
             patient_info = read_json(self.patient_info_file)
             appointment = read_json(self.appointment_file)
@@ -1139,8 +1138,6 @@ class PatientController:
                 return
             
             # Prepare table data
-            
-            
             table_data = {
                 "Date": [],
                 "Time Slot": [],

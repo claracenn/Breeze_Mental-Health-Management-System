@@ -29,17 +29,18 @@ ORANGE = "\033[1;33m"
 
 """
 ==================================
-MHWP Controller Class
+Admin Controller Class
 ==================================
 """
-# ----------------------------
-# Homepage and Menus
-# ----------------------------
 class AdminController:
     def __init__(self, admin):
         self.admin = admin
         self.display_manager = DisplayManager()
-    
+
+
+# ----------------------------
+# Homepage and Menus
+# ----------------------------
     def display_admin_homepage(self):
         title = "🏠 Admin Homepage"
         main_menu_title = "🏠 Admin Homepage"

@@ -45,6 +45,10 @@ class MHWPController:
             5: "\U0001F61E",
             6: "\U0001F621"
         }
+        self.patient_info_file = "data/patient_info.json"
+        self.patient_record_file = 'data/patient_record.json'
+        self.appointment_file = "data/appointment.json"
+        self.mwhp_resources_file = "data/mhwp_resources.json"
         self.skip_upcoming_appointments = False
 
 
@@ -66,9 +70,15 @@ class MHWPController:
         if self.mhwp.status == "DISABLED":
             print(f"{RED}{BOLD}Your account is disabled. You can only log out.{RESET}")
             options = [f"{option} (Disabled)" for option in options[:-1]] + ["Log Out"]
-            action_map = {"4": lambda: None}
+            action_map = {
+            "1": lambda: print(f"{RED}Your account is disabled. You can not use this function.{RESET}"),
+            "2": lambda: print(f"{RED}Your account is disabled. You can not use this function.{RESET}"),
+            "3": lambda: print(f"{RED}Your account is disabled. You can not use this function.{RESET}"),
+            "4": lambda: print(f"{BOLD}Logging out...{RESET}"),  # Log Out
+            }
+            self.skip_upcoming_appointments = True
             
-        # Display upcoming appointments if any
+        # Display upcoming appointments if not disabled
         if not self.skip_upcoming_appointments:
             upcoming_appointments = self.get_upcoming_appointments()
             # Sort upcoming appointments by date and time
@@ -79,7 +89,6 @@ class MHWPController:
                     print(f"{BOLD}{appt['date']} {appt['time_slot']} - {appt['status']} with {appt['patient_name']}{RESET}")
             else:
                 print(f"{MAGENTA}{BOLD}No appointments in the next 7 days.{RESET}")
-            self.skip_upcoming_appointments = True
 
         # Call the navigate_menu method from the DisplayManager to show the menu
         while True:
@@ -135,32 +144,25 @@ class MHWPController:
             self.display_mhwp_homepage()
 
 
-
 # -----------------------------------
 # Common Functions for Data Retrieval
 # -----------------------------------
     def get_patients_info(self):
         '''Returns a list of patient information for current MHWP'''
-        patient_data_path_name = "./data/patient_info.json"
-        patient_info_payload = read_json(patient_data_path_name)
+        patient_info_payload = read_json(self.patient_info_file)
         return [patient for patient in patient_info_payload if patient["mhwp_id"] == self.mhwp.user_id]
 
     def get_patient_records(self):
         '''Returns a list of patient records for current MHWP'''
-        patient_record_path = "./data/patient_record.json"
-        patient_record_payload = read_json(patient_record_path)
+        patient_record_payload = read_json(self.patient_record_file)
         patients_info = self.get_patients_info()
         patient_ids = set([patient["patient_id"] for patient in patients_info])
         patient_records = [record for record in patient_record_payload if record["patient_id"] in patient_ids] 
-        # print(patient_records)
-        # for record in patient_records:
-        #     record["name"] = self.get_patient_name(record["patient_id"])
         return patient_records
 
     def get_appointments(self):
         '''Returns a list of appointments for current MWHP'''
-        appointment_path_name = "./data/appointment.json"
-        appointment_payload = read_json(appointment_path_name)
+        appointment_payload = read_json(self.appointment_file)
         return [appointment for appointment in appointment_payload if appointment["mhwp_id"] == self.mhwp.user_id]
 
     def get_patient_name(self, patient_id):
@@ -187,7 +189,7 @@ class MHWPController:
             return True
         except (ValueError, TypeError):
             return False
-
+    
     def get_upcoming_appointments(self):
         """Get appointments within the next 7 days for the MHWP."""
         current_date = datetime.now()
@@ -209,7 +211,6 @@ class MHWPController:
                 upcoming_appointments.append(appointment)
 
         return upcoming_appointments
-
 
 # --------------------------------
 # Section 1: Appointments Calendar
@@ -286,7 +287,7 @@ class MHWPController:
                 for app in appointments:
                     if app["appointment_id"] == appointment["appointment_id"]:
                         new_note = input("Please enter new note for the appointment: ")
-                        update_entry('./data/appointment.json', appointment["appointment_id"], {"notes": new_note})
+                        update_entry(self.appointment_file, appointment["appointment_id"], {"notes": new_note})
                         self.display_manager.print_text(
                         style=f"{BOLD}",
                         text=f"Appointment {appointment['appointment_id']} note has been successfully changed."
@@ -310,7 +311,7 @@ class MHWPController:
 
             try:
                 update_status = "CANCELLED" if new_status == 1 else "CONFIRMED"
-                update_entry('./data/appointment.json', appointment["appointment_id"], {"status": update_status})
+                update_entry(self.appointment_file, appointment["appointment_id"], {"status": update_status})
                 self.display_manager.print_text(
                     style=f"{RESET}{BOLD}",
                     text=f"📅 Appointment {appointment['appointment_id']} status has been successfully changed to {'CANCELLED' if new_status == 1 else 'CONFIRMED'}.\n"
@@ -451,8 +452,8 @@ class MHWPController:
                             manual_name = input(f"{CYAN}{BOLD}Enter the name of the new resource: {RESET}").strip()
                             manual_link = input(f"{CYAN}{BOLD}Enter the link of the new resource: {RESET}").strip()
                             
-                            update_entry('./data/mhwp_resources.json', app["appointment_id"], {"resource_name": manual_name})
-                            update_entry('./data/mhwp_resources.json', app["appointment_id"], {"resource_link": manual_link})
+                            update_entry(self.mwhp_resources_file, app["appointment_id"], {"resource_name": manual_name})
+                            update_entry(self.mwhp_resources_file, app["appointment_id"], {"resource_link": manual_link})
                             self.display_manager.print_text(
                                 style=f"{GREEN}",
                                 text=f"Resource '{manual_name}' with link '{manual_link}' has been successfully added and assigned."
@@ -460,8 +461,8 @@ class MHWPController:
                             return
                         else:
                             # Allocate pre-defined resources
-                            update_entry('./data/mhwp_resources.json', app["appointment_id"], {"resource_name": resources["Resource Name"][resource_input - 1]})
-                            update_entry('./data/mhwp_resources.json', app["appointment_id"], {"resource_link": resources["Resource Link"][resource_input - 1]})
+                            update_entry(self.mwhp_resources_file, app["appointment_id"], {"resource_name": resources["Resource Name"][resource_input - 1]})
+                            update_entry(self.mwhp_resources_file, app["appointment_id"], {"resource_link": resources["Resource Link"][resource_input - 1]})
                             self.display_manager.print_text(
                                 style=f"{GREEN}",
                                 text=f"Resource '{resources['Resource Name'][resource_input - 1]}' has been successfully assigned."
@@ -563,7 +564,7 @@ class MHWPController:
                     if new_condition == "back":
                         self.update_patient_record()
                         return
-                    update_entry('./data/patient_record.json', id_input, {"condition": new_condition})
+                    update_entry(self.patient_record_file, id_input, {"condition": new_condition})
                     print(f"{GREEN}Patient condition updated successfully.{RESET}")
                     break
                 elif choice == "2":
@@ -573,7 +574,7 @@ class MHWPController:
                     if new_notes == "back":
                         self.update_patient_record()
                         return
-                    update_entry('./data/patient_record.json', id_input, {"notes": new_notes})
+                    update_entry(self.patient_record_file, id_input, {"notes": new_notes})
                     print(f"{GREEN}Patient notes updated successfully.{RESET}")
                     break
                 elif choice == "3":
@@ -586,8 +587,8 @@ class MHWPController:
                     if new_notes == "back":
                         self.update_patient_record()
                         return
-                    update_entry('./data/patient_record.json', id_input, {"condition": new_condition})
-                    update_entry('./data/patient_record.json', id_input, {"notes": new_notes})
+                    update_entry(self.patient_record_file, id_input, {"condition": new_condition})
+                    update_entry(self.patient_record_file, id_input, {"notes": new_notes})
                     print(f"{GREEN}Patient record updated successfully.\n{RESET}")
                     break
                 elif choice == "4":

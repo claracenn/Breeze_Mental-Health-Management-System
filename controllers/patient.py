@@ -115,7 +115,15 @@ class PatientController:
         if self.patient.status == "DISABLED":
             print(f"{RED}Your account is disabled. You can only log out.{RESET}")
             options = [f"{option} (Disabled)" for option in options[:-1]] + ["Log Out"]
-            action_map = {"7": lambda: print(f"{BOLD}Logging out...{RESET}")}
+            action_map = {
+            "1": lambda: print(f"{RED}Your account is disabled. You can only log out.{RESET}"),
+            "2": lambda: print(f"{RED}Your account is disabled. You can only log out.{RESET}"),
+            "3": lambda: print(f"{RED}Your account is disabled. You can only log out.{RESET}"),
+            "4": lambda: print(f"{RED}Your account is disabled. You can only log out.{RESET}"),
+            "5": lambda: print(f"{RED}Your account is disabled. You can only log out.{RESET}"),
+            "6": lambda: print(f"{RED}Your account is disabled. You can only log out.{RESET}"),
+            "7": lambda: print(f"{BOLD}Logging out...{RESET}"),  # Log Out
+            }
 
         # Display upcoming appointments only on the first visit
         if not self.skip_upcoming_appointments:

@@ -289,8 +289,12 @@ class PatientController:
                             self.profile_menu()
                             return
                         if choice == "4":
-                            self.display_eligible_mhwps(patient["patient_id"], patient["mhwp_id"])
-                            self.profile_menu()
+                            success = self.display_eligible_mhwps(patient["patient_id"], patient["mhwp_id"])
+                            if success:
+                                 print(f"{GREEN}MHWP change request submitted successfully.{RESET}")
+                            else:
+                                 print(f"{RED}No changes made to the MHWP.{RESET}")
+                            continue 
                             return  
                         elif choice == "1":
                             new_name = input("Enter new name: ").strip()
@@ -382,14 +386,21 @@ class PatientController:
         }
         create_table(display_data, title="🧑‍⚕️ Eligible MHWPs", display_title=True, display_index=True)
 
-        selected_idx = int(input("Select a new MHWP by index: ").strip()) - 1
-        if 0 <= selected_idx < len(eligible_mhwps):
-            new_mhwp_id = eligible_mhwps[selected_idx]["mhwp_id"]
-            reason = input("Enter the reason for changing MHWP: ").strip()
-            self.create_mhwp_change_request(patient_id, current_mhwp_id, new_mhwp_id, reason)
-            print(f"{GREEN}Your request to change MHWP has been submitted and is pending approval.{RESET}")
-        else:
-            print(f"{LIGHT_RED}Invalid selection.{RESET}")
+         while True:
+                try:
+                    selected_idx = int(input("Select a new MHWP by index: ").strip()) - 1
+                    if 0 <= selected_idx < len(eligible_mhwps):
+                        new_mhwp_id = eligible_mhwps[selected_idx]["mhwp_id"]
+                        reason = input("Enter the reason for changing MHWP: ").strip()
+                        self.create_mhwp_change_request(patient_id, current_mhwp_id, new_mhwp_id, reason)
+                        return True  # Indicate success
+                    else:
+                        print(f"{RED}Invalid selection. Please select a valid index.{RESET}")
+                except ValueError:
+                    print(f"{RED}Invalid input. Please enter a number corresponding to the MHWP index.{RESET}")
+
+
+        
 
 
     def create_mhwp_change_request(self, patient_id, current_mhwp_id, target_mhwp_id, reason):

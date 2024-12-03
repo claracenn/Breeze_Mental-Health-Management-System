@@ -385,7 +385,7 @@ class PatientController:
             "Patient Count": [mhwp["patient_count"] for mhwp in eligible_mhwps]
         }
         create_table(display_data, title="🧑‍⚕️ Eligible MHWPs", display_title=True, display_index=True)
-         while True:
+        while True:
                 try:
                     selected_idx = int(input("Select a new MHWP by index: ").strip()) - 1
                     if 0 <= selected_idx < len(eligible_mhwps):

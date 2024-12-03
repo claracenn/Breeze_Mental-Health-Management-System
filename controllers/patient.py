@@ -7,6 +7,7 @@ from models.user import Patient
 from utils.data_handler import *
 from utils.display_manager import DisplayManager
 from controllers.mhwp import MHWPController
+from controllers.admin import AdminController
 import urllib.request
 import urllib.parse
 import ssl
@@ -220,7 +221,7 @@ class PatientController:
     def resource_menu(self):
         title = "📚 Resource Menu"
         main_menu_title = "🏠 Patient Homepage"
-        options = ["Search by Keyword", "Display Rescources from MHWP", "Back to Homepage"]
+        options = ["Search by Keyword", "Display Resources from MHWP", "Back to Homepage"]
         action_map = {
             "1": self.search_by_keyword,
             "2": self.display_resources_from_MHWP,
@@ -289,8 +290,12 @@ class PatientController:
                             self.profile_menu()
                             return
                         if choice == "4":
-                            self.display_eligible_mhwps(patient["patient_id"], patient["mhwp_id"])
-                            self.profile_menu()
+                            success = self.display_eligible_mhwps(patient["patient_id"], patient["mhwp_id"])
+                            if success:
+                                 print(f"{GREEN}MHWP change request submitted successfully.{RESET}")
+                            else:
+                                 print(f"{RED}No changes made to the MHWP.{RESET}")
+                            continue 
                             return  
                         elif choice == "1":
                             new_name = input("Enter new name: ").strip()
@@ -364,7 +369,7 @@ class PatientController:
     def display_eligible_mhwps(self, patient_id, current_mhwp_id):
         """Display a list of eligible MHWPs (patient_count < 4) for the patient to select from."""
         
-        MHWPController.calculate_patient_counts(self.patient_info_file, self.mhwp_info_file)
+        AdminController.calculate_patient_counts(self.patient_info_file, self.mhwp_info_file)
         mhwp_data = read_json(self.mhwp_info_file)
 
         # Show eligible mhwp
@@ -381,15 +386,21 @@ class PatientController:
             "Patient Count": [mhwp["patient_count"] for mhwp in eligible_mhwps]
         }
         create_table(display_data, title="🧑‍⚕️ Eligible MHWPs", display_title=True, display_index=True)
+        while True:
+                try:
+                    selected_idx = int(input("Select a new MHWP by index: ").strip()) - 1
+                    if 0 <= selected_idx < len(eligible_mhwps):
+                        new_mhwp_id = eligible_mhwps[selected_idx]["mhwp_id"]
+                        reason = input("Enter the reason for changing MHWP: ").strip()
+                        self.create_mhwp_change_request(patient_id, current_mhwp_id, new_mhwp_id, reason)
+                        return True  # Indicate success
+                    else:
+                        print(f"{RED}Invalid selection. Please select a valid index.{RESET}")
+                except ValueError:
+                    print(f"{RED}Invalid input. Please enter a number corresponding to the MHWP index.{RESET}")
 
-        selected_idx = int(input("Select a new MHWP by index: ").strip()) - 1
-        if 0 <= selected_idx < len(eligible_mhwps):
-            new_mhwp_id = eligible_mhwps[selected_idx]["mhwp_id"]
-            reason = input("Enter the reason for changing MHWP: ").strip()
-            self.create_mhwp_change_request(patient_id, current_mhwp_id, new_mhwp_id, reason)
-            print(f"{GREEN}Your request to change MHWP has been submitted and is pending approval.{RESET}")
-        else:
-            print(f"{LIGHT_RED}Invalid selection.{RESET}")
+
+        
 
 
     def create_mhwp_change_request(self, patient_id, current_mhwp_id, target_mhwp_id, reason):
@@ -487,9 +498,9 @@ class PatientController:
         }
                 
         if add_entry(self.journal_file, journal):
-            print("Journal saved successfully!")
+            print(f"{GREEN}Journal saved successfully!{RESET}")
         else:
-            print("Failed to save journal. Please try again.")
+            print(f"{RED}Failed to save journal. Please try again.{RESET}")
 
     def delete_journal(self):
         # display the journal
@@ -542,9 +553,9 @@ class PatientController:
         
         # Update the journal entry in the JSON file
         if update_entry(self.journal_file, actual_index + 1, {"journal_text": new_journal_text}):
-            print("Journal entry updated successfully!")
+            print(f"{GREEN}Journal entry updated successfully!{RESET}")
         else:
-            print("Failed to update journal entry. Please try again.")
+            print(f"{RED}Failed to update journal entry. Please try again.{RESET}")
 
 # ----------------------------
 # Section 3: Mood methods
@@ -572,7 +583,7 @@ class PatientController:
         moods = read_json(self.mood_file)
         
         if not moods:
-            print("No mood entries found.")
+            print(f"{LIGHT_RED}No mood entries found.{RESET}")
             return
         
         # Filter for the current patient's mood entries
@@ -581,7 +592,7 @@ class PatientController:
         ]
 
         if not patient_moods:
-            print("No mood entries found for this patient.")
+            print(f"{LIGHT_RED}No mood entries found for this patient.{RESET}")
             return
         
         # Sort moods by timestamp in descending order
@@ -640,9 +651,9 @@ class PatientController:
                 mood_choice = int(mood_choice)
                 if 1 <= mood_choice <= 6:
                     break
-                print("Please enter a number between 1 and 6.")
+                print(f"{LIGHT_RED}Please enter a number between 1 and 6.{RESET}")
             except ValueError:
-                print("Please enter a valid number between 1 and 6.")
+                print(f"{LIGHT_RED}Please enter a valid number between 1 and 6.{RESET}")
 
         mood_colors = {
             1: "1_red",
@@ -654,7 +665,7 @@ class PatientController:
         }
         mood_color = mood_colors[mood_choice]
 
-        mood_comments = input(f"{CYAN}{BOLD}Please enter your mood comments: {RESET}\n").strip()
+        mood_comments = input(f"{CYAN}{BOLD}Please enter your mood comments: \n{RESET}").strip()
         if mood_comments == "back":
             self.display_manager.back_operation()
             self.mood_menu()
@@ -670,9 +681,9 @@ class PatientController:
         }
 
         if add_entry(self.mood_file, mood):
-            print("Mood logged successfully!")
+            print(f"{GREEN}Mood logged successfully!{RESET}")
         else:
-            print("Failed to log mood. Please try again.")
+            print(f"{RED}Failed to log mood. Please try again.{RESET}")
 
 
     def delete_mood(self):
@@ -693,9 +704,9 @@ class PatientController:
             return
                 
         if delete_entry(self.mood_file, actual_index + 1):  
-            print("Mood entry deleted successfully!")
+            print(f"{GREEN}Mood entry deleted successfully!{RESET}")
         else:
-            print("Failed to delete mood entry. Please try again.")
+            print(f"{RED}Failed to delete mood entry. Please try again.{RESET}")
 
 
     def update_mood(self):
@@ -722,11 +733,9 @@ class PatientController:
             return
         
         if update_entry(self.mood_file, actual_index + 1, {"mood_comments": new_mood_comments}):  
-            print("Mood entry updated successfully!")
+            print(f"{GREEN}Mood entry updated successfully!{RESET}")
         else:
-            print("Failed to update mood entry. Please try again.")
-   
-        
+            print(f"{RED}Failed to update mood entry. Please try again.{RESET}")
 
 
 # ----------------------------
@@ -740,7 +749,7 @@ class PatientController:
 
             patient = next((p for p in patient_info if p["patient_id"] == self.patient.user_id), None)
             if not patient:
-                print("Patient not found.")
+                print(f"{LIGHT_RED}Patient not found.{RESET}")
                 return
             
             # Filter appointments for the current patient
@@ -749,7 +758,7 @@ class PatientController:
             else:
                 patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id]
             if not patient_appointments:
-                print("No appointments found for this patient.")
+                print(f"{LIGHT_RED}No appointments found for this patient.{RESET}")
                 return
             
             # Prepare table data
@@ -800,7 +809,7 @@ class PatientController:
 
             patient = next((p for p in patient_info if p["patient_id"] == self.patient.user_id), None)
             if not patient:
-                print("Patient not found.")
+                print(f"{LIGHT_RED}Patient not found.{RESET}")
                 return
                 
             today = datetime.now().date()
@@ -823,7 +832,7 @@ class PatientController:
                         available_dates.append(date)
 
                 if not available_dates:
-                    print("❗️ No available dates for appointment.")
+                    print(f"{LIGHT_RED}❗️ No available dates for appointment.{RESET}")
                     return
                 else:
                     print("📅 Available Dates:")
@@ -895,7 +904,7 @@ class PatientController:
             
             # Add and save the new appointment
             add_entry(self.appointment_file, new_appointment)
-            print("😊 Appointment booked successfully!")
+            print(f"{GREEN}😊 Appointment booked successfully!{RESET}")
             print(f"📅 Date: {selected_date}, ⏰ Time Slot: {selected_time_slot}")
 
         except Exception as e:
@@ -944,7 +953,7 @@ class PatientController:
                         if mhwp_email:
                             send_email(mhwp_email, subject, message_body)
                         else:
-                            print("❌ Failed to send email to MHWP. Please try again.")
+                            print(f"{LIGHT_RED}❌ Failed to send email to MHWP. Please try again.{RESET}")
                         return
             print(f"❌ {LIGHT_RED}Failed to cancel appointment. Please try again.")
 
@@ -1029,12 +1038,12 @@ class PatientController:
                 print(f"{LIGHT_RED}No related resources found.{RESET}")
 
         except Exception as e:
-            print(f"Error occurred: {e}")
+            print(f"{LIGHT_RED}Error occurred: {e}")
 
 
     def display_resources_from_MHWP(self):
         """Display resources recommended by the MHWP for the current patient."""
-        resources_data = read_json(self.mwhp_resources_file)
+        resources_data = read_json(self.mhwp_resources_file)
         patients_data = read_json(self.patient_info_file)
 
         if resources_data is None or patients_data is None:
@@ -1080,7 +1089,7 @@ class PatientController:
         # show all appointments
         self.view_feedback()
 
-        # Let patient choose which appointment to provide feedback for
+        # Let patient choose which appointment to provide feedback for MHWP
         while True:
             try:
                 display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to provide feedback for: {RESET}").strip()
@@ -1113,10 +1122,60 @@ class PatientController:
         }
 
         if add_entry(self.feedback_file, feedback):
-            print("✅ Feedback added successfully!")
+            print(f"{GREEN}✅ Feedback added successfully!{RESET}")
             return
         else:
-            print("❌ Failed to add feedback. Please try again.")
+            print(f"{LIGHT_RED}❌ Failed to add feedback. Please try again.{RESET}")
+
+    def update_feedback(self):
+        """Update feedback for an appointment."""
+        # Show all appointments
+        self.view_feedback()
+
+        # Let patient choose which appointment to provide feedback for
+        while True:
+            try:
+                display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to provide feedback for: {RESET}").strip()
+                if display_index == "back":
+                    self.display_manager.back_operation()
+                    self.feedback_menu()
+                    return
+                display_index = int(display_index)
+                if display_index not in self.appointment_id_map:
+                    print(f"{LIGHT_RED}Invalid number. Please choose a number from the list above.{RESET}")
+                    continue
+                break
+            except ValueError:
+                print(f"{LIGHT_RED}Invalid input. Please enter a valid number.{RESET}")
+
+        # Get the feedback
+        new_feedback_content = input(f"{CYAN}{BOLD}Please enter your new feedback: {RESET}\n").strip()
+        if new_feedback_content == "back":
+            self.display_manager.back_operation()
+            self.feedback_menu()
+            return
+        
+        # Update feedback to feedback.json file
+        current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        actual_appointment_id = self.appointment_id_map[display_index]
+
+        # Read the existing feedback data
+        feedback_data = read_json(self.feedback_file)
+        if feedback_data is None:
+            print("❌ Failed to read feedback data. Please try again.")
+            return
+
+        # Update the feedback entry
+        for i in feedback_data:
+            if i["appointment_id"] == actual_appointment_id:
+                i["feedback"] = new_feedback_content  # Update the matching feedback item
+                i["create_time"] = current_timestamp
+                print("✅ Feedback updated successfully!")
+                # Save the updated feedback data back to the file
+                save_json(self.feedback_file, feedback_data)
+                return
+
+        print(" ❌ Failed to update feedback. Please try again.")
 
     def update_feedback(self):
         """Update feedback for an appointment."""
@@ -1179,7 +1238,7 @@ class PatientController:
 
             patient = next((p for p in patient_info if p["patient_id"] == self.patient.user_id), None)
             if not patient:
-                print("Patient not found.")
+                print(f"{LIGHT_RED}Patient not found.{RESET}")
                 return
             
             # Filter appointments for the current patient

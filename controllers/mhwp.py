@@ -589,13 +589,20 @@ class MHWPController:
 
                 if choice == "1":
                     # Update condition
-                    new_condition = input(f"{CYAN}Please enter new patient condition: {RESET}")
-                    if new_condition == "back":
-                        self.update_patient_record()
-                        return
-                    update_entry(self.patient_record_file, id_input, {"condition": new_condition})
-                    print(f"{GREEN}Patient condition updated successfully.{RESET}")
+                    while True:
+                        # MHWP can choose condition from predefined list
+                        new_condition = input(f"{GREY}List of Conditions: 'Anxiety', 'ADHD', 'Depression', 'Stress', 'PTSD', 'Bipolar Disorder', 'OCD', 'Panic Disorder', 'Social Anxiety', and 'GAD (Generalized Anxiety Disorder)'. {RESET} \n{CYAN}Please enter new patient condition: {RESET}")
+                        if new_condition == "back":
+                            self.update_patient_record()
+                            return
+                        if new_condition not in ['Anxiety', 'ADHD', 'Depression', 'Stress', 'PTSD', 'Bipolar Disorder', 'OCD', 'Panic Disorder', 'Social Anxiety', 'GAD (Generalized Anxiety Disorder)']:
+                            print(f"{RED}Invalid choice. Please choose condition from the list. \n{RESET}")
+                            continue
+                        update_entry('./data/patient_record.json', id_input, {"condition": new_condition})
+                        print(f"{GREEN}Patient condition updated successfully.{RESET}")
+                        break
                     break
+                
                 elif choice == "2":
                     # Update notes
                     new_notes = input(f"{CYAN}Please enter new notes for the patient: {RESET}")
@@ -606,12 +613,21 @@ class MHWPController:
                     update_entry(self.patient_record_file, id_input, {"notes": new_notes})
                     print(f"{GREEN}Patient notes updated successfully.{RESET}")
                     break
+
                 elif choice == "3":
                     # Update all fields
-                    new_condition = input(f"{CYAN}Please enter new patient condition: {RESET}")
-                    if new_condition == "back":
-                        self.update_patient_record()
-                        return
+                    while True:
+                        new_condition = input(f"{GREY}List of Conditions: 'Anxiety', 'ADHD', 'Depression', 'Stress', 'PTSD', 'Bipolar Disorder', 'OCD', 'Panic Disorder', 'Social Anxiety', and 'GAD (Generalized Anxiety Disorder)'.{RESET} \n{CYAN}Please enter new patient condition: {RESET}")
+                        if new_condition == "back":
+                            self.update_patient_record()
+                            return
+                        if new_condition not in ['Anxiety', 'ADHD', 'Depression', 'Stress', 'PTSD', 'Bipolar Disorder', 'OCD', 'Panic Disorder', 'Social Anxiety', 'GAD (Generalized Anxiety Disorder)']:
+                            print(f"{RED}Invalid choice. Please choose condition from the list. \n{RESET}")
+                            continue
+                        update_entry('./data/patient_record.json', id_input, {"condition": new_condition})
+                        print(f"{GREEN}Patient condition updated successfully.{RESET}")
+                        break                    
+
                     new_notes = input(f"{CYAN}Please enter new notes for the patient: {RESET}")
                     if new_notes == "back":
                         self.update_patient_record()
@@ -620,13 +636,16 @@ class MHWPController:
                     update_entry(self.patient_record_file, id_input, {"notes": new_notes})
                     print(f"{GREEN}Patient record updated successfully.\n{RESET}")
                     break
+
                 elif choice == "4":
                     # Exit back to patient list
                     print(f"{GREY}Exiting to patient selection menu...\n{RESET}")
                     break
+
                 elif choice == "back":
                     self.update_patient_record()
                     return
+
                 else:
                     print(f"{RED}Invalid choice. Please enter 1, 2, or 3. \n{RESET}")
             break

@@ -58,7 +58,7 @@ class DisplayManager:
         if self.menu_stack and self.breadcrumbs:
             self.menu_stack.pop()
             self.breadcrumbs.pop()
-            print(f"{GREY}Returning to the previous menu...{RESET}")
+            print(f"{GREY}Returning to the previous menu...\n{RESET}")
         else:
             print(f"{GREY}No previous menu to return to. Exiting...{RESET}")
             sys.exit()
@@ -87,7 +87,7 @@ class DisplayManager:
                     sys.exit()
                 else:
                     # If not in the main menu, reset breadcrumbs and menu stack to the main menu
-                    print(f"{CYAN}Returning to the main menu...{RESET}")
+                    print(f"{GREY}Returning to the main menu...\n{RESET}")
                     self.menu_stack.clear()
                     self.breadcrumbs = [main_menu_title]
                     return "main_menu"

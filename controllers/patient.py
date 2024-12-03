@@ -233,11 +233,12 @@ class PatientController:
     def feedback_menu(self):
         title = "📚 Feedback Menu"
         main_menu_title = "🏠 Patient Homepage"
-        options = ["Provide a feedback", "View your feedbacks", "Back to Homepage"]
+        options = ["Provide a feedback", "View your feedbacks",  "Update your feedback", "Back to Homepage"]
         action_map = {
             "1": self.add_feedback,
             "2": self.view_feedback,
-            "3": lambda: None,  # Back to Homepage handled in navigate_menu
+            "3": self.update_feedback,
+            "4": lambda: None,  # Back to Homepage handled in navigate_menu
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
         if result == "main_menu":
@@ -724,6 +725,8 @@ class PatientController:
             print("Mood entry updated successfully!")
         else:
             print("Failed to update mood entry. Please try again.")
+   
+        
 
 
 # ----------------------------
@@ -1114,6 +1117,56 @@ class PatientController:
             return
         else:
             print("❌ Failed to add feedback. Please try again.")
+
+    def update_feedback(self):
+        """Update feedback for an appointment."""
+        # Show all appointments
+        self.view_feedback()
+
+        # Let patient choose which appointment to provide feedback for
+        while True:
+            try:
+                display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to provide feedback for: {RESET}").strip()
+                if display_index == "back":
+                    self.display_manager.back_operation()
+                    self.feedback_menu()
+                    return
+                display_index = int(display_index)
+                if display_index not in self.appointment_id_map:
+                    print(f"{LIGHT_RED}Invalid number. Please choose a number from the list above.{RESET}")
+                    continue
+                break
+            except ValueError:
+                print(f"{LIGHT_RED}Invalid input. Please enter a valid number.{RESET}")
+
+        # Get the feedback
+        new_feedback_content = input(f"{CYAN}{BOLD}Please enter your new feedback: {RESET}\n").strip()
+        if new_feedback_content == "back":
+            self.display_manager.back_operation()
+            self.feedback_menu()
+            return
+        
+        # Update feedback to feedback.json file
+        current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        actual_appointment_id = self.appointment_id_map[display_index]
+
+        # Read the existing feedback data
+        feedback_data = read_json(self.feedback_file)
+        if feedback_data is None:
+            print("❌ Failed to read feedback data. Please try again.")
+            return
+
+        # Update the feedback entry
+        for i in feedback_data:
+            if i["appointment_id"] == actual_appointment_id:
+                i["feedback"] = new_feedback_content  # Update the matching feedback item
+                i["create_time"] = current_timestamp
+                print("✅ Feedback updated successfully!")
+                # Save the updated feedback data back to the file
+                save_json(self.feedback_file, feedback_data)
+                return
+
+        print("❌ Failed to update feedback. Please try again.")
 
 
     def view_feedback(self):

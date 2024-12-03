@@ -138,6 +138,13 @@ class MHWPController:
         # for record in patient_records:
         #     record["name"] = self.get_patient_name(record["patient_id"])
         return patient_records
+    
+
+    def get_patient_moods(self):
+        '''Returns a list of appointments for current MWHP'''
+        mood_data_path_name = "./data/patient_mood.json"
+        mood_data_payload = read_json(mood_data_path_name)
+        return mood_data_payload
 
     def get_appointments(self):
         '''Returns a list of appointments for current MWHP'''
@@ -498,13 +505,15 @@ class MHWPController:
         """Display patient records for a MHWP."""
         patient_records = self.get_patient_records()
         patients_info = self.get_patients_info()
+        patient_moods = self.get_patient_moods()
 
-        payload = [
-            {**val_1, **val_2} 
-            for val_1 in patient_records
-            for val_2 in patients_info
-            if val_1["patient_id"] == val_2["patient_id"]
-        ]
+        # merge data
+        for record in patient_records:
+            for info in patients_info:
+                for mood in patient_moods:
+                    if record["patient_id"] == info["patient_id"] and record["patient_id"] == mood["patient_id"]:
+                        record |= info
+                        record |= mood
 
 
 
@@ -517,14 +526,14 @@ class MHWPController:
             "Notes": [],
             "Mood": []
         }
-        for patient in payload:
+        for patient in patient_records:
             data["Patient ID"].append(patient["patient_id"])
             data["Name"].append(patient["name"])
             data["Email"].append(patient["name"])
             data["Conditions"].append(patient["condition"])
             data["Notes"].append(patient["notes"])
             data["Emergency Contact"].append(patient["emergency_contact_email"])
-            data["Mood"].append(self.icons[patient["mood_code"]])
+            data["Mood"].append(self.icons[int(patient["mood_color"][0])])
 
         if not data["Patient ID"]:
             self.display_manager.print_text(

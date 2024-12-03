@@ -234,11 +234,12 @@ class PatientController:
     def feedback_menu(self):
         title = "📚 Feedback Menu"
         main_menu_title = "🏠 Patient Homepage"
-        options = ["Provide a feedback", "View your feedbacks", "Back to Homepage"]
+        options = ["Provide a feedback", "View your feedbacks",  "Update your feedback", "Back to Homepage"]
         action_map = {
             "1": self.add_feedback,
             "2": self.view_feedback,
-            "3": lambda: None,  # Back to Homepage handled in navigate_menu
+            "3": self.update_feedback,
+            "4": lambda: None,  # Back to Homepage handled in navigate_menu
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
         if result == "main_menu":
@@ -680,9 +681,9 @@ class PatientController:
         }
 
         if add_entry(self.mood_file, mood):
-            print(f"{GREEN}Mood logged successfully!{RESET}")
+            print(f"{GREEN}✅ Mood logged successfully!{RESET}")
         else:
-            print(f"{RED}Failed to log mood. Please try again.{RESET}")
+            print(f"{RED}❌ Failed to log mood. Please try again.{RESET}")
 
 
     def delete_mood(self):
@@ -703,9 +704,9 @@ class PatientController:
             return
                 
         if delete_entry(self.mood_file, actual_index + 1):  
-            print(f"{GREEN}Mood entry deleted successfully!{RESET}")
+            print(f"{GREEN}✅ Mood entry deleted successfully!{RESET}")
         else:
-            print(f"{RED}Failed to delete mood entry. Please try again.{RESET}")
+            print(f"{RED}❌ Failed to delete mood entry. Please try again.{RESET}")
 
 
     def update_mood(self):
@@ -722,7 +723,7 @@ class PatientController:
         actual_index = self.current_patient_mood_map.get(mood_index)
         
         if actual_index is None:
-            print(f"{LIGHT_RED}Invalid index for the current patient.{RESET}")
+            print(f"{LIGHT_RED}❌ Invalid index for the current patient.{RESET}")
             return
         
         new_mood_comments = input(f"{CYAN}{BOLD}Enter the new mood comments: {RESET}\n").strip()
@@ -732,9 +733,9 @@ class PatientController:
             return
         
         if update_entry(self.mood_file, actual_index + 1, {"mood_comments": new_mood_comments}):  
-            print(f"{GREEN}Mood entry updated successfully!{RESET}")
+            print(f"{GREEN}✅ Mood entry updated successfully!{RESET}")
         else:
-            print(f"{RED}Failed to update mood entry. Please try again.{RESET}")
+            print(f"{RED}❌ Failed to update mood entry. Please try again.{RESET}")
 
 
 # ----------------------------
@@ -757,7 +758,7 @@ class PatientController:
             else:
                 patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id]
             if not patient_appointments:
-                print(f"{LIGHT_RED}No appointments found for this patient.{RESET}")
+                print(f"{LIGHT_RED}❌ No appointments found for this patient.{RESET}")
                 return
             
             # Prepare table data
@@ -831,7 +832,7 @@ class PatientController:
                         available_dates.append(date)
 
                 if not available_dates:
-                    print(f"{LIGHT_RED}❗️ No available dates for appointment.{RESET}")
+                    print(f"{LIGHT_RED}❌ No available dates for appointment.{RESET}")
                     return
                 else:
                     print("📅 Available Dates:")
@@ -923,10 +924,10 @@ class PatientController:
             try:
                 display_index = int(display_index)
                 if display_index not in self.appointment_id_map:
-                    print(f"{LIGHT_RED}Invalid number. Please choose a number from the list above.{RESET}")
+                    print(f"{LIGHT_RED}❌ Invalid number. Please choose a number from the list above.{RESET}")
                     continue
             except ValueError:
-                print(f"{LIGHT_RED}Invalid input. Please enter a valid number.{RESET}")
+                print(f"{LIGHT_RED}❌ Invalid input. Please enter a valid number.{RESET}")
                 continue
 
             actual_appointment_id = self.appointment_id_map[display_index]
@@ -1034,10 +1035,10 @@ class PatientController:
                 data = {key: [result[key] for result in results] for key in results[0]}
                 create_table(data, title="📚 Meditation and Relaxation Resources", display_title=True, display_index=False)
             else:
-                print(f"{LIGHT_RED}No related resources found.{RESET}")
+                print(f"{LIGHT_RED}❌ No related resources found.{RESET}")
 
         except Exception as e:
-            print(f"{LIGHT_RED}Error occurred: {e}")
+            print(f"{LIGHT_RED}❌ Error occurred: {e}")
 
 
     def display_resources_from_MHWP(self):
@@ -1098,11 +1099,11 @@ class PatientController:
                     return
                 display_index = int(display_index)
                 if display_index not in self.appointment_id_map:
-                    print(f"{LIGHT_RED}Invalid number. Please choose a number from the list above.{RESET}")
+                    print(f"{LIGHT_RED}❌ Invalid number. Please choose a number from the list above.{RESET}")
                     continue
                 break
             except ValueError:
-                print(f"{LIGHT_RED}Invalid input. Please enter a valid number.{RESET}")
+                print(f"{LIGHT_RED}❌ Invalid input. Please enter a valid number.{RESET}")
 
         # Get the feedback
         feedback_content = input(f"{CYAN}{BOLD}Please enter your feedback: {RESET}\n").strip()
@@ -1125,6 +1126,106 @@ class PatientController:
             return
         else:
             print(f"{LIGHT_RED}❌ Failed to add feedback. Please try again.{RESET}")
+
+    def update_feedback(self):
+        """Update feedback for an appointment."""
+        # Show all appointments
+        self.view_feedback()
+
+        # Let patient choose which appointment to provide feedback for
+        while True:
+            try:
+                display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to provide feedback for: {RESET}").strip()
+                if display_index == "back":
+                    self.display_manager.back_operation()
+                    self.feedback_menu()
+                    return
+                display_index = int(display_index)
+                if display_index not in self.appointment_id_map:
+                    print(f"{LIGHT_RED}❌ Invalid number. Please choose a number from the list above.{RESET}")
+                    continue
+                break
+            except ValueError:
+                print(f"{LIGHT_RED}❌ Invalid input. Please enter a valid number.{RESET}")
+
+        # Get the feedback
+        new_feedback_content = input(f"{CYAN}{BOLD}Please enter your new feedback: {RESET}\n").strip()
+        if new_feedback_content == "back":
+            self.display_manager.back_operation()
+            self.feedback_menu()
+            return
+        
+        # Update feedback to feedback.json file
+        current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        actual_appointment_id = self.appointment_id_map[display_index]
+
+        # Read the existing feedback data
+        feedback_data = read_json(self.feedback_file)
+        if feedback_data is None:
+            print(f"{LIGHT_RED}❌ Failed to read feedback data. Please try again.{RESET}")
+            return
+
+        # Update the feedback entry
+        for i in feedback_data:
+            if i["appointment_id"] == actual_appointment_id:
+                i["feedback"] = new_feedback_content  # Update the matching feedback item
+                i["create_time"] = current_timestamp
+                print(f"{GREEN}✅ Feedback updated successfully!{RESET}")
+                # Save the updated feedback data back to the file
+                save_json(self.feedback_file, feedback_data)
+                return
+
+        print(f"{LIGHT_RED}❌ Failed to update feedback. Please try again.{RESET}")
+
+    def update_feedback(self):
+        """Update feedback for an appointment."""
+        # Show all appointments
+        self.view_feedback()
+
+        # Let patient choose which appointment to provide feedback for
+        while True:
+            try:
+                display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to provide feedback for: {RESET}").strip()
+                if display_index == "back":
+                    self.display_manager.back_operation()
+                    self.feedback_menu()
+                    return
+                display_index = int(display_index)
+                if display_index not in self.appointment_id_map:
+                    print(f"{LIGHT_RED}❌ Invalid number. Please choose a number from the list above.{RESET}")
+                    continue
+                break
+            except ValueError:
+                print(f"{LIGHT_RED}❌ Invalid input. Please enter a valid number.{RESET}")
+
+        # Get the feedback
+        new_feedback_content = input(f"{CYAN}{BOLD}Please enter your new feedback: {RESET}\n").strip()
+        if new_feedback_content == "back":
+            self.display_manager.back_operation()
+            self.feedback_menu()
+            return
+        
+        # Update feedback to feedback.json file
+        current_timestamp = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        actual_appointment_id = self.appointment_id_map[display_index]
+
+        # Read the existing feedback data
+        feedback_data = read_json(self.feedback_file)
+        if feedback_data is None:
+            print(f"{LIGHT_RED}❌ Failed to read feedback data. Please try again.{RESET}")
+            return
+
+        # Update the feedback entry
+        for i in feedback_data:
+            if i["appointment_id"] == actual_appointment_id:
+                i["feedback"] = new_feedback_content  # Update the matching feedback item
+                i["create_time"] = current_timestamp
+                print(f"{GREEN}✅ Feedback updated successfully!{RESET}")
+                # Save the updated feedback data back to the file
+                save_json(self.feedback_file, feedback_data)
+                return
+
+        print(f"{LIGHT_RED}❌ Failed to update feedback. Please try again.{RESET}")
 
 
     def view_feedback(self):

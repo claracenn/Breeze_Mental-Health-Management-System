@@ -681,7 +681,7 @@ class PatientController:
         }
 
         if add_entry(self.mood_file, mood):
-            print(f"{GREEN}✅Mood logged successfully!{RESET}")
+            print(f"{GREEN}✅ Mood logged successfully!{RESET}")
         else:
             print(f"{RED}❌ Failed to log mood. Please try again.{RESET}")
 
@@ -704,7 +704,7 @@ class PatientController:
             return
                 
         if delete_entry(self.mood_file, actual_index + 1):  
-            print(f"{GREEN}✅Mood entry deleted successfully!{RESET}")
+            print(f"{GREEN}✅ Mood entry deleted successfully!{RESET}")
         else:
             print(f"{RED}❌ Failed to delete mood entry. Please try again.{RESET}")
 
@@ -733,7 +733,7 @@ class PatientController:
             return
         
         if update_entry(self.mood_file, actual_index + 1, {"mood_comments": new_mood_comments}):  
-            print(f"{GREEN}✅Mood entry updated successfully!{RESET}")
+            print(f"{GREEN}✅ Mood entry updated successfully!{RESET}")
         else:
             print(f"{RED}❌ Failed to update mood entry. Please try again.{RESET}")
 

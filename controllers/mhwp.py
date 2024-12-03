@@ -36,12 +36,12 @@ class MHWPController:
         self.mhwp = mhwp
         self.display_manager = DisplayManager()
         self.icons = {
-            1: "\U0001F601",
-            2: "\U0001F642",
-            3: "\U0001F610",
-            4: "\U0001F615", 
-            5: "\U0001F61E",
-            6: "\U0001F621"
+            1: "😢",
+            2: "😕",
+            3: "😐",
+            4: "🙂", 
+            5: "😃",
+            6: "😃"
         }
 
 
@@ -51,10 +51,10 @@ class MHWPController:
     def display_mhwp_homepage(self):
         title = "🏠 MHWP HomePage"
         main_menu_title = "🏠 MHWP HomePage"
-        options = ["Appointments Calendar", "Patient Records","Log Out"]
+        options = ["Appointments Calendar", "Patients Dashboard","Log Out"]
         action_map = {
         "1": self.appointment_menu,
-        "2": self.patient_records_menu,
+        "2": self.patient_dashboard_menu,
         "3": lambda: None  # Left it to be None to return to log out
         }
 
@@ -90,27 +90,28 @@ class MHWPController:
         if result == "main_menu":
             self.display_mhwp_homepage()
     
-    def patient_records_menu(self):
-        title = "📋 Patient Records"
-        main_menu_title = "🏠 MHWP HomePage"
-        options = ["View Patient Records", "Update Patient Records", "Back to Homepage"]
-        action_map = {
-            "1": self.view_patient_records,
-            "2": self.update_patient_record,
-            "3": lambda: None
-        }
-        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
-        if result == "main_menu":
-            self.display_mhwp_homepage()
+    # def patient_dashboard_menu(self):
+    #     title = "📋 Patient Records"
+    #     main_menu_title = "🏠 MHWP HomePage"
+    #     options = ["View Patient Dashboard", "Update Patient Dashboard", "Back to Homepage"]
+    #     action_map = {
+    #         "1": self.view_patient_dashboard,
+    #         "2": self.update_patient_dashboard,
+    #         "3": lambda: None
+    #     }
+    #     result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+    #     if result == "main_menu":
+    #         self.display_mhwp_homepage()
 
     def patient_dashboard_menu(self):
         title = "📋 Patient Dashboard"
         main_menu_title = "🏠 MHWP HomePage"
-        options = ["View Patient Dashboard", "Email Emergency Contact", "Back to Homepage"]
+        options = ["View Patient Dashboard", "Update Patient Dashboard", "Email Emergency Contact", "Back to Homepage"]
         action_map = {
             "1": self.view_dashboard,
-            "2": self.contact_emergency,
-            "3": lambda: None
+            "2": self.update_patient_record,
+            "3": self.contact_emergency,
+            "4": lambda: None
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
         if result == "main_menu":
@@ -204,6 +205,28 @@ class MHWPController:
                 upcoming_appointments.append(appointment)
 
         return upcoming_appointments
+    
+
+    # get mood data for patients of the current mhwp
+    def get_patient_mood_data(self):
+        patient_records = self.get_patient_records()
+        patient_moods_data = self.get_patient_moods()
+        
+        # Sort moods by timestamp in descending order
+        patient_moods_data.sort(key=lambda x: x["timestamp"], reverse=True)
+
+        patient_ids = set([record["patient_id"] for record in patient_records])
+
+        patient_moods = {}
+        for mood_data in patient_moods_data:
+            id = mood_data["patient_id"]
+            if id in patient_ids:
+                if not id in patient_moods:
+                    patient_moods[id] = []
+                patient_moods[id].append([mood_data["timestamp"], mood_data["mood_comments"], mood_data["mood_color"]])
+
+        return patient_moods
+
 
 
 # --------------------------------
@@ -499,21 +522,34 @@ class MHWPController:
         create_table(data, title="Patient Feedback", display_title=True)
 
 # ----------------------------
-# Section 2: Patient Records
+# Section 2: Patient Dashboard
 # ----------------------------
-    def view_patient_records(self):
-        """Display patient records for a MHWP."""
+
+    def view_dashboard(self):
+        """Display patient dashboard for a MHWP."""
         patient_records = self.get_patient_records()
         patients_info = self.get_patients_info()
-        patient_moods = self.get_patient_moods()
+        patient_moods = self.get_patient_mood_data()
 
-        # merge data
+
+
         for record in patient_records:
             for info in patients_info:
-                for mood in patient_moods:
-                    if record["patient_id"] == info["patient_id"] and record["patient_id"] == mood["patient_id"]:
-                        record |= info
-                        record |= mood
+                if record["patient_id"] == info["patient_id"]:
+                    record |= info
+
+
+        for record in patient_records:
+            # 2d array
+            moods = patient_moods[record["patient_id"]]
+            record["moods"] = ""
+            record["mood_comments"] = ""
+            for mood in moods:
+                record["moods"] += " " + self.icons[int(mood[-1][0])]
+                record["mood_comments"] += " " + mood[-2]
+
+
+        
 
 
 
@@ -524,8 +560,10 @@ class MHWPController:
             "Emergency Contact": [],
             "Conditions": [], 
             "Notes": [],
-            "Mood": []
+            "Mood Tracking Information": [],
+            "Mood Comments": []
         }
+
         for patient in patient_records:
             data["Patient ID"].append(patient["patient_id"])
             data["Name"].append(patient["name"])
@@ -533,7 +571,8 @@ class MHWPController:
             data["Conditions"].append(patient["condition"])
             data["Notes"].append(patient["notes"])
             data["Emergency Contact"].append(patient["emergency_contact_email"])
-            data["Mood"].append(self.icons[int(patient["mood_color"][0])])
+            data["Mood Tracking Information"].append(patient["moods"])
+            data["Mood Comments"].append(patient["mood_comments"])
 
         if not data["Patient ID"]:
             self.display_manager.print_text(
@@ -546,7 +585,7 @@ class MHWPController:
 
 
     def update_patient_record(self):
-        self.view_patient_records()
+        self.view_dashboard()
         while True:
             patient_records = self.get_patient_records()
             if not patient_records:
@@ -717,4 +756,5 @@ class MHWPController:
 if __name__ == "__main__":
     mhwp_controller = MHWPController(MHWP(21, "mhwp", "password", "Robert Lewandowski", "robert.lewandowski@example.com", 3, "ACTIVE"))
     mhwp_controller.display_mhwp_homepage()
+
 

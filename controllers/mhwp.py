@@ -719,17 +719,20 @@ class MHWPController:
             for patient in patients:
                 if id_input == patient["patient_id"]:
                     email = patient["emergency_contact_email"]
+
+                    subject_input = input(f"{CYAN}{BOLD}Enter message for the subject ⏳: {RESET}").strip()
+                    if subject_input == "back":
+                        self.display_manager.back_operation()
+                        self.patient_dashboard_menu()
+                        return
+
                     email_input = input(f"{CYAN}{BOLD}Enter subject for the email ⏳: {RESET}").strip()
                     if email_input == "back":
                         self.display_manager.back_operation()
                         self.patient_dashboard_menu()
                         return
 
-                    subject_input = input(f"{CYAN}{BOLD}Enter message for the email ⏳: {RESET}").strip()
-                    if email_input == "back":
-                        self.display_manager.back_operation()
-                        self.patient_dashboard_menu()
-                        return
+       
 
 
                     # TODO: Send email to emergency contact

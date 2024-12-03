@@ -581,7 +581,7 @@ class MHWPController:
             )
         else:
             print(" ")
-            create_table(data, title="Patients Records", display_title=True)
+            create_table(data, title="Patient Dashboard", display_title=True)
 
 
     def update_patient_record(self):

@@ -725,24 +725,23 @@ class MHWPController:
                         self.patient_dashboard_menu()
                         return
             
-            # Send email to emergency contact
-            first_line = "Dear Sir/Madam,\n"
-            final_line = f"\nSincerely Your Mental Health and Wellbeing Practioner,\n{self.mhwp.name}"
-            email_body = first_line + "\n" + email_input + "\n" + final_line
-            email_success = send_email(email, subject_input, email_body)
-            if (email_success):
-                print(f"{GREEN}Email has been sent succesfully.{RESET}")
+                    # Send email to emergency contact
+                    first_line = "Dear Sir/Madam,\n"
+                    final_line = f"\nSincerely Your Mental Health and Wellbeing Practioner,\n{self.mhwp.name}"
+                    email_body = first_line + "\n" + email_input + "\n" + final_line
+                    email_success = send_email(email, subject_input, email_body)
+                    if (email_success):
+                        print(f"{GREEN}Email has been sent succesfully.{RESET}")
+                    else:
+                        print(f"{RED}Something went wrong. Please try again later...{RESET}")
+
+                    break
             else:
-                print(f"{RED}Something went wrong. Please try again later...{RESET}")
-
-            break
-
-        else:
-            self.display_manager.print_text(
-                style=f"{RED}",
-                text="Invalid input. Please enter a valid patient ID."
-            )
-            continue
+                self.display_manager.print_text(
+                    style=f"{RED}",
+                    text="Invalid input. Please enter a valid patient ID."
+                )
+                continue
 
 
 if __name__ == "__main__":

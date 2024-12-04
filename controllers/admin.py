@@ -36,6 +36,15 @@ class AdminController:
     def __init__(self, admin):
         self.admin = admin
         self.display_manager = DisplayManager()
+        self.appointment_file = "./data/appointment.json"
+        self.journal_file = "./data/patient_journal.json"
+        self.mood_file = "./data/patient_mood.json"
+        self.patient_info_file = "./data/patient_info.json"
+        self.patient_record_file = "./data/patient_record.json"
+        self.request_log_file = "./data/request_log.json"
+        self.mhwp_info_file = "./data/mhwp_info.json"
+        self.feedback_file = "./data/feedback.json"
+        self.user_info_file = "./data/user.json"
 
 
 # ----------------------------
@@ -158,7 +167,7 @@ class AdminController:
         Retrieves patient info from the data files.
         Returns data table if found, None otherwise.
         '''
-        data_path = "./data/patient_info.json"
+        data_path = self.patient_info_file
 
         patient_info = read_json(data_path)
         if patient_info is None or not isinstance(patient_info, list):
@@ -181,7 +190,7 @@ class AdminController:
         Retrieves MHWP info from the data files.
         Returns data table if found, None otherwise.
         '''
-        data_path = "./data/mhwp_info.json"
+        data_path = self.mhwp_info_file
 
         mhwp_info = read_json(data_path)
         if mhwp_info is None or not isinstance(mhwp_info, list):
@@ -287,14 +296,14 @@ class AdminController:
                 patient_index = next((i for i, id_ in enumerate(patient_data["Patient ID"]) if id_ == input_patient_id), None)
                 if patient_index is not None:
                     patient_entry = {key: patient_data[key][patient_index] for key in patient_data}
-                if patient_entry.get("mhwp_id") == input_mhwp_id:
+                if patient_entry["MHWP ID"] == input_mhwp_id:
                     retry_attempts += 1
                     print(f"{RED}Patient ID {input_patient_id} is already assigned to MHWP ID {input_mhwp_id}.{RESET}")
                     continue
                 # If not assigned to the same MHWP, proceed to update               
-                update_entry("./data/patient_info.json", input_patient_id, {"mhwp_id": input_mhwp_id})
+                update_entry(self.patient_info_file, input_patient_id, {"mhwp_id": input_mhwp_id})
                 print(f"{GREEN}MHWP ID {input_mhwp_id} found. Successfully assigned Patient {input_patient_id} to MHWP {input_mhwp_id}! {RESET}")
-                self.calculate_patient_counts("./data/patient_info.json", "./data/mhwp_info.json")
+                self.calculate_patient_counts(self.patient_info_file, self.mhwp_info_file)
                 break
 
             else:
@@ -313,7 +322,7 @@ class AdminController:
 # ----------------------------------
     def display_request_info(self):
         """Retrieve and display request information"""
-        request_info = read_json("./data/request_log.json")
+        request_info = read_json(self.request_log_file)
         requests_sorted = sorted(request_info, key=lambda x: datetime.strptime(x["requested_at"], "%Y-%m-%d %H:%M:%S"), reverse=True)
 
         if requests_sorted is None or not isinstance(requests_sorted, list):
@@ -335,7 +344,7 @@ class AdminController:
 
     def check_request_is_not_pending(self, index):
         """ Check if the request is not pending"""
-        request_info = read_json("./data/request_log.json")
+        request_info = read_json(self.request_log_file)
 
         specific_request = request_info[index-1]
         status = specific_request["status"]
@@ -348,7 +357,7 @@ class AdminController:
     def resolve_request(self):
         """ Resolve patient requests of changing MHWP """
         self.display_request_info()
-        request_data = read_json("./data/request_log.json")
+        request_data = read_json(self.request_log_file)
 
         # Ask for Patient ID to allocate
         retry_attempts = 0
@@ -391,21 +400,21 @@ class AdminController:
 
                 # Back to Homepage
                 if choice == "back" or choice == "3":
-                    self.back_operation()
+                    self.display_manager.back_operation()
                     self.display_admin_homepage()
                     return
                 
                 # Approve request
                 if choice == "1":
                     request_data[input_index-1]['status'] = "approved"
-                    save_json("./data/request_log.json", request_data)
+                    save_json(self.request_log_file, request_data)
                     patient_id = request_data[input_index-1]['patient_id']
                     target_MHWP_id = request_data[input_index-1]['target_mhwp_id']
 
                     #update patient file to new MHWP           
-                    update_entry("./data/patient_info.json", patient_id, {"mhwp_id": target_MHWP_id})
+                    update_entry(self.patient_info_file, patient_id, {"mhwp_id": target_MHWP_id})
                     print(f"{GREEN}Request settled. Successfully assigned Patient {patient_id} to MHWP {target_MHWP_id}! {RESET}")
-                    self.calculate_patient_counts("./data/patient_info.json", "./data/mhwp_info.json")
+                    self.calculate_patient_counts(self.patient_info_file, self.mhwp_info_file)
                     return
 
                 # Reject request
@@ -413,7 +422,7 @@ class AdminController:
                     request_data[input_index-1]['status'] = "rejected"
                     patient_id = request_data[input_index-1]['patient_id']
                     print(f"{RED}Request settled. Rejected Patient {patient_id}'s request. {RESET}")
-                    save_json("./data/request_log.json", request_data)
+                    save_json(self.request_log_file, request_data)
                     return
                 
                 else:
@@ -439,7 +448,7 @@ class AdminController:
     def edit_mhwp(self):
         # Display MHWP info
         self.display_mhwp_info()
-        data = read_json("./data/mhwp_info.json")
+        data = read_json(self.mhwp_info_file)
 
         while True:
             input_mhwp_id = input(f"{CYAN}{BOLD}Enter MHWP ID to edit ⏳: {RESET}").strip()
@@ -515,7 +524,7 @@ class AdminController:
                             print(f"{RED}Invalid choice. Please try again.")
 
                     # Save the updated data
-                    save_json("./data/mhwp_info.json", data)
+                    save_json(self.mhwp_info_file, data)
 
             # If MHWP ID not found
             if mhwp_found == False:
@@ -525,7 +534,7 @@ class AdminController:
     def edit_patient(self):
         # Display patient info
         self.display_patient_info()
-        data = read_json("./data/patient_info.json")
+        data = read_json(self.patient_info_file)
         
         while True:
             input_patient_id = input(f"{CYAN}{BOLD}Enter Patient ID to edit ⏳: {RESET}").strip()
@@ -624,8 +633,8 @@ class AdminController:
                             print(f"{RED}Invalid choice. Please try again.")
 
                     # Save the updated data
-                    save_json("./data/patient_info.json", data)
-                    update_entry("./data/patient_record.json", input_patient_id, {"name": new_name})
+                    save_json(self.patient_info_file, data)
+                    update_entry(self.patient_record_file, input_patient_id, {"name": new_name})
                     break
 
             # If MHWP ID not found
@@ -638,7 +647,7 @@ class AdminController:
 # ----------------------------
     def disable_user(self, role):
         # Read data 
-        data = read_json('./data/user.json')
+        data = read_json(self.user_info_file)
         if data is None or not isinstance(data, list):
             print(f"{RED}Error: Failed to read valid data.")
             return None
@@ -691,7 +700,7 @@ class AdminController:
             selected_user_id = int(selected_user_id)
             for user in active_data:
                 if user["user_id"] == selected_user_id:
-                    update_entry('./data/user.json', selected_user_id, {"status": "DISABLED"})
+                    update_entry(self.user_info_file, selected_user_id, {"status": "DISABLED"})
                     print(f"{GREEN}User with ID {selected_user_id} has been successfully disabled.{RESET}")
                     return
             else:
@@ -700,7 +709,7 @@ class AdminController:
 
     def enable_user(self, role):
         # Read data 
-        data = read_json('./data/user.json')
+        data = read_json(self.user_info_file)
         if data is None or not isinstance(data, list):
             print(f"{RED}Error: Failed to read valid data.")
             return None
@@ -790,7 +799,7 @@ class AdminController:
             input_mhwp_id = int(input_mhwp_id)
             if input_mhwp_id in mhwp_data.get("MHWP ID", []):
                 # Check for existing relationships with patients
-                patient_data = read_json("./data/patient_info.json")
+                patient_data = read_json(self.patient_info_file)
                 patients_assigned = [p for p in patient_data if p.get("mhwp_id") == input_mhwp_id]
                 if patients_assigned:
                     print(f"{RED}Cannot delete MHWP with assigned patients. Please reassign patients first.{RESET}")
@@ -799,7 +808,7 @@ class AdminController:
                     return
 
                 # Check for future uncancelled appointments
-                appointment_data = read_json("./data/appointment.json")
+                appointment_data = read_json(self.appointment_file)
                 current_datetime = datetime.now()
                 appointments_assigned = [
                     appt for appt in appointment_data
@@ -815,7 +824,7 @@ class AdminController:
                     return
 
                 # Check for pending requests
-                request_data = read_json("./data/request_log.json")
+                request_data = read_json(self.request_log_file)
                 requests_assigned = [
                     req for req in request_data 
                     if (req.get("current_mhwp_id") == input_mhwp_id or 
@@ -834,8 +843,8 @@ class AdminController:
                     try:
                         # Delete from all relevant files
                         mhwp_file_paths = [
-                            "./data/mhwp_info.json",
-                            "./data/user.json"
+                            self.mhwp_info_file,
+                            self.user_info_file
                         ]
                         for file_path in mhwp_file_paths:
                             data = read_json(file_path)
@@ -890,18 +899,18 @@ class AdminController:
                 if confirm == "yes":
                     try:
                         # Get MHWP ID before deletion for patient count update
-                        patient_info = read_json("./data/patient_info.json")
+                        patient_info = read_json(self.patient_info_file)
                         patient_entry = next((p for p in patient_info if p["patient_id"] == input_patient_id), None)
                         mhwp_id = patient_entry.get("mhwp_id") if patient_entry else None
 
                         # Delete from all relevant files
                         patient_file_paths = [
-                            "./data/appointment.json",
-                            "./data/patient_info.json",
-                            "./data/patient_journal.json",
-                            "./data/patient_mood.json",
-                            "./data/patient_record.json",
-                            "./data/user.json"
+                            self.appointment_file,
+                            self.patient_info_file,
+                            self.journal_file,
+                            self.mood_file,
+                            self.patient_record_file,
+                            self.user_info_file
                         ]
                         
                         for file_path in patient_file_paths:
@@ -911,11 +920,11 @@ class AdminController:
 
                         # Update MHWP patient count if patient was assigned
                         if mhwp_id:
-                            mhwp_data = read_json("./data/mhwp_info.json")
+                            mhwp_data = read_json(self.mhwp_info_file)
                             for mhwp in mhwp_data:
                                 if mhwp["mhwp_id"] == mhwp_id:
                                     mhwp["patient_count"] = max(0, mhwp["patient_count"] - 1)
-                            save_json("./data/mhwp_info.json", mhwp_data)
+                            save_json(self.mhwp_info_file, mhwp_data)
 
                         print(f"{GREEN}Successfully deleted Patient {input_patient_id}!{RESET}")
                         break
@@ -940,7 +949,7 @@ class AdminController:
 # ----------------------------
     def view_patients_summary(self):
         """Displays a summary of all patients"""
-        patient_file = "./data/patient_info.json"
+        patient_file = self.patient_info_file
         patient_data = read_json(patient_file)
         if not patient_data:
             create_table({}, title="Patients Summary", no_data_message="No Patient Data Found", display_title=True, display_index=False)
@@ -955,7 +964,7 @@ class AdminController:
 
     def view_mhwps_summary(self):
         """Displays a summary of all MHWPs"""
-        mhwp_file = "./data/mhwp_info.json"
+        mhwp_file = self.mhwp_info_file
         mhwp_data = read_json(mhwp_file)
         if not mhwp_data:
             create_table({}, title="MHWPs Summary", no_data_message="No MHWP Data Found", display_title=True, display_index=False)
@@ -970,7 +979,7 @@ class AdminController:
 
     def view_allocations_summary(self):
         """Displays patient-to-MHWP allocations"""
-        patient_file = "./data/patient_info.json"
+        patient_file = self.patient_info_file
         patient_data = read_json(patient_file)
         if not patient_data:
             create_table({}, title="Patient Allocations", no_data_message="No Allocations Found", display_title=True, display_index=False)
@@ -984,7 +993,7 @@ class AdminController:
 
     def view_weekly_bookings_summary(self):
         """Displays the count of weekly confirmed bookings per MHWP"""
-        appointment_file = "./data/appointment.json"
+        appointment_file = self.appointment_file
         appointments = read_json(appointment_file)
 
         if not appointments:

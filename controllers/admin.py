@@ -128,7 +128,10 @@ class AdminController:
             "4": self.view_weekly_bookings_summary,
             "5": lambda: None  
         }
-        self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
+        if result == "main_menu":
+            self.display_admin_homepage()
+        
 
 
 # ----------------------------

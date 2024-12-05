@@ -107,3 +107,17 @@
 2024-12-02 19:28:30,418 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
 2024-12-02 19:35:48,818 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
 2024-12-02 19:42:56,887 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
+2024-12-04 23:41:34,567 - Action: User 'mhwp2' logged in despite being disabled, Performed by: system
+2024-12-04 23:49:09,598 - Action: Successful login: Username 'mhwp2', Performed by: mhwp2
+2024-12-04 23:49:34,911 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
+2024-12-05 00:20:21,259 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
+2024-12-05 00:27:30,137 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
+2024-12-05 00:49:56,519 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
+2024-12-05 00:55:13,036 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
+2024-12-05 00:56:31,331 - Action: User 'mhwp2' logged in despite being disabled, Performed by: system
+2024-12-05 00:56:35,227 - Action: Successful login: Username 'mhwp2', Performed by: mhwp2
+2024-12-05 12:59:08,925 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
+2024-12-05 13:00:42,077 - Action: Failed login attempt: Incorrect password for Username 'mhwp1', Performed by: system
+2024-12-05 13:04:27,507 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
+2024-12-05 13:05:13,625 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1
+2024-12-05 14:42:00,439 - Action: Successful login: Username 'mhwp1', Performed by: mhwp1

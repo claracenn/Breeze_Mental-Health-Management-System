@@ -5,7 +5,7 @@
         "mhwp_id": 21,
         "date": "2024-03-20",
         "time_slot": "10:00 - 11:00",
-        "status": "PENDING",
+        "status": "CANCELLED",
         "notes": "Session focused on relaxation techniques.",
         "create_time": "2024-10-29T17:43:11",
         "last_updated": "2024-10-29T17:43:11"
@@ -126,7 +126,7 @@
         "mhwp_id": 21,
         "date": "2024-08-01",
         "time_slot": "10:00 - 11:00",
-        "status": "PENDING",
+        "status": "CONFIRMED",
         "notes": "Talked through recent challenges.",
         "create_time": "2024-10-29T17:43:11",
         "last_updated": "2024-10-29T17:43:11"
@@ -379,7 +379,7 @@
         "mhwp_id": 23,
         "date": "2024-07-31",
         "time_slot": "10:00 - 11:00",
-        "status": "CANCELLD",
+        "status": "CANCELLED",
         "notes": "Addressed recent life changes.",
         "create_time": "2024-10-29T17:43:11",
         "last_updated": "2024-10-29T17:43:11"
@@ -424,7 +424,7 @@
         "date": "2024-11-03",
         "time_slot": "15:00 - 16:00",
         "status": "CONFIRMED",
-        "notes": "Follow-up session to discuss progress.",
+        "notes": "Focus on relaxation methods",
         "create_time": "2024-10-29T17:43:11",
         "last_updated": "2024-10-29T17:43:11"
     },
@@ -482,5 +482,49 @@
         "notes": "",
         "create_time": "2024-11-24T21:14:10",
         "last_updated": "2024-11-24T21:17:37"
+    },
+    {
+        "appointment_id": 45,
+        "patient_id": 1,
+        "mhwp_id": 21,
+        "date": "2024-12-09",
+        "time_slot": "09:00 - 10:00",
+        "status": "CANCELLED",
+        "notes": "",
+        "create_time": "2024-12-02T11:25:59",
+        "last_updated": "2024-12-02T11:25:59"
+    },
+    {
+        "appointment_id": 46,
+        "patient_id": 1,
+        "mhwp_id": 21,
+        "date": "2024-12-07",
+        "time_slot": "14:00 - 15:00",
+        "status": "CONFIRMED",
+        "notes": "",
+        "create_time": "2024-12-02T11:26:06",
+        "last_updated": "2024-12-02T11:26:06"
+    },
+    {
+        "appointment_id": 47,
+        "patient_id": 1,
+        "mhwp_id": 21,
+        "date": "2024-12-08",
+        "time_slot": "14:00 - 15:00",
+        "status": "CONFIRMED",
+        "notes": "",
+        "create_time": "2024-12-02T21:27:33",
+        "last_updated": "2024-12-02T21:27:33"
+    },
+    {
+        "appointment_id": 48,
+        "patient_id": 1,
+        "mhwp_id": 21,
+        "date": "2024-12-05",
+        "time_slot": "09:00 - 10:00",
+        "status": "CONFIRMED",
+        "notes": "",
+        "create_time": "2024-12-02T21:27:43",
+        "last_updated": "2024-12-02T21:27:43"
     }
 ]

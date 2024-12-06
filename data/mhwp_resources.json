@@ -268,7 +268,7 @@
         "resource_name": "",
         "resource_link": "",
         "create_time": "2024-11-22T10:43:54"
-    }, 
+    },
     {
         "appointment_id": 46,
         "resource_name": "",
@@ -283,8 +283,8 @@
     },
     {
         "appointment_id": 48,
-        "resource_name": "",
-        "resource_link": "",
+        "resource_name": "Positive Psychology",
+        "resource_link": "https://positivepsychology.com/childhood-trauma/",
         "create_time": "2024-11-22T10:43:54"
     }
 ]

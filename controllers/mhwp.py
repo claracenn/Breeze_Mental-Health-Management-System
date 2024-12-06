@@ -767,7 +767,7 @@ class MHWPController:
                     email_body = first_line + "\n" + email_input + "\n" + final_line
                     email_success = send_email(email, subject_input, email_body)
                     if (email_success):
-                        print(f"{GREEN}Email has been sent succesfully.{RESET}")
+                        print(f"{GREEN}Email has been sent successfully.{RESET}")
                     else:
                         print(f"{RED}Something went wrong. Please try again later...{RESET}")
 
@@ -778,6 +778,7 @@ class MHWPController:
                     text="Invalid input. Please enter a valid patient ID."
                 )
                 continue
+            break
 
 
 if __name__ == "__main__":

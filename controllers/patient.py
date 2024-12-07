@@ -92,6 +92,26 @@ class PatientController:
         return upcoming_appointments
 
 
+# -----------------------------------
+# Common Functions for Validation
+# -----------------------------------
+    def is_integer(self, value):
+        '''
+        Checks if the given value can be safely converted to an integer for user input sanitation.
+        Args: value, The value to check.
+            
+        Returns: bool, True if the value is an integer, False otherwise.
+        '''
+        if isinstance(value,int): return True
+
+        try:
+            value = value.strip()
+            int(value)  # Try converting to an integer
+            return True
+        except (ValueError, TypeError):
+            return False
+
+
 # ----------------------------
 # Homepage and Menus
 # ----------------------------
@@ -175,7 +195,7 @@ class PatientController:
         main_menu_title = "🏠 Patient Homepage"
         options = ["View Journal Entries", "Add Journal Entry", "Update Journal", "Delete Journal", "Back to Homepage"]
         action_map = {
-            "1": self.view_journals,  # Changed to new submenu function
+            "1": self.view_journals, 
             "2": self.add_journal,
             "3": self.update_journal,
             "4": self.delete_journal,
@@ -360,7 +380,6 @@ class PatientController:
                         # Save the updated data back to the file
                         save_json(self.patient_info_file, patient_info_data)
                         save_json(self.patient_record_file, patient_record_data)
-    
             
             if patient_found == False:
                 print(f"{LIGHT_RED}Patient not found. Please try again.")
@@ -396,12 +415,9 @@ class PatientController:
                         self.create_mhwp_change_request(patient_id, current_mhwp_id, new_mhwp_id, reason)
                         return True  # Indicate success
                     else:
-                        print(f"{RED}Invalid selection. Please select a valid index.{RESET}")
+                        print(f"{LIGHT_RED}Invalid selection. Please select a valid index.{RESET}")
                 except ValueError:
-                    print(f"{RED}Invalid input. Please enter a number corresponding to the MHWP index.{RESET}")
-
-
-        
+                    print(f"{LIGHT_RED}Invalid input. Please enter a number corresponding to the MHWP index.{RESET}")
 
 
     def create_mhwp_change_request(self, patient_id, current_mhwp_id, target_mhwp_id, reason):
@@ -428,6 +444,7 @@ class PatientController:
         # Save the updated request log back to the file
         save_json(self.request_log_file, request_log)
         print("Your request to change MHWP has been submitted and is pending approval.")
+
 
 # ----------------------------
 # Section 2: Journal methods
@@ -460,7 +477,7 @@ class PatientController:
         }
 
         # Create a mapping of user-visible indices to actual indices in the file
-        self.current_patient_journal_map = {}  # Maps display index to actual JSON index
+        self.current_patient_journal_map = {} 
         
         for idx, journal in enumerate(patient_journals):
         # Map user-visible index (1-based) to actual JSON file index
@@ -503,60 +520,81 @@ class PatientController:
         else:
             print(f"{RED}Failed to save journal. Please try again.{RESET}")
 
-    def delete_journal(self):
-        # display the journal
-        self.view_journals()
 
+    def delete_journal(self):
         """Delete a journal entry for the current patient."""
-        journal_index = input(f"{CYAN}{BOLD}Enter the index of the journal entry you want to delete: {RESET}").strip()
-        if journal_index == "back":
-            self.display_manager.back_operation() 
-            self.journal_menu()
-            return
-        journal_index = int(journal_index)
-        # Retrieve the actual index in the JSON file
-        actual_index = self.current_patient_journal_map.get(journal_index)
-        
-        if actual_index is None:
-            print(f"{LIGHT_RED}Invalid index for the current patient.{RESET}")
-            return
-        
-        if delete_entry(self.journal_file, actual_index + 1):
-            print(f"{GREEN}Journal entry deleted successfully!{RESET}")
-        else:
-            print(f"{LIGHT_RED}Failed to delete journal entry. Please try again.{RESET}")
+        self.view_journals()
+        while True:
+            journal_index = input(f"{CYAN}{BOLD}Enter the index of the journal entry you want to delete: {RESET}").strip()
+            
+            if journal_index == "back":
+                self.display_manager.back_operation() 
+                self.journal_menu()
+                return
+            
+            if not self.is_integer(journal_index):
+                self.display_manager.print_text(
+                    style=f"{LIGHT_RED}",
+                    text="Invalid input. Please enter an integer value."
+                )
+                continue
+
+            journal_index = int(journal_index)
+
+            # Retrieve the actual index in the JSON file
+            actual_index = self.current_patient_journal_map.get(journal_index)
+            
+            if actual_index is None:
+                print(f"{LIGHT_RED}Invalid index for the current patient.{RESET}")
+                continue
+            
+            if delete_entry(self.journal_file, actual_index + 1):
+                print(f"{GREEN}Journal entry deleted successfully!{RESET}")
+                return
+            else:
+                print(f"{LIGHT_RED}Failed to delete journal entry. Please try again.{RESET}")
 
 
     def update_journal(self):
-        # Display all journals for the current patient in a table format
-        self.view_journals()
-
         """Update a journal entry for the current patient."""
-        journal_index = input(f"{CYAN}{BOLD}Enter the index of the journal entry you want to update: {RESET}").strip()
-        if journal_index == "back":
-            self.display_manager.back_operation() 
-            self.journal_menu()
-            return
-        journal_index = int(journal_index)
-        # Retrieve the actual index in the JSON file
-        actual_index = self.current_patient_journal_map.get(journal_index)
+        self.view_journals()
+        while True:
+            journal_index = input(f"{CYAN}{BOLD}Enter the index of the journal entry you want to update: {RESET}").strip()
+            
+            if journal_index == "back":
+                self.display_manager.back_operation() 
+                self.journal_menu()
+                return
+            
+            if not self.is_integer(journal_index):
+                self.display_manager.print_text(
+                    style=f"{LIGHT_RED}",
+                    text="Invalid input. Please enter an integer value."
+                )
+                continue
+
+            journal_index = int(journal_index)
+            # Retrieve the actual index in the JSON file
+            actual_index = self.current_patient_journal_map.get(journal_index)
         
-        if actual_index is None:
-            print(f"{LIGHT_RED}Invalid index for the current patient.{RESET}")
-            return
+            if actual_index is None:
+                print(f"{LIGHT_RED}Invalid index for the current patient.{RESET}")
+                continue
         
-        # Get the new journal text
-        new_journal_text = input(f"{CYAN}{BOLD}Type your new journal text, tap enter when you finish: {RESET}\n").strip()
-        if new_journal_text == "back":
-            self.display_manager.back_operation() 
-            self.journal_menu()
-            return
-        
-        # Update the journal entry in the JSON file
-        if update_entry(self.journal_file, actual_index + 1, {"journal_text": new_journal_text}):
-            print(f"{GREEN}Journal entry updated successfully!{RESET}")
-        else:
-            print(f"{RED}Failed to update journal entry. Please try again.{RESET}")
+            # Get the new journal text
+            new_journal_text = input(f"{CYAN}{BOLD}Type your new journal text, tap enter when you finish: {RESET}\n").strip()
+            if new_journal_text == "back":
+                self.display_manager.back_operation() 
+                self.journal_menu()
+                return
+            
+            # Update the journal entry in the JSON file
+            if update_entry(self.journal_file, actual_index + 1, {"journal_text": new_journal_text}):
+                print(f"{GREEN}Journal entry updated successfully!{RESET}")
+                return
+            else:
+                print(f"{RED}Failed to update journal entry. Please try again.{RESET}")
+
 
 # ----------------------------
 # Section 3: Mood methods
@@ -690,53 +728,65 @@ class PatientController:
     def delete_mood(self):
         """Delete a mood entry for the current patient."""
         self.view_moods()
-        mood_index = input(f"{CYAN}{BOLD}Enter the index of the mood entry you want to delete: {RESET}").strip()
-        if mood_index == "back":
-            self.display_manager.back_operation()
-            self.mood_menu()
-            return
-        mood_index = int(mood_index)
-
-        # Get the actual JSON index from the mapping
-        actual_index = self.current_patient_mood_map.get(mood_index)
-        
-        if actual_index is None:
-            print(f"{LIGHT_RED}Invalid index for the current patient.{RESET}")
-            return
-                
-        if delete_entry(self.mood_file, actual_index + 1):  
-            print(f"{GREEN}✅ Mood entry deleted successfully!{RESET}")
-        else:
-            print(f"{RED}❌ Failed to delete mood entry. Please try again.{RESET}")
+        while True:
+            mood_index = input(f"{CYAN}{BOLD}Enter the index of the mood entry you want to delete: {RESET}").strip()
+            if mood_index == "back":
+                self.display_manager.back_operation()
+                self.mood_menu()
+                return
+            
+            if not self.is_integer(mood_index):
+                print(f"{LIGHT_RED}Invalid input. Please enter an integer value.{RESET}")
+                continue
+            
+            mood_index = int(mood_index)
+            # Get the actual JSON index from the mapping
+            actual_index = self.current_patient_mood_map.get(mood_index)
+            
+            if actual_index is None:
+                print(f"{LIGHT_RED}Invalid index for the current patient.{RESET}")
+                continue
+                    
+            if delete_entry(self.mood_file, actual_index + 1):  
+                print(f"{GREEN}✅ Mood entry deleted successfully!{RESET}")
+                return
+            else:
+                print(f"{RED}❌ Failed to delete mood entry. Please try again.{RESET}")
 
 
     def update_mood(self):
-        self.view_moods()
         """Update a mood entry for the current patient."""
-        mood_index = input(f"{CYAN}{BOLD}Enter the index of the mood entry you want to update: {RESET}").strip()
-        if mood_index == "back":
-            self.display_manager.back_operation()
-            self.mood_menu()
-            return
-        mood_index = int(mood_index)
-        
-        # Get the actual JSON index from the mapping
-        actual_index = self.current_patient_mood_map.get(mood_index)
-        
-        if actual_index is None:
-            print(f"{LIGHT_RED}❌ Invalid index for the current patient.{RESET}")
-            return
-        
-        new_mood_comments = input(f"{CYAN}{BOLD}Enter the new mood comments: {RESET}\n").strip()
-        if new_mood_comments == "back":
-            self.display_manager.back_operation()
-            self.mood_menu()
-            return
-        
-        if update_entry(self.mood_file, actual_index + 1, {"mood_comments": new_mood_comments}):  
-            print(f"{GREEN}✅ Mood entry updated successfully!{RESET}")
-        else:
-            print(f"{RED}❌ Failed to update mood entry. Please try again.{RESET}")
+        self.view_moods()
+        while True:
+            mood_index = input(f"{CYAN}{BOLD}Enter the index of the mood entry you want to update: {RESET}").strip()
+            if mood_index == "back":
+                self.display_manager.back_operation()
+                self.mood_menu()
+                return
+            
+            if not self.is_integer(mood_index):
+                print(f"{LIGHT_RED}Invalid input. Please enter an integer value.{RESET}")
+                continue
+            
+            mood_index = int(mood_index)
+            # Get the actual JSON index from the mapping
+            actual_index = self.current_patient_mood_map.get(mood_index)
+            
+            if actual_index is None:
+                print(f"{LIGHT_RED}Invalid index for the current patient.{RESET}")
+                continue
+            
+            new_mood_comments = input(f"{CYAN}{BOLD}Enter the new mood comments: {RESET}\n").strip()
+            if new_mood_comments == "back":
+                self.display_manager.back_operation()
+                self.mood_menu()
+                return
+            
+            if update_entry(self.mood_file, actual_index + 1, {"mood_comments": new_mood_comments}):  
+                print(f"{GREEN}✅ Mood entry updated successfully!{RESET}")
+                return
+            else:
+                print(f"{RED}❌ Failed to update mood entry. Please try again.{RESET}")
 
 
 # ----------------------------
@@ -858,12 +908,12 @@ class PatientController:
                         return
                     selected_date_idx = int(selected_date_idx) - 1
                     if selected_date_idx < 0 or selected_date_idx >= len(available_dates):
-                        print(f"❌ {LIGHT_RED}Invalid selection.{RESET}")
+                        print(f"{LIGHT_RED}Invalid selection.{RESET}")
                         continue
                     selected_date = available_dates[selected_date_idx]
                     break
                 except ValueError:
-                    print(f"❌ {LIGHT_RED}Invalid selection.{RESET}")
+                    print(f"{LIGHT_RED}Invalid selection.{RESET}")
             
             # Display available time slots
             while True:
@@ -887,12 +937,12 @@ class PatientController:
                         return
                     selected_slot_index = int(selected_slot_index) - 1
                     if selected_slot_index not in range(len(available_time_slots)):
-                        print(f"❌ {LIGHT_RED}Invalid selection.{RESET}") 
+                        print(f"{LIGHT_RED}Invalid selection.{RESET}") 
                         continue 
                     selected_time_slot = available_time_slots[selected_slot_index]
                     break
                 except ValueError:
-                    print(f"❌ {LIGHT_RED}Invalid selection.{RESET}")
+                    print(f"{LIGHT_RED}Invalid selection.{RESET}")
 
             # Confirm appointment
             new_appointment = {
@@ -929,10 +979,10 @@ class PatientController:
             try:
                 display_index = int(display_index)
                 if display_index not in self.appointment_id_map:
-                    print(f"{LIGHT_RED}❌ Invalid number. Please choose a number from the list above.{RESET}")
+                    print(f"{LIGHT_RED}Invalid number. Please choose a number from the list above.{RESET}")
                     continue
             except ValueError:
-                print(f"{LIGHT_RED}❌ Invalid input. Please enter a valid number.{RESET}")
+                print(f"{LIGHT_RED}Invalid input. Please enter a valid number.{RESET}")
                 continue
 
             actual_appointment_id = self.appointment_id_map[display_index]
@@ -1104,11 +1154,11 @@ class PatientController:
                     return
                 display_index = int(display_index)
                 if display_index not in self.appointment_id_map:
-                    print(f"{LIGHT_RED}❌ Invalid number. Please choose a number from the list above.{RESET}")
+                    print(f"{LIGHT_RED}Invalid number. Please choose a number from the list above.{RESET}")
                     continue
                 break
             except ValueError:
-                print(f"{LIGHT_RED}❌ Invalid input. Please enter a valid number.{RESET}")
+                print(f"{LIGHT_RED}Invalid input. Please enter a valid number.{RESET}")
 
         # Get the feedback
         feedback_content = input(f"{CYAN}{BOLD}Please enter your feedback: {RESET}\n").strip()
@@ -1147,11 +1197,11 @@ class PatientController:
                     return
                 display_index = int(display_index)
                 if display_index not in self.appointment_id_map:
-                    print(f"{LIGHT_RED}❌ Invalid number. Please choose a number from the list above.{RESET}")
+                    print(f"{LIGHT_RED}Invalid number. Please choose a number from the list above.{RESET}")
                     continue
                 break
             except ValueError:
-                print(f"{LIGHT_RED}❌ Invalid input. Please enter a valid number.{RESET}")
+                print(f"{LIGHT_RED}Invalid input. Please enter a valid number.{RESET}")
 
         # Get the feedback
         new_feedback_content = input(f"{CYAN}{BOLD}Please enter your new feedback: {RESET}\n").strip()
@@ -1197,11 +1247,11 @@ class PatientController:
                     return
                 display_index = int(display_index)
                 if display_index not in self.appointment_id_map:
-                    print(f"{LIGHT_RED}❌ Invalid number. Please choose a number from the list above.{RESET}")
+                    print(f"{LIGHT_RED}Invalid number. Please choose a number from the list above.{RESET}")
                     continue
                 break
             except ValueError:
-                print(f"{LIGHT_RED}❌ Invalid input. Please enter a valid number.{RESET}")
+                print(f"{LIGHT_RED}Invalid input. Please enter a valid number.{RESET}")
 
         # Get the feedback
         new_feedback_content = input(f"{CYAN}{BOLD}Please enter your new feedback: {RESET}\n").strip()

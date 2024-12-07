@@ -210,28 +210,6 @@ class MHWPController:
                 upcoming_appointments.append(appointment)
 
         return upcoming_appointments
-    
-
-    # get mood data for patients of the current mhwp
-    def get_patient_mood_data(self):
-        patient_records = self.get_patient_records()
-        patient_moods_data = self.get_patient_moods()
-        
-        # Sort moods by timestamp in descending order
-        patient_moods_data.sort(key=lambda x: x["timestamp"], reverse=True)
-
-        patient_ids = set([record["patient_id"] for record in patient_records])
-
-        patient_moods = {}
-        for mood_data in patient_moods_data:
-            id = mood_data["patient_id"]
-            if id in patient_ids:
-                if not id in patient_moods:
-                    patient_moods[id] = []
-                patient_moods[id].append([mood_data["timestamp"], mood_data["mood_comments"], mood_data["mood_color"]])
-
-        return patient_moods
-
 
     def get_patient_mood_data(self):
         """Get mood data for patients of the current MHWP."""
@@ -252,6 +230,7 @@ class MHWPController:
                 patient_moods[id].append([mood_data["timestamp"], mood_data["mood_comments"], mood_data["mood_color"]])
 
         return patient_moods
+
 
 # --------------------------------
 # Section 1: Appointments Calendar
@@ -296,9 +275,8 @@ class MHWPController:
         )
 
 
-
-
     def handle_appointment_status(self, appointment, isPending):
+        """MHWP can handle the status of a Pending or Confirmed appointment."""
         appointments = self.get_appointments()
         self.display_manager.print_text(
             style=f"{MAGENTA}{BOLD}",
@@ -554,7 +532,8 @@ class MHWPController:
                 data["Patient Name"].append(app_set[feedback["appointment_id"]])
                 data["Feedback"].append(feedback["feedback"])
 
-        create_table(data, title="Patient Feedback", display_title=True)
+        create_table(data, title="📒 Patient Feedback", display_title=True)
+
 
 # ----------------------------
 # Section 2: Patient Dashboard
@@ -611,6 +590,7 @@ class MHWPController:
 
 
     def update_patient_record(self):
+        """Allow MHWP to update patient record."""
         self.view_dashboard()
         while True:
             patient_records = self.get_patient_records()
@@ -725,6 +705,7 @@ class MHWPController:
 
 
     def contact_emergency(self):
+        """Allow MHWP to email emergency contact of a patient."""
         self.view_dashboard()
         patients = self.get_patients_info()
 

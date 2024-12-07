@@ -59,6 +59,7 @@ class PatientController:
         self.mhwp_resources_file = "data/mhwp_resources.json"
         self.skip_upcoming_appointments = False
 
+
 # ------------------------------------
 # Upcoming Appointment Notice Function
 # ------------------------------------
@@ -221,10 +222,10 @@ class PatientController:
     def resource_menu(self):
         title = "📚 Resource Menu"
         main_menu_title = "🏠 Patient Homepage"
-        options = ["Search by Keyword", "Display Resources from MHWP", "Back to Homepage"]
+        options = ["Display Resources from MHWP", "Search by Keyword", "Back to Homepage"]
         action_map = {
-            "1": self.search_by_keyword,
-            "2": self.display_resources_from_MHWP,
+            "1": self.display_resources_from_MHWP,
+            "2": self.search_by_keyword,
             "3": lambda: None,  # Back to Homepage handled in navigate_menu
         }
         result = self.display_manager.navigate_menu(title, options, action_map, main_menu_title)
@@ -823,12 +824,21 @@ class PatientController:
             while True:
                 available_dates = []
                 for date in all_dates:
+                    # Check if the patient already has an appointment on this date
+                    patient_appointments_on_date = [
+                        a for a in appointment
+                        if a["patient_id"] == self.patient.user_id and a["date"] == date
+                    ]
+                    if patient_appointments_on_date:
+                        continue  # Skip this date as the patient already has an appointment
+
+                    # Check if slots are available for the date
                     mhwp_appointments = [
                         a for a in appointment
                         if a["mhwp_id"] == self.patient.mhwp_id and a["date"] == date and a["status"] in ["PENDING", "CONFIRMED"]
                     ]
                     booked_slots = [a["time_slot"] for a in mhwp_appointments]
-                    if len(booked_slots) < len(all_time_slots):
+                    if len(booked_slots) < len(all_time_slots): # If not all the time slots are booked, add the date as available
                         available_dates.append(date)
 
                 if not available_dates:
@@ -851,12 +861,6 @@ class PatientController:
                         print(f"❌ {LIGHT_RED}Invalid selection.{RESET}")
                         continue
                     selected_date = available_dates[selected_date_idx]
-
-                    # Check if the patient already has an appointment on the selected date
-                    patient_appointments = [a for a in appointment if a["patient_id"] == self.patient.user_id]
-                    if any(a["date"] == selected_date for a in patient_appointments):
-                        print(f"❗️ {LIGHT_RED}You already have an appointment on this date. Please choose another date.{RESET}")
-                        continue #return to date selection
                     break
                 except ValueError:
                     print(f"❌ {LIGHT_RED}Invalid selection.{RESET}")
@@ -868,13 +872,14 @@ class PatientController:
                                         and a["status"] in ["PENDING", "CONFIRMED"]
                                     ]   
                 booked_time_slots = [a["time"] for a in mhwp_appointments]
+                # Check the time slots that are not booked
                 available_time_slots = [t for t in all_time_slots if t not in booked_time_slots]
                 print("⏰ Available Time Slots:")
                 for i, slot in enumerate(available_time_slots, 1):
                     print(f"{i}. {slot}")
 
-                # Select time slot
                 try:
+                    # Select time slot
                     selected_slot_index = input("Select a time slot: ")
                     if selected_slot_index == "back":
                         self.display_manager.back_operation()
@@ -883,7 +888,7 @@ class PatientController:
                     selected_slot_index = int(selected_slot_index) - 1
                     if selected_slot_index not in range(len(available_time_slots)):
                         print(f"❌ {LIGHT_RED}Invalid selection.{RESET}") 
-                        continue #return to time slot selection
+                        continue 
                     selected_time_slot = available_time_slots[selected_slot_index]
                     break
                 except ValueError:
@@ -1132,7 +1137,7 @@ class PatientController:
         # Show all appointments
         self.view_feedback()
 
-        # Let patient choose which appointment to provide feedback for
+        # Let patient choose which appointment to provide feedback for mhwp
         while True:
             try:
                 display_index = input(f"{CYAN}{BOLD}Enter the index of the appointment you want to provide feedback for: {RESET}").strip()

@@ -132,6 +132,7 @@ class MHWPController:
             self.display_mhwp_homepage()
 
 
+
 # -----------------------------------
 # Common Functions for Data Retrieval
 # -----------------------------------
@@ -209,6 +210,28 @@ class MHWPController:
                 upcoming_appointments.append(appointment)
 
         return upcoming_appointments
+    
+
+    # get mood data for patients of the current mhwp
+    def get_patient_mood_data(self):
+        patient_records = self.get_patient_records()
+        patient_moods_data = self.get_patient_moods()
+        
+        # Sort moods by timestamp in descending order
+        patient_moods_data.sort(key=lambda x: x["timestamp"], reverse=True)
+
+        patient_ids = set([record["patient_id"] for record in patient_records])
+
+        patient_moods = {}
+        for mood_data in patient_moods_data:
+            id = mood_data["patient_id"]
+            if id in patient_ids:
+                if not id in patient_moods:
+                    patient_moods[id] = []
+                patient_moods[id].append([mood_data["timestamp"], mood_data["mood_comments"], mood_data["mood_color"]])
+
+        return patient_moods
+
 
     def get_patient_mood_data(self):
         """Get mood data for patients of the current MHWP."""
@@ -265,6 +288,14 @@ class MHWPController:
                 style=f"{RED}",
                 text="No appointments available to display."
             )
+
+        # Additional prompt or action for the user
+        self.display_manager.print_text(
+            style=f"{GREY}",
+            text="Use the menu options to handle appointments or return to the main menu."
+        )
+
+
 
 
     def handle_appointment_status(self, appointment, isPending):
@@ -501,25 +532,29 @@ class MHWPController:
 
     def view_feedback(self):
         """Display feedback given by patients for MHWP's appointments."""
+
         apps = self.get_appointments()
         feedbacks = self.get_feedback()
+
         # Create a mapping for the MHWP's apppointments and corresponding Patient names
         app_set = {}
         for app in apps:
             app_set[app["appointment_id"]] = self.get_patient_name(app["patient_id"])
+
         data = {
             "Appointment ID": [],
             "Patient Name": [],
             "Feedback": []
         }
+
         # Populate the data structure with feedback from patients
         for feedback in feedbacks:
             if feedback["appointment_id"] in app_set:
                 data["Appointment ID"].append(feedback["appointment_id"])
                 data["Patient Name"].append(app_set[feedback["appointment_id"]])
                 data["Feedback"].append(feedback["feedback"])
-        create_table(data, title="📖 Patient Feedback", display_title=True)
 
+        create_table(data, title="Patient Feedback", display_title=True)
 
 # ----------------------------
 # Section 2: Patient Dashboard
@@ -533,7 +568,7 @@ class MHWPController:
         for record in patient_records:
             for info in patients_info:
                 if record["patient_id"] == info["patient_id"]:
-                    record |= info
+                    record.update(info)
 
         for record in patient_records:
             # 2d array
@@ -554,6 +589,7 @@ class MHWPController:
             "Mood Tracking Information": [],
             "Mood Comments": []
         }
+
         for patient in patient_records:
             data["Patient ID"].append(patient["patient_id"])
             data["Name"].append(patient["name"])
@@ -586,7 +622,7 @@ class MHWPController:
 
             if id_input == "back":
                 self.display_manager.back_operation()
-                self.patient_records_menu()
+                self.patient_dashboard_menu()
                 return
             
             if not self.is_integer(id_input):
@@ -731,7 +767,7 @@ class MHWPController:
                     email_body = first_line + "\n" + email_input + "\n" + final_line
                     email_success = send_email(email, subject_input, email_body)
                     if (email_success):
-                        print(f"{GREEN}Email has been sent succesfully.{RESET}")
+                        print(f"{GREEN}Email has been sent successfully.{RESET}")
                     else:
                         print(f"{RED}Something went wrong. Please try again later...{RESET}")
 
@@ -742,8 +778,11 @@ class MHWPController:
                     text="Invalid input. Please enter a valid patient ID."
                 )
                 continue
+            break
 
 
 if __name__ == "__main__":
     mhwp_controller = MHWPController(MHWP(21, "mhwp", "password", "Robert Lewandowski", "robert.lewandowski@example.com", 3, "ACTIVE"))
     mhwp_controller.display_mhwp_homepage()
+
+

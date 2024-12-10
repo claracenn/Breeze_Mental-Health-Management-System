@@ -21,7 +21,7 @@ This project is a Python-based command-line application for managing mental heal
 
 ### Patients
 
-- View and edit personal profile.
+- View and edit personal profile as well as making request to change assigned MHWP.
 - View, add, edit and delete daily journal entries.
 - View, add, edit and delete daily mood and comments.
 - View, make, and cancel appointments with MHWP.

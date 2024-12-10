@@ -339,9 +339,44 @@ class MHWPController:
             try:
                 update_status = "CANCELLED" if new_status == 1 else "CONFIRMED"
                 update_entry(self.appointment_file, appointment["appointment_id"], {"status": update_status})
+
+                #send email to patient and mhwp
+
+                status_message = f"{"Confirmed" if new_status == 1 else "Cancelled"}"
+                patients = self.get_patients_info()
+                patient = next((p for p in patients if p["patient_id"] == appointment["patient_id"]), None)
+                patient_name = patient["name"]
+                patient_email = patient["email"]
+
+                subject = "Change in Appointment Status"
+
+                patient_message = f'''
+                Your MHWP {status_message} an Appointment.\n
+                MHWP Name: {self.mhwp.name}\n
+                Date: {appointment["date"]}\n
+                Time Slot: {appointment["time_slot"]}\n
+                Breeze Mental Health and Wellbeing App
+                '''
+
+                mhwp_message = f'''
+                You have {status_message} an Appointment.\n
+                Patient Name: {patient_name}\n
+                Date: {appointment["date"]}\n
+                Time Slot: {appointment["time_slot"]}\n
+                Breeze Mental Health and Wellbeing App
+                '''
+
+
+
+                send_email(patient_email, subject, patient_message)
+                send_email(self.mhwp.email, subject, mhwp_message)
+
+
                 self.display_manager.print_text(
                     style=f"{RESET}{BOLD}",
-                    text=f"📅 Appointment {appointment['appointment_id']} status has been successfully changed to {'CANCELLED' if new_status == 1 else 'CONFIRMED'}.\n"
+                    text=f"📅 Appointment {appointment['appointment_id']} status has been successfully changed to {'CANCELLED' if new_status == 1 else 'CONFIRMED'}.\nEmail updates have been sent"
+
+
                 )
                 break
             except Exception as e:

@@ -161,7 +161,7 @@ class PatientController:
                 for appt in upcoming_appointments:
                     print(f"{BOLD}{appt['date']} {appt['time_slot']} - {appt['status']} with {appt['mhwp_name']}{RESET}")
             else:
-                print(f"{MAGENTA}No appointments in the next 7 days.{RESET}")
+                print(f"{MAGENTA}{BOLD}No appointments in the next 7 days.{RESET}")
 
         # Call the navigate_menu method from the DisplayManager to show the menu
         while True:
@@ -1341,9 +1341,3 @@ class PatientController:
 
         except Exception as e:
             print(f"An error occurred while viewing feedbacks: {str(e)}")
-
-
-# Testing
-if __name__ == "__main__":
-    patient_controller = PatientController(Patient(1, "patient", "password", "name", "email", "emergency_contact_email", 21, "ACTIVE"))
-    patient_controller.display_patient_homepage()

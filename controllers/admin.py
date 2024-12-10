@@ -1031,10 +1031,4 @@ class AdminController:
         create_table(data, title="Weekly Confirmed Bookings", display_title=True, display_index=False)
         total_confirmed = len(confirmed_appointments)
         print(f"\n{GREEN}{BOLD}Total Confirmed Appointments for This Week: {total_confirmed}{RESET}\n")
-    
-    
-# Give test of allocate patient to mhwp
-if __name__ == "__main__":
-    admin = Admin(1, "admin", "", "ACTIVE")
-    admin_controller = AdminController(admin)
-    admin_controller.display_admin_homepage()
+

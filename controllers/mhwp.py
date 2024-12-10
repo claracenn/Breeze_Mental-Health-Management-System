@@ -796,9 +796,3 @@ class MHWPController:
                 continue
             break
 
-
-if __name__ == "__main__":
-    mhwp_controller = MHWPController(MHWP(21, "mhwp", "password", "Robert Lewandowski", "robert.lewandowski@example.com", 3, "ACTIVE"))
-    mhwp_controller.display_mhwp_homepage()
-
-
